@@ -9,7 +9,7 @@ const orders = () => new OrdersController(paypalClient());
 
 type NewOrder = {
   amount: string; // "210.00"
-  payeeEmail: string; // who receives the money
+  payeeEmail?: string; // who receives the money (empty = the platform)
   description: string;
   returnUrl?: string;
 };
@@ -23,7 +23,7 @@ export async function createAuthorizeOrder(order: NewOrder) {
       purchaseUnits: [
         {
           amount: { currencyCode: "USD", value: order.amount },
-          payee: { emailAddress: order.payeeEmail },
+          payee: order.payeeEmail ? { emailAddress: order.payeeEmail } : undefined,
           description: order.description,
         },
       ],
