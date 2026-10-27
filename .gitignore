@@ -50,3 +50,4 @@ AGENTS.md
 .claude/
 .mcp.json
 skills-lock.json
+sandbox-accounts.csv
