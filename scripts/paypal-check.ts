@@ -14,6 +14,7 @@ import {
   refundCapture,
 } from "@/lib/paypal/payments";
 import { sendPayout } from "@/lib/paypal/payouts";
+import { safePayPalError } from "@/lib/paypal/errors";
 
 const [command, a, b] = process.argv.slice(2);
 
@@ -46,6 +47,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error?.result ?? error);
+  console.error(safePayPalError(error));
   process.exit(1);
 });
