@@ -13,6 +13,7 @@ async function main() {
     console.log(`goods: ${g.title} | ${g.condition} | used ~$${g.usedValue}${match?.newPrice ? ` (new $${match.newPrice})` : ""}`);
   }
   for (const s of result.skills) console.log(`skill: ${s.title} (because: ${s.because})`);
+  process.exit(0); // the database pool would keep the script running
 }
 
 main().catch((error) => {
