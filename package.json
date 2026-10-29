@@ -7,10 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "paypal:check": "tsx --env-file=.env.local scripts/paypal-check.ts"
+    "paypal:check": "tsx --env-file=.env.local scripts/paypal-check.ts",
+    "agent:check": "tsx --env-file=.env.local scripts/agent-check.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.135.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@paypal/agent-toolkit": "1.11.0",
     "@paypal/paypal-server-sdk": "2.5.0",
     "@paypal/react-paypal-js": "10.6.0",
     "next": "16.4.2",
