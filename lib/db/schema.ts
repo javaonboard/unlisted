@@ -170,3 +170,11 @@ export const memoryFacts = pgTable("memory_facts", {
   replacedBy: uuid("replaced_by"),
   createdAt: createdAt(),
 });
+
+// AI calls and tokens per day, so we can cap spend and see real cost.
+export const aiUsage = pgTable("ai_usage", {
+  day: text("day").primaryKey(), // "2026-10-29"
+  calls: integer("calls").default(0).notNull(),
+  inputTokens: integer("input_tokens").default(0).notNull(),
+  outputTokens: integer("output_tokens").default(0).notNull(),
+});

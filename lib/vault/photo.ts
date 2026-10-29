@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { claude, MODELS } from "@/lib/ai/client";
+import { checkAiLimits, recordAiUsage } from "@/lib/ai/limits";
 import { findProductsInPhoto, type ProductMatch } from "./products";
 
 const PhotoResult = z.object({
@@ -29,7 +30,9 @@ export type PhotoAnalysis = z.infer<typeof PhotoResult> & { matches: ProductMatc
 export async function analyzePhoto(
   base64Image: string,
   mediaType: "image/jpeg" | "image/png" | "image/webp",
+  ip?: string,
 ): Promise<PhotoAnalysis> {
+  await checkAiLimits(ip);
   const matches = await findProductsInPhoto(base64Image);
   const list = matches
     .map((m, i) => `${i}. ${m.thing} → ${m.title ?? "no match"}${m.newPrice ? `, new $${m.newPrice}` : ""}`)
@@ -59,6 +62,7 @@ Also list services this person could offer to neighbors based on equipment you s
     ],
   });
 
+  await recordAiUsage(message.usage);
   const result = message.parsed_output;
   if (!result) throw new Error(`photo analysis failed: ${message.stop_reason}`);
   console.log("[ai] photo analyzed:", result.goods.length, "goods,", result.skills.length, "skills");
