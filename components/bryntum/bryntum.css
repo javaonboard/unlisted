@@ -2,3 +2,8 @@
 @import "@bryntum/scheduler/fontawesome/css/solid.css";
 @import "@bryntum/scheduler/scheduler.css";
 @import "@bryntum/scheduler/svalbard-light.css";
+
+/* Match our light blue accent. */
+.b-scheduler {
+  --b-primary: #0284c7;
+}
