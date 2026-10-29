@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.135.0",
+    "@bryntum/scheduler": "npm:@bryntum/scheduler-trial@7.3.8",
+    "@bryntum/scheduler-react": "7.3.8",
     "@channel3/sdk": "4.6.0",
     "@modelcontextprotocol/sdk": "1.32.2",
     "@paypal/agent-toolkit": "1.11.0",
