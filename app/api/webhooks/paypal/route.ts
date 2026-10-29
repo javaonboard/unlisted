@@ -1,5 +1,6 @@
 import { verifyWebhook } from "@/lib/paypal/webhooks";
 import { safePayPalError } from "@/lib/paypal/errors";
+import { logActivity } from "@/lib/db/activity";
 
 export async function POST(request: Request) {
   const rawBody = await request.text();
@@ -16,6 +17,12 @@ export async function POST(request: Request) {
 
   const event = JSON.parse(rawBody);
   console.log("[webhook]", event.event_type, event.id, event.resource?.id);
-  // Events get recorded in the activity log once the database is in.
+
+  await logActivity({
+    type: "paypal",
+    message: event.summary ?? event.event_type,
+    paypalEventId: event.id,
+    data: { eventType: event.event_type, resourceId: event.resource?.id },
+  });
   return new Response("ok");
 }

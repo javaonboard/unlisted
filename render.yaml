@@ -5,6 +5,7 @@ services:
     plan: 0.5c-512mb
     region: oregon
     buildCommand: npm ci && npm run build
+    preDeployCommand: npm run db:migrate
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
