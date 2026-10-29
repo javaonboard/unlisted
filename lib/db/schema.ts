@@ -88,6 +88,10 @@ export const negotiations = pgTable("negotiations", {
   status: text("status", { enum: ["open", "agreed", "closed"] })
     .default("open")
     .notNull(),
+  round: integer("round").default(0).notNull(),
+  maxRounds: integer("max_rounds").default(6).notNull(),
+  agreedPrice: money("agreed_price"),
+  closedReason: text("closed_reason"),
   createdAt: createdAt(),
 });
 
@@ -95,11 +99,17 @@ export const offers = pgTable("offers", {
   id: id(),
   negotiationId: uuid("negotiation_id").notNull().references(() => negotiations.id),
   fromUserId: text("from_user_id").notNull().references(() => users.id),
-  price: money("price").notNull(),
+  round: integer("round").notNull(),
+  kind: text("kind", {
+    enum: ["offer", "counter", "question", "accept", "reject", "walk_away"],
+  }).notNull(),
+  price: money("price"),
   terms: jsonb("terms").$type<Record<string, unknown>>().default({}).notNull(),
   evidenceIds: jsonb("evidence_ids").$type<string[]>().default([]).notNull(),
-  note: text("note"),
-  accepted: boolean("accepted").default(false).notNull(),
+  note: text("note"), // what the other side sees
+  reasoning: text("reasoning"), // private, only the sender's owner sees it
+  signalsUsed: jsonb("signals_used").$type<string[]>().default([]).notNull(),
+  a2a: jsonb("a2a").$type<Record<string, unknown>>(), // the A2A message as sent
   createdAt: createdAt(),
 });
 

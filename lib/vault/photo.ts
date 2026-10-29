@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { claude, MODELS } from "@/lib/ai/client";
-import { checkAiLimits, recordAiUsage } from "@/lib/ai/limits";
+import { askForData } from "@/lib/ai/structured";
 import { findProductsInPhoto, type ProductMatch } from "./products";
 
 const PhotoResult = z.object({
@@ -32,39 +30,29 @@ export async function analyzePhoto(
   mediaType: "image/jpeg" | "image/png" | "image/webp",
   ip?: string,
 ): Promise<PhotoAnalysis> {
-  await checkAiLimits(ip);
   const matches = await findProductsInPhoto(base64Image);
   const list = matches
     .map((m, i) => `${i}. ${m.thing} → ${m.title ?? "no match"}${m.newPrice ? `, new $${m.newPrice}` : ""}`)
     .join("\n");
 
-  const message = await claude().messages.parse({
-    model: MODELS.main,
-    max_tokens: 4000,
-    output_config: { effort: "low", format: zodOutputFormat(PhotoResult) },
-    messages: [
+  const result = await askForData({
+    schema: PhotoResult,
+    ip,
+    content: [
+      { type: "image", source: { type: "base64", media_type: mediaType, data: base64Image } },
       {
-        role: "user",
-        content: [
-          { type: "image", source: { type: "base64", media_type: mediaType, data: base64Image } },
-          {
-            type: "text",
-            text: `This is a photo of someone's home. A product search found these items:
+        type: "text",
+        text: `This is a photo of someone's home. A product search found these items:
 ${list}
 
 List the goods worth keeping track of, with condition you can see and a fair used price
 (use the new price as a ceiling). Skip fixtures like walls, floors and built-ins.
 Also list services this person could offer to neighbors based on equipment you see
 (for example a ladder suggests gutter cleaning). Leave skills empty if there are none.`,
-          },
-        ],
       },
     ],
   });
 
-  await recordAiUsage(message.usage);
-  const result = message.parsed_output;
-  if (!result) throw new Error(`photo analysis failed: ${message.stop_reason}`);
   console.log("[ai] photo analyzed:", result.goods.length, "goods,", result.skills.length, "skills");
   return { ...result, matches };
 }

@@ -15,6 +15,20 @@
       "when": 1793301603653,
       "tag": "0001_ai_usage",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793303625579,
+      "tag": "0002_rooms",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793303627653,
+      "tag": "0003_drop_offer_accepted",
+      "breakpoints": true
     }
   ]
 }
