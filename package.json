@@ -10,7 +10,8 @@
     "paypal:check": "tsx --env-file=.env.local scripts/paypal-check.ts",
     "agent:check": "tsx --env-file=.env.local scripts/agent-check.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx --env-file=.env.local scripts/seed.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.135.0",

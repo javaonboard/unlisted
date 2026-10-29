@@ -1,0 +1,97 @@
+// The demo world. Personas with a PayPal email can pay or get paid in sandbox.
+// Everyone else only lives in the database (other bidders, other providers).
+
+export const users = [
+  { id: "maya", name: "Maya Lee", area: "East Austin", paypalEmail: "unlisted-maya@personal.example.com", bio: "Moving across town on Saturday." },
+  { id: "sam", name: "Sam Ortiz", area: "Mueller", paypalEmail: "unlisted-seller@personal.example.com", bio: "Selling a loveseat before a new baby arrives." },
+  { id: "sara", name: "Sara Kim", area: "Hyde Park", paypalEmail: "unlisted-seller2@personal.example.com", bio: "Downsizing after a move." },
+  { id: "ben", name: "Ben Carter", area: "Cherrywood", paypalEmail: "unlisted-buyer@personal.example.com", bio: "Furnishing a first apartment." },
+  { id: "bella", name: "Bella Diaz", area: "Windsor Park", paypalEmail: "unlisted-buyer2@personal.example.com", bio: "Needs a big sofa for movie nights." },
+  { id: "omar", name: "Omar Haddad", area: "Holly", paypalEmail: null, bio: "Looking for a sectional for the den." },
+  { id: "marco", name: "Marco Ruiz", area: "East Austin", paypalEmail: "unlisted-mover@business.example.com", bio: "Pickup truck, dolly and straps. Weekends." },
+  { id: "gus", name: "Gus Patel", area: "Mueller", paypalEmail: null, bio: "Has a tall ladder and free Saturdays." },
+  { id: "lily", name: "Lily Nguyen", area: "Cherrywood", paypalEmail: null, bio: "Mows lawns around the neighborhood." },
+  { id: "ivan", name: "Ivan Petrov", area: "Hyde Park", paypalEmail: null, bio: "IT person. Wi-Fi, TV mounting, PC builds." },
+  { id: "kai", name: "Kai Johnson", area: "Holly", paypalEmail: null, bio: "Wants to try VR." },
+  { id: "priya", name: "Priya Shah", area: "Mueller", paypalEmail: null, bio: "Building a gaming PC." },
+];
+
+export const mandates = users.map((u) => ({
+  userId: u.id,
+  maxSpend: u.id === "maya" ? "350.00" : "500.00",
+  askBeforePaying: true,
+  canNegotiate: true,
+}));
+
+type Item = {
+  key: string;
+  ownerId: string;
+  kind: "goods" | "skill";
+  title: string;
+  category: string;
+  condition?: string;
+  estimatedValue?: string;
+  minPrice?: string;
+  openToOffers?: boolean;
+  details?: Record<string, unknown>;
+};
+
+export const vaultItems: Item[] = [
+  // Maya: never listed anything.
+  { key: "sectional", ownerId: "maya", kind: "goods", title: "Grey 3-seat sectional", category: "sofa", condition: "Good. Small stain on left cushion.", estimatedValue: "240.00", minPrice: "150.00", details: { seats: 3, widthIn: 104, bought: "2022" } },
+  { key: "lamp", ownerId: "maya", kind: "goods", title: "Brass floor lamp", category: "lighting", condition: "Like new", estimatedValue: "45.00" },
+  { key: "quest3", ownerId: "maya", kind: "goods", title: "Meta Quest 3 (128GB)", category: "vr-headset", condition: "Good. Barely used.", estimatedValue: "320.00", details: { storageGb: 128 } },
+  // Sofa sellers.
+  { key: "loveseat", ownerId: "sam", kind: "goods", title: "Navy loveseat, 2 seats", category: "sofa", condition: "Very good", estimatedValue: "300.00", minPrice: "240.00", openToOffers: true, details: { seats: 2, widthIn: 68 } },
+  { key: "small-sofa", ownerId: "sara", kind: "goods", title: "Beige apartment sofa", category: "sofa", condition: "Good. Light wear on arm.", estimatedValue: "320.00", minPrice: "260.00", openToOffers: true, details: { seats: 2, widthIn: 74 } },
+  // Local skills.
+  { key: "moving", ownerId: "marco", kind: "skill", title: "Moving help with pickup truck", category: "moving", estimatedValue: "85.00", minPrice: "70.00", openToOffers: true, details: { days: ["Sat", "Sun"], equipment: ["truck", "dolly", "straps"] } },
+  { key: "gutters", ownerId: "gus", kind: "skill", title: "Gutter cleaning", category: "gutters", estimatedValue: "80.00", openToOffers: true, details: { equipment: ["ladder"] } },
+  { key: "lawn", ownerId: "lily", kind: "skill", title: "Lawn mowing", category: "lawn", estimatedValue: "40.00", openToOffers: true, details: { equipment: ["mower", "trimmer"] } },
+  { key: "it-setup", ownerId: "ivan", kind: "skill", title: "Wi-Fi, TV mounting and PC setup", category: "it-setup", estimatedValue: "60.00", openToOffers: true },
+];
+
+export const evidence = [
+  { itemKey: "sectional", type: "note" as const, summary: "Small stain on left cushion, about 2 inches.", verified: true },
+  { itemKey: "sectional", type: "receipt" as const, summary: "Bought new in 2022 for $1,100.", verified: true },
+  { itemKey: "loveseat", type: "note" as const, summary: "No stains, pet-free home (seller's claim).", verified: false },
+  { itemKey: "small-sofa", type: "note" as const, summary: "Light wear on right arm.", verified: true },
+];
+
+type Intent = {
+  key: string;
+  ownerId: string;
+  type: "buy" | "sell" | "request_service" | "offer_service";
+  text: string;
+  category: string;
+  maxPrice?: string;
+  minPrice?: string;
+  constraints?: Record<string, unknown>;
+  dependsOn?: string[];
+  dueInDays?: number;
+};
+
+export const intents: Intent[] = [
+  // Maya's linked deal: all three or nothing.
+  { key: "maya-sofa", ownerId: "maya", type: "buy", text: "A smaller sofa under $300, delivered by Saturday.", category: "sofa", maxPrice: "300.00", constraints: { maxWidthIn: 80 }, dependsOn: ["maya-sell", "maya-mover"], dueInDays: 3 },
+  { key: "maya-sell", ownerId: "maya", type: "sell", text: "Sell the sectional, only if I find the smaller sofa.", category: "sofa", minPrice: "150.00", dependsOn: ["maya-sofa"], dueInDays: 3 },
+  { key: "maya-mover", ownerId: "maya", type: "request_service", text: "Mover for Saturday morning, both pickups.", category: "moving", maxPrice: "90.00", dueInDays: 3 },
+  // Demand for her sectional she never listed.
+  { key: "ben-sectional", ownerId: "ben", type: "buy", text: "Sectional for my first apartment.", category: "sofa", maxPrice: "250.00", constraints: { minSeats: 3 }, dueInDays: 14 },
+  { key: "bella-sectional", ownerId: "bella", type: "buy", text: "Big sofa or sectional for movie nights.", category: "sofa", maxPrice: "230.00", constraints: { minSeats: 3 }, dueInDays: 10 },
+  { key: "omar-sectional", ownerId: "omar", type: "buy", text: "Sectional for the den, can pick up.", category: "sofa", maxPrice: "260.00", constraints: { minSeats: 3 }, dueInDays: 7 },
+  // Other local demand: shows the engine is not just sofas.
+  { key: "kai-quest", ownerId: "kai", type: "buy", text: "A Quest 3 under $300 nearby.", category: "vr-headset", maxPrice: "300.00", dueInDays: 20 },
+  { key: "priya-gpu", ownerId: "priya", type: "buy", text: "Used RTX 4070 or better under $450.", category: "gpu", maxPrice: "450.00", dueInDays: 20 },
+  { key: "sara-gutters", ownerId: "sara", type: "request_service", text: "Gutters cleaned before the rain.", category: "gutters", maxPrice: "100.00", dueInDays: 5 },
+];
+
+export const memoryFacts = [
+  { userId: "maya", fact: "Prefers weekend pickups.", source: "deal:2026-08 bookshelf", confidence: 0.8, verified: true },
+  { userId: "maya", fact: "Accepted about $20 less for a same-day pickup.", source: "deal:2026-09 desk", confidence: 0.6, verified: false },
+  { userId: "maya", fact: "Lives on a second floor with no elevator.", source: "user", confidence: 1, verified: true },
+];
+
+export const notifications = [
+  { userId: "maya", title: "3 people want a sectional like yours", body: "Ben, Bella and Omar are looking nearby. Your sectional is still private. Open it to offers?", link: "/vault" },
+];
