@@ -37,6 +37,7 @@ async function Vault() {
       {plans.map((p) => (
         <Link key={p.id} href={`/deals/${p.id}`} className="mb-6 block rounded-2xl bg-accent p-4 text-sm hover:bg-accent/70">
           📋 Plan: <span className="font-medium">{p.title}</span> · see every part, the total and Saturday&apos;s timeline ▸
+          {p.scoutNote && <span className="mt-2 block text-muted-foreground">🧭 {p.scoutNote}</span>}
         </Link>
       ))}
 

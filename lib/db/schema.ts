@@ -124,6 +124,7 @@ export const deals = pgTable("deals", {
   id: id(),
   ownerId: text("owner_id").notNull().references(() => users.id),
   title: text("title").notNull(),
+  scoutNote: text("scout_note"), // the Scout's short "why I picked these"
   status: text("status", {
     enum: ["proposed", "approved", "held", "settled", "cancelled"],
   })

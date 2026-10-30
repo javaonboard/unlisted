@@ -57,6 +57,13 @@
       "when": 1793378480496,
       "tag": "0007_leg_handoff",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793379764871,
+      "tag": "0008_scout_note",
+      "breakpoints": true
     }
   ]
 }
