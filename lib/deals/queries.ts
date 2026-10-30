@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray, or } from "drizzle-orm";
+import { asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 
 // Deals someone owns or takes part in.
@@ -23,14 +23,25 @@ export async function getDealChannel(dealId: string, viewerId: string) {
   const visibleRooms = deal.ownerId === viewerId ? rooms : rooms.filter((r) => r.buyerId === viewerId || r.sellerId === viewerId);
   const roomIds = visibleRooms.map((r) => r.id);
 
-  const [moves, users, bookings] = await Promise.all([
+  const [moves, users, bookings, legs, events] = await Promise.all([
     roomIds.length ? db.select().from(schema.offers).where(inArray(schema.offers.negotiationId, roomIds)).orderBy(asc(schema.offers.createdAt)) : [],
     db.select().from(schema.users),
     db.select().from(schema.bookings).where(eq(schema.bookings.dealId, dealId)).orderBy(desc(schema.bookings.startsAt)),
+    db.select().from(schema.dealLegs).where(eq(schema.dealLegs.dealId, dealId)).orderBy(asc(schema.dealLegs.createdAt)),
+    db.select().from(schema.activity).where(sql`${schema.activity.data}->>'dealId' = ${dealId}`).orderBy(asc(schema.activity.createdAt)),
   ]);
 
   // Talk between an agent and its owner is only for that owner.
   const messages = moves.filter((m) => (m.kind === "ask_owner" || m.kind === "owner_note" ? m.fromUserId === viewerId : true));
   const names = Object.fromEntries(users.map((u) => [u.id, u.name]));
-  return { deal, rooms: visibleRooms, messages, bookings, names };
+  const mine = deal.ownerId === viewerId;
+  return {
+    deal,
+    rooms: visibleRooms,
+    messages,
+    bookings,
+    names,
+    legs: legs.filter((l) => mine || l.payerId === viewerId || l.payeeId === viewerId),
+    events: events.filter((e) => mine || e.userId === null || e.userId === viewerId),
+  };
 }

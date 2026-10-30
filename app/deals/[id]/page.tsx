@@ -5,6 +5,7 @@ import { currentUserId } from "@/lib/session";
 import { getDealChannel, listDealsFor } from "@/lib/deals/queries";
 import { ChatMessage } from "@/components/deals/ChatMessage";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
+import { PaymentsPanel } from "@/components/payments/PaymentsPanel";
 
 const dot = (status: string) =>
   status === "agreed" ? "bg-emerald-500" : status === "waiting_owner" ? "bg-amber-500" : status === "open" ? "bg-sky-500 animate-pulse" : "bg-zinc-400";
@@ -15,7 +16,7 @@ async function Channel({ params }: { params: Promise<{ id: string }> }) {
   const [data, deals] = await Promise.all([getDealChannel(id, viewerId), listDealsFor(viewerId)]);
   if (!data) notFound();
 
-  const { deal, rooms, messages, bookings, names } = data;
+  const { deal, rooms, messages, bookings, names, legs, events } = data;
   const thread = Object.fromEntries(rooms.map((r) => [r.id, r.label ?? "deal"]));
   // Keep refreshing while agents talk, and in the gap before the mover leg starts.
   const active = rooms.some((r) => r.status === "open" || r.status === "waiting_owner") || (deal.status === "proposed" && !rooms.some((r) => r.label?.startsWith("Mover")));
@@ -60,6 +61,11 @@ async function Channel({ params }: { params: Promise<{ id: string }> }) {
               waiting={rooms.find((r) => r.id === m.negotiationId)?.status === "waiting_owner"}
             />
           ))}
+          {events.map((e) => (
+            <p key={e.id} className="mx-2 my-1 rounded-xl bg-secondary px-3 py-2 text-sm">
+              {e.message} <span className="text-xs text-muted-foreground">{e.createdAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
+            </p>
+          ))}
           {bookings.map((b) => (
             <p key={b.id} className="mx-2 my-1 rounded-xl bg-secondary px-3 py-2 text-sm">
               📅 {names[b.providerId]?.split(" ")[0]} is booked {b.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}–
@@ -85,6 +91,16 @@ async function Channel({ params }: { params: Promise<{ id: string }> }) {
           <span>Net</span>
           <span>{net >= 0 ? "+" : "−"}${Math.abs(net).toFixed(0)}</span>
         </div>
+        <p className="mt-6 mb-2 text-xs font-semibold uppercase text-muted-foreground">Payments</p>
+        <PaymentsPanel
+          dealId={deal.id}
+          isOwner={deal.ownerId === viewerId}
+          viewerId={viewerId}
+          rooms={rooms}
+          legs={legs}
+          names={names}
+          clientId={process.env.PAYPAL_CLIENT_ID ?? ""}
+        />
         <p className="mt-6 mb-2 text-xs font-semibold uppercase text-muted-foreground">Saturday</p>
         <ul className="flex flex-col gap-1 text-muted-foreground">
           {rooms.map((r) => {

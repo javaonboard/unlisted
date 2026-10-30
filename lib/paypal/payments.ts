@@ -7,14 +7,16 @@ const payments = () => new PaymentsController(paypalClient());
 const usd = (value: string) => ({ currencyCode: "USD", value });
 
 // Takes the money at handoff. Leave amount empty to capture the full hold.
+// One hold can cover several legs: capture each one, and mark the last as final.
 export async function captureAuthorization(
   authorizationId: string,
   amount?: string,
+  final = true,
 ) {
   const { result } = await payments().captureAuthorizedPayment({
     authorizationId,
     paypalRequestId: randomUUID(),
-    body: { amount: amount ? usd(amount) : undefined, finalCapture: true },
+    body: { amount: amount ? usd(amount) : undefined, finalCapture: final },
   });
   console.log("[paypal] captured", authorizationId, result.id, result.status);
   return { captureId: result.id, status: result.status };

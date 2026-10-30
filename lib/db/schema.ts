@@ -135,6 +135,7 @@ export const deals = pgTable("deals", {
 export const dealLegs = pgTable("deal_legs", {
   id: id(),
   dealId: uuid("deal_id").notNull().references(() => deals.id),
+  roomId: uuid("room_id").references(() => negotiations.id), // the negotiation this leg pays for
   kind: text("kind", { enum: ["goods", "service"] }).notNull(),
   description: text("description").notNull(),
   payerId: text("payer_id").notNull().references(() => users.id),
@@ -150,6 +151,7 @@ export const dealLegs = pgTable("deal_legs", {
   })
     .default("pending")
     .notNull(),
+  handoffCode: text("handoff_code"), // the payee shows it, the payer enters it to confirm
   handoffAt: timestamp("handoff_at"),
   createdAt: createdAt(),
 });

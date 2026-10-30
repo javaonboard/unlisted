@@ -50,6 +50,13 @@
       "when": 1793377436940,
       "tag": "0006_depends_on",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793378480496,
+      "tag": "0007_leg_handoff",
+      "breakpoints": true
     }
   ]
 }
