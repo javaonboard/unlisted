@@ -6,7 +6,7 @@ const PhotoResult = z.object({
   goods: z.array(
     z.object({
       title: z.string().describe("Short name, e.g. 'Grey 3-seat sectional'"),
-      category: z.string().describe("One lowercase word or slug, e.g. 'sofa'"),
+      category: z.string().describe("One lowercase word or slug, e.g. 'sofa', 'lighting', 'vr-headset', 'gpu', 'bike', 'tools'"),
       condition: z.string().describe("What you can actually see: stains, wear, damage. Say 'looks good' if nothing."),
       usedValue: z.number().describe("Fair used price in USD"),
       matchIndex: z.number().nullable().describe("Index of the matching product in the list, or null"),
@@ -15,7 +15,7 @@ const PhotoResult = z.object({
   skills: z.array(
     z.object({
       title: z.string().describe("A service a person could offer, e.g. 'Gutter cleaning'"),
-      category: z.string(),
+      category: z.string().describe("One of: moving, gutters, lawn, car-care, it-setup, washing, assembly, or a short new word"),
       because: z.string().describe("The equipment in the photo that suggests it"),
     }),
   ),

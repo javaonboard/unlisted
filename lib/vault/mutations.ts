@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 
 type NewItem = {
@@ -24,4 +25,9 @@ export async function addVaultItem(ownerId: string, item: NewItem) {
     })
     .returning();
   return row;
+}
+
+// A small thumbnail so the card shows the photo it came from.
+export async function setPhoto(itemId: string, dataUrl: string) {
+  await db.update(schema.vaultItems).set({ photos: [dataUrl] }).where(eq(schema.vaultItems.id, itemId));
 }

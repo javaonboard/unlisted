@@ -86,6 +86,11 @@ export const intents: Intent[] = [
   { key: "kai-quest", ownerId: "kai", type: "buy", text: "A Quest 3 under $300 nearby.", category: "vr-headset", maxPrice: "300.00", dueInDays: 20 },
   { key: "priya-gpu", ownerId: "priya", type: "buy", text: "Used RTX 4070 or better under $450.", category: "gpu", maxPrice: "450.00", dueInDays: 20 },
   { key: "sara-gutters", ownerId: "sara", type: "request_service", text: "Gutters cleaned before the rain.", category: "gutters", maxPrice: "100.00", dueInDays: 5 },
+  { key: "ben-gutters", ownerId: "ben", type: "request_service", text: "Clean the gutters on a one-story house.", category: "gutters", maxPrice: "80.00", dueInDays: 10 },
+  { key: "omar-gutters", ownerId: "omar", type: "request_service", text: "Gutters are overflowing, need help this week.", category: "gutters", maxPrice: "90.00", dueInDays: 6 },
+  { key: "bella-lawn", ownerId: "bella", type: "request_service", text: "Mow and edge a small front yard every two weeks.", category: "lawn", maxPrice: "45.00", dueInDays: 7 },
+  { key: "priya-oil", ownerId: "priya", type: "request_service", text: "Oil change at home, I have the oil.", category: "car-care", maxPrice: "60.00", dueInDays: 8 },
+  { key: "kai-oil", ownerId: "kai", type: "request_service", text: "Someone to change my oil on a weekend.", category: "car-care", maxPrice: "55.00", dueInDays: 12 },
 ];
 
 export const memoryFacts = [

@@ -8,6 +8,7 @@ import { findDemandFor } from "@/lib/matching/matcher";
 import { iconFor, statusLine } from "@/lib/anchors/status";
 import { planMovingDay } from "@/app/actions/deals";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
+import { PhotoToVault } from "@/components/vault/PhotoToVault";
 
 async function Vault() {
   const userId = await currentUserId();
@@ -41,11 +42,18 @@ async function Vault() {
         </Link>
       ))}
 
+      <PhotoToVault />
+
       <h2 className="mb-3 font-medium">My things</h2>
       <div className="grid gap-3 sm:grid-cols-2">
         {items.map((item) => (
           <Link key={item.id} href={`/vault/${item.id}`} className="flex gap-3 rounded-2xl border p-3 hover:bg-muted/40">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-2xl">{iconFor(item.category)}</div>
+            {item.photos[0] ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={item.photos[0]} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
+            ) : (
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-2xl">{iconFor(item.category)}</div>
+            )}
             <div className="min-w-0">
               <p className="font-medium">{item.title}</p>
               <p className="truncate text-sm text-muted-foreground">{item.condition ?? item.category} · ~${Number(item.estimatedValue ?? 0).toFixed(0)}</p>
