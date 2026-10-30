@@ -92,6 +92,13 @@
       "when": 1793395941166,
       "tag": "0012_bookings_drop_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793397522478,
+      "tag": "0013_bookings_confirmed",
+      "breakpoints": true
     }
   ]
 }

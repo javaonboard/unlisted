@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { approveDealAction, cancelHoldAction, confirmSoloDealAction } from "@/app/actions/payments";
 import { PayButton } from "@/components/payments/PayButton";
 import { ConfirmHandoff } from "@/components/payments/LegActions";
+import { TimeConfirm } from "@/components/rooms/TimeConfirm";
 
 type Props = {
   roomId: string;
@@ -18,6 +19,8 @@ type Props = {
   when: string | null;
   place: string | null;
   booking: { startsAt: Date; endsAt: Date } | null;
+  waitingOn: string[];
+  buyerId: string;
   clientId: string;
 };
 
@@ -34,13 +37,20 @@ export function NextSteps(p: Props) {
   const held = leg && leg.status !== "pending";
   const handedOff = leg && (leg.status === "captured" || leg.status === "paid_out");
 
+  // The buyer says yes to the time by placing the hold; after that, like anyone else.
+  const final = p.booking && p.waitingOn.length === 0;
+  const waiting = p.waitingOn.map((id) => (id === p.viewerId ? "you" : p.first(id))).join(" and ");
+  const canConfirm = p.waitingOn.includes(p.viewerId) && (p.buyerId !== p.viewerId || !!held);
+
   return (
     <div className="mt-3 rounded-2xl border p-4 text-sm">
       <p className="mb-3 font-medium">Next steps</p>
       <p className="mb-3 text-muted-foreground">
-        {p.booking ? `📅 Booked ${p.booking.startsAt.toLocaleDateString("en-US", { weekday: "short" })} ${time(p.booking.startsAt)}–${time(p.booking.endsAt)}` : p.when ? `🕒 ${p.when}` : ""}
+        {p.booking ? `📅 ${p.booking.startsAt.toLocaleDateString("en-US", { weekday: "short" })} ${time(p.booking.startsAt)}–${time(p.booking.endsAt)}` : p.when ? `🕒 ${p.when}` : ""}
         {p.place ? ` · 📍 ${p.place}` : ""}
+        {p.booking && (final ? " · ✅ Time confirmed by both" : ` · ⏳ Tentative, waiting for ${waiting}`)}
       </p>
+      {p.booking && !handedOff && leg?.status !== "voided" && <div className="-mt-2 mb-3"><TimeConfirm roomId={p.roomId} canConfirm={canConfirm} /></div>}
 
       <ol className="flex flex-col gap-3">
         <li className={approved ? done : ""}>
@@ -61,7 +71,7 @@ export function NextSteps(p: Props) {
         </li>
 
         <li className={held ? done : ""}>
-          2. Hold the payment with PayPal
+          2. Hold the payment with PayPal{iPay && !held ? " (this also confirms your time)" : ""}
           {approved && leg?.status === "pending" && (
             <div className="mt-2">
               {iPay ? <PayButton dealId={p.dealId!} clientId={p.clientId} total={p.payTotal} /> : <span className="text-muted-foreground"> · waiting for {p.first(leg.payerId)}</span>}

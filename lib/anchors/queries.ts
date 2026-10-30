@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 
 type Room = typeof schema.negotiations.$inferSelect;
@@ -62,7 +62,7 @@ export async function getRoomView(roomId: string, viewerId: string) {
   // Payment and schedule for this deal.
   const [legs, bookings] = await Promise.all([
     room.dealId ? db.select().from(schema.dealLegs).where(eq(schema.dealLegs.dealId, room.dealId)) : Promise.resolve([]),
-    db.select().from(schema.bookings).where(and(eq(schema.bookings.roomId, room.id), eq(schema.bookings.userId, viewerId))),
+    db.select().from(schema.bookings).where(eq(schema.bookings.roomId, room.id)),
   ]);
   const leg = legs.find((l) => l.roomId === room.id) ?? null;
   const myPending = legs.filter((l) => l.payerId === viewerId && l.status === "pending");
@@ -73,7 +73,8 @@ export async function getRoomView(roomId: string, viewerId: string) {
     payTotal: myPending.reduce((sum, l) => sum + Number(l.amount), 0),
     planSettled: all.length > 0 && !all.some((r) => r.status === "open" || r.status === "waiting_owner"),
     hasLegs: legs.length > 0,
-    booking: bookings[0] ?? null,
+    booking: bookings.find((b) => b.userId === viewerId) ?? null,
+    waitingOn: bookings.filter((b) => !b.confirmedAt).map((b) => b.userId), // who still has to confirm the time
     when: agreedTerms?.when ?? null,
     place: agreedTerms?.place ?? null,
     childSummaries: await Promise.all(

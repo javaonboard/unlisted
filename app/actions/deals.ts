@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { currentUserId } from "@/lib/session";
 import { startLinkedDeal } from "@/lib/deals/planner";
-import { applyOwnerReply } from "@/lib/negotiation/owner";
+import { applyOwnerReply, askForNewTime } from "@/lib/negotiation/owner";
+import { confirmTime } from "@/lib/bookings";
 import { playRoom } from "@/lib/negotiation/room";
 
 export async function planMovingDay() {
@@ -18,4 +19,16 @@ export async function replyToAgent(roomId: string, words: string) {
   await applyOwnerReply(roomId, await currentUserId(), words);
   after(() => playRoom(roomId).catch((e) => console.error("[room] failed", roomId, e?.message)));
   revalidatePath("/deals", "layout");
+}
+
+export async function confirmTimeAction(roomId: string) {
+  await confirmTime(roomId, await currentUserId());
+  revalidatePath("/", "layout");
+}
+
+// Ask for another time in your own words; the agents settle it.
+export async function changeTimeAction(roomId: string, words: string) {
+  await askForNewTime(roomId, await currentUserId(), words);
+  after(() => playRoom(roomId).catch((e) => console.error("[room] failed", roomId, e?.message)));
+  revalidatePath("/", "layout");
 }

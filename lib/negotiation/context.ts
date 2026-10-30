@@ -60,7 +60,7 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
     : [];
 
   // Both people's busy times, like a free/busy calendar. No details.
-  const busy = [...(await busyTimes(ownerId)), ...(await busyTimes(otherId))];
+  const busy = [...(await busyTimes(ownerId, roomId)), ...(await busyTimes(otherId, roomId))];
 
   const lastFromOther = [...moves].reverse().find((m) => m.fromUserId === otherId && m.price);
   const signals = counterpartySignals({

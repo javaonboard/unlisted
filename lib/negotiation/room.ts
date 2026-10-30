@@ -127,7 +127,16 @@ export async function recordOutsideMove(roomId: string, fromUserId: string, move
 // Plays until the room closes or waits for an owner, then lets the deal react.
 export async function playRoom(roomId: string) {
   while (await playTurn(roomId)) {}
-  const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
+  let [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
+
+  // A time change that went nowhere keeps the deal and the old time.
+  const [booked] = await db.select().from(schema.bookings).where(eq(schema.bookings.roomId, roomId)).limit(1);
+  if (room.status === "closed" && booked) {
+    [room] = await db.update(schema.negotiations).set({ status: "agreed", closedReason: null }).where(eq(schema.negotiations.id, roomId)).returning();
+    for (const userId of [room.buyerId, room.sellerId]) {
+      await db.insert(schema.notifications).values({ userId, title: "No better time found", body: "The old time stands. Confirm it or ask again.", link: `/rooms/${roomId}` });
+    }
+  }
 
   // A finished deal teaches each owner's agent something, and services get booked.
   if (room.status === "agreed") {

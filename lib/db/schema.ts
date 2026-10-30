@@ -210,6 +210,7 @@ export const bookings = pgTable("bookings", {
   startsAt: timestamp("starts_at").notNull(),
   endsAt: timestamp("ends_at").notNull(),
   dealId: uuid("deal_id").references(() => deals.id),
+  confirmedAt: timestamp("confirmed_at"), // this person said yes to the time; final once both have
   createdAt: createdAt(),
 });
 

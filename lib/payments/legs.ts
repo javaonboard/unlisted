@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/db/activity";
 import { createAuthorizeOrder, authorizeOrder } from "@/lib/paypal/orders";
 import { captureAuthorization, voidAuthorization } from "@/lib/paypal/payments";
 import { sendPayout } from "@/lib/paypal/payouts";
+import { confirmTime, waitingOn } from "@/lib/bookings";
 
 const FEE = 0.05; // Unlisted keeps 5% of each payout
 const money = (n: number) => n.toFixed(2);
@@ -72,6 +73,7 @@ export async function holdPayment(orderId: string, payerId: string) {
 
   const { authorizationId } = await authorizeOrder(orderId);
   await db.update(schema.dealLegs).set({ authorizationId, status: "held", heldAt: new Date() }).where(eq(schema.dealLegs.orderId, orderId));
+  for (const leg of legs) if (leg.roomId) await confirmTime(leg.roomId, payerId); // paying is saying yes to the time
   const total = legs.reduce((sum, l) => sum + Number(l.amount), 0);
   await say(legs[0].dealId, payerId, `💳 PayPal hold placed: $${total.toFixed(0)} for ${legs.map((l) => l.description).join(" + ")}. Not charged yet.`, { orderId, authorizationId });
 }
@@ -81,6 +83,7 @@ export async function confirmHandoff(legId: string, payerId: string, code: strin
   const [leg] = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.id, legId));
   if (!leg || leg.payerId !== payerId || leg.status !== "held") throw new Error("This handoff can't be confirmed.");
   if (leg.handoffCode !== code.trim()) throw new Error("That code doesn't match.");
+  if (leg.roomId && (await waitingOn([leg.roomId]))[leg.roomId].length) throw new Error("Both sides need to confirm the time first.");
 
   // The hold may cover more legs; only the last capture closes it.
   const sameHold = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.authorizationId, leg.authorizationId!));

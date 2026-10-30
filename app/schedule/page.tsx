@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { currentUserId } from "@/lib/session";
 import { getUser } from "@/lib/users/queries";
-import { myBookings } from "@/lib/bookings";
+import { myBookings, waitingOn } from "@/lib/bookings";
 import { BackLink } from "@/components/anchors/BackLink";
 import { ScheduleView } from "@/components/bryntum/ScheduleView";
 
@@ -16,6 +16,11 @@ async function MySchedule() {
   today.setHours(0, 0, 0, 0);
   const weekLater = new Date(today.getTime() + 3 * 86_400_000); // the next three days, hour by hour
   const upcoming = bookings.filter((b) => b.endsAt > today).sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+  const waiting = await waitingOn(upcoming.flatMap((b) => (b.roomId ? [b.roomId] : [])));
+  const status = (roomId: string | null) => {
+    const who = roomId ? waiting[roomId] : [];
+    return !who.length ? null : who.includes(userId) ? "Waiting for you" : "Waiting for them";
+  };
 
   return (
     <>
@@ -23,14 +28,17 @@ async function MySchedule() {
         from={local(today)}
         to={local(weekLater)}
         rows={[{ id: userId, name: user?.name.split(" ")[0] ?? "Me" }]}
-        slots={upcoming.map((b) => ({ id: b.id, resourceId: userId, name: b.title, startDate: local(b.startsAt), endDate: local(b.endsAt), eventColor: b.roomId ? "green" : "gray" }))}
+        slots={upcoming.map((b) => ({ id: b.id, resourceId: userId, name: b.title, startDate: local(b.startsAt), endDate: local(b.endsAt), eventColor: !b.roomId ? "gray" : status(b.roomId) ? "orange" : "green" }))}
       />
       <ul className="mt-4 flex flex-col gap-2 text-sm">
         {upcoming.length === 0 && <li className="text-muted-foreground">Nothing booked this week.</li>}
         {upcoming.map((b) => (
           <li key={b.id} className="flex justify-between rounded-xl border p-3">
             <span>{b.roomId ? <Link href={`/rooms/${b.roomId}`} className="hover:underline">{b.title}</Link> : b.title}</span>
-            <span className="text-muted-foreground">{b.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}</span>
+            <span className="text-muted-foreground">
+              {status(b.roomId) && <span className="mr-2 rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-800">{status(b.roomId)}</span>}
+              {b.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}
+            </span>
           </li>
         ))}
       </ul>
@@ -43,7 +51,7 @@ export default function SchedulePage() {
     <main className="mx-auto w-full max-w-4xl p-8">
       <BackLink href="/" label="Inbox" />
       <h1 className="mb-1 text-2xl font-semibold">My schedule</h1>
-      <p className="mb-4 text-muted-foreground">Every handoff and job your agent agreed, plus what was already on your calendar.</p>
+      <p className="mb-4 text-muted-foreground">Every handoff and job your agent agreed. Orange means someone still has to confirm the time.</p>
       <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <MySchedule />
       </Suspense>

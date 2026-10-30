@@ -54,6 +54,8 @@ async function Room({ params }: { params: Promise<{ id: string }> }) {
           when={data.when}
           place={data.place}
           booking={data.booking}
+          waitingOn={data.waitingOn}
+          buyerId={room.buyerId}
           clientId={process.env.PAYPAL_CLIENT_ID ?? ""}
         />
       )}
