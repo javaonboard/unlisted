@@ -14,7 +14,7 @@ async function MySchedule() {
   const [user, bookings] = await Promise.all([getUser(userId), myBookings(userId)]);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const weekLater = new Date(today.getTime() + 7 * 86_400_000);
+  const weekLater = new Date(today.getTime() + 3 * 86_400_000); // the next three days, hour by hour
   const upcoming = bookings.filter((b) => b.endsAt > today).sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
 
   return (
