@@ -128,6 +128,15 @@ export async function recordOutsideMove(roomId: string, fromUserId: string, move
 export async function playRoom(roomId: string) {
   while (await playTurn(roomId)) {}
   const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
+
+  // A finished deal teaches each owner's agent something. Runs on the side.
+  if (room.status === "agreed") {
+    const { learnFromRoom } = await import("@/lib/memory/extract");
+    for (const ownerId of [room.buyerId, room.sellerId]) {
+      learnFromRoom(roomId, ownerId).catch((e) => console.error("[memory] failed", e?.message));
+    }
+  }
+
   if (room.dealId && room.status !== "waiting_owner") {
     const { onLegFinished } = await import("@/lib/deals/coordinator");
     await onLegFinished(room.dealId);

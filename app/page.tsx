@@ -13,6 +13,7 @@ async function Inbox() {
     <>
       <h1 className="text-2xl font-semibold">Hi {user?.name.split(" ")[0]}</h1>
       <p className="mt-1 text-muted-foreground">{user?.bio}</p>
+      <Link href="/memory" className="mt-2 inline-block text-sm text-primary hover:underline">What my agent knows about me ▸</Link>
 
       <h2 className="mt-8 mb-3 font-medium">Inbox</h2>
       {notifications.length === 0 && <p className="text-sm text-muted-foreground">Nothing new.</p>}

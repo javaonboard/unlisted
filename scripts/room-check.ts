@@ -29,6 +29,10 @@ async function main() {
     if (m.signalsUsed.length) console.log(`  signals: ${m.signalsUsed.join(" | ")}`);
   }
   console.log(`\nresult: ${result.status}${result.agreedPrice ? ` at $${result.agreedPrice}` : ""}${result.closedReason ? ` (${result.closedReason})` : ""}`);
+  await new Promise((r) => setTimeout(r, 15000)); // let memory learning finish
+  const facts = await db.select().from(schema.memoryFacts).where(eq(schema.memoryFacts.userId, "maya"));
+  console.log("\nMaya's agent now knows:");
+  for (const f of facts) console.log(`- ${f.fact} (${f.source}, ${f.verified ? "confirmed" : `${Math.round(f.confidence * 100)}% sure`})`);
   process.exit(0);
 }
 
