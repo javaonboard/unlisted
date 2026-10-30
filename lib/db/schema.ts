@@ -214,6 +214,14 @@ export const bookings = pgTable("bookings", {
   createdAt: createdAt(),
 });
 
+// Hours someone marked as free. If they marked any, agents only pick times inside them.
+export const freeTimes = pgTable("free_times", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id),
+  startsAt: timestamp("starts_at").notNull(),
+  endsAt: timestamp("ends_at").notNull(),
+});
+
 // Things that happened. Saved, then announced with Postgres NOTIFY so listeners react at once.
 export const events = pgTable("events", {
   id: id(),

@@ -12,7 +12,7 @@ type Busy = { startsAt: Date; endsAt: Date };
 // Returns an error to send back to the agent, or null if the move is fine.
 export function checkMove(
   move: Move,
-  rules: { limits: Limits; evidenceIds: string[]; standingPrice: number | null; alreadyAsked: boolean; busy: Busy[] },
+  rules: { limits: Limits; evidenceIds: string[]; standingPrice: number | null; alreadyAsked: boolean; busy: Busy[]; free?: Busy[][] },
 ) {
   const { limits } = rules;
 
@@ -46,6 +46,8 @@ export function checkMove(
     if (Number.isNaN(start.getTime())) return "slotStart must be an ISO time.";
     const clash = rules.busy.find((b) => start < b.endsAt && end > b.startsAt);
     if (clash) return `That time clashes with something already booked until ${clash.endsAt.toISOString()}. Pick a free time.`;
+    const outside = (rules.free ?? []).some((hours) => hours.length && !hours.some((h) => start >= h.startsAt && start < h.endsAt));
+    if (outside) return "That time is outside the free hours someone marked. Pick a time inside them.";
   }
 
   const unknown = move.evidenceIds.filter((id) => !rules.evidenceIds.includes(id));

@@ -45,6 +45,8 @@ If the reply allows or sets a price, give it as newLimit. "Yes" means the sugges
 export async function askForNewTime(roomId: string, ownerId: string, words: string) {
   const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
   if (!room || room.status !== "agreed" || (room.buyerId !== ownerId && room.sellerId !== ownerId)) return;
+  const [done] = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.roomId, roomId));
+  if (done && ["captured", "paid_out"].includes(done.status)) return; // already handed off
 
   await db.update(schema.bookings).set({ confirmedAt: null }).where(eq(schema.bookings.roomId, roomId));
   await confirmTime(roomId, ownerId);

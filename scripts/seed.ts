@@ -8,7 +8,7 @@ import * as data from "./seed-data";
 
 async function main() {
   await db.execute(sql`truncate users, mandates, vault_items, evidence, intents, negotiations,
-    offers, deals, deal_legs, bookings, activity, notifications, memory_facts restart identity cascade`);
+    offers, deals, deal_legs, bookings, free_times, activity, notifications, memory_facts restart identity cascade`);
 
   await db.insert(schema.users).values(data.users.map((u) => ({ ...u, connectorKey: randomBytes(12).toString("hex") })));
   await db.insert(schema.mandates).values(data.mandates);
