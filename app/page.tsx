@@ -21,7 +21,10 @@ async function Inbox() {
     <>
       <h1 className="text-2xl font-semibold">Hi {user?.name.split(" ")[0]}</h1>
       <p className="mt-1 text-muted-foreground">{user?.bio}</p>
-      <Link href="/memory" className="mt-2 inline-block text-sm text-primary hover:underline">What my agent knows about me ▸</Link>
+      <div className="mt-2 flex gap-4 text-sm">
+        <Link href="/schedule" className="text-primary hover:underline">My schedule ▸</Link>
+        <Link href="/memory" className="text-primary hover:underline">What my agent knows about me ▸</Link>
+      </div>
 
       <LiveRefresh active every={5000} />
       {suggestions.length > 0 && (

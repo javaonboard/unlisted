@@ -78,6 +78,20 @@
       "when": 1793392628721,
       "tag": "0010_events_suggestions",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793395935106,
+      "tag": "0011_bookings_per_user",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793395941166,
+      "tag": "0012_bookings_drop_provider",
+      "breakpoints": true
     }
   ]
 }

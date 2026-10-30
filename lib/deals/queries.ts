@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 
 // Deals someone owns or takes part in.
@@ -26,7 +26,7 @@ export async function getDealChannel(dealId: string, viewerId: string) {
   const [moves, users, bookings, legs, events] = await Promise.all([
     roomIds.length ? db.select().from(schema.offers).where(inArray(schema.offers.negotiationId, roomIds)).orderBy(asc(schema.offers.createdAt)) : [],
     db.select().from(schema.users),
-    db.select().from(schema.bookings).where(eq(schema.bookings.dealId, dealId)).orderBy(desc(schema.bookings.startsAt)),
+    db.select().from(schema.bookings).where(and(eq(schema.bookings.dealId, dealId), eq(schema.bookings.userId, viewerId))).orderBy(desc(schema.bookings.startsAt)),
     db.select().from(schema.dealLegs).where(eq(schema.dealLegs.dealId, dealId)).orderBy(asc(schema.dealLegs.createdAt)),
     db.select().from(schema.activity).where(sql`${schema.activity.data}->>'dealId' = ${dealId}`).orderBy(asc(schema.activity.createdAt)),
   ]);

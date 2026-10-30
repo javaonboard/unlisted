@@ -62,7 +62,7 @@ export async function getRoomView(roomId: string, viewerId: string) {
   // Payment and schedule for this deal.
   const [legs, bookings] = await Promise.all([
     room.dealId ? db.select().from(schema.dealLegs).where(eq(schema.dealLegs.dealId, room.dealId)) : Promise.resolve([]),
-    room.dealId ? db.select().from(schema.bookings).where(and(eq(schema.bookings.dealId, room.dealId), eq(schema.bookings.providerId, room.sellerId))) : Promise.resolve([]),
+    db.select().from(schema.bookings).where(and(eq(schema.bookings.roomId, room.id), eq(schema.bookings.userId, viewerId))),
   ]);
   const leg = legs.find((l) => l.roomId === room.id) ?? null;
   const myPending = legs.filter((l) => l.payerId === viewerId && l.status === "pending");

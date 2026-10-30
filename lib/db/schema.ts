@@ -201,10 +201,11 @@ export const aiUsage = pgTable("ai_usage", {
   outputTokens: integer("output_tokens").default(0).notNull(),
 });
 
-// Time a provider is busy, shown on their Bryntum schedule.
+// What is on someone's calendar: a handoff or a job. Each deal books both people.
 export const bookings = pgTable("bookings", {
   id: id(),
-  providerId: text("provider_id").notNull().references(() => users.id),
+  userId: text("user_id").notNull().references(() => users.id),
+  roomId: uuid("room_id").references(() => negotiations.id),
   title: text("title").notNull(),
   startsAt: timestamp("starts_at").notNull(),
   endsAt: timestamp("ends_at").notNull(),

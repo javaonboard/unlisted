@@ -12,7 +12,7 @@ type Busy = { startsAt: Date; endsAt: Date };
 // Returns an error to send back to the agent, or null if the move is fine.
 export function checkMove(
   move: Move,
-  rules: { limits: Limits; evidenceIds: string[]; standingPrice: number | null; alreadyAsked: boolean; busy: Busy[]; isService: boolean },
+  rules: { limits: Limits; evidenceIds: string[]; standingPrice: number | null; alreadyAsked: boolean; busy: Busy[] },
 ) {
   const { limits } = rules;
 
@@ -37,15 +37,15 @@ export function checkMove(
     }
   }
 
-  // A service offer must name an exact start time, so it can be booked.
-  if (rules.isService && needsPrice && !move.slotStart) return "For a service, set slotStart to the exact ISO start time you propose.";
+  // Every offer names an exact time, so the deal can go on both calendars.
+  if (needsPrice && !move.slotStart) return "Set slotStart to the exact ISO time you propose for the handoff or job.";
 
   if (move.slotStart) {
     const start = new Date(move.slotStart);
-    const end = new Date(start.getTime() + 2 * 3_600_000);
+    const end = new Date(start.getTime() + 30 * 60_000);
     if (Number.isNaN(start.getTime())) return "slotStart must be an ISO time.";
     const clash = rules.busy.find((b) => start < b.endsAt && end > b.startsAt);
-    if (clash) return `That slot clashes with an existing booking until ${clash.endsAt.toTimeString().slice(0, 5)}.`;
+    if (clash) return `That time clashes with something already booked until ${clash.endsAt.toISOString()}. Pick a free time.`;
   }
 
   const unknown = move.evidenceIds.filter((id) => !rules.evidenceIds.includes(id));

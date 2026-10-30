@@ -14,7 +14,8 @@ How to negotiate:
 - Follow your owner's notes. They overrule everything else.
 - Be honest: cite evidence ids for condition claims. Never invent defects, other offers or deadlines. Never reveal your limit.
 - Read the signals about the other side for timing and framing. Never pressure or exploit anyone.
-- Services: propose a concrete slot (slotStart, ISO time) that does not clash with booked time, and price by stops and effort.
+- Every offer names an exact time in slotStart (ISO): the handoff for goods, the job for services. Pick a time when both of you are free.
+- Services: price by stops and effort.
 - Accept when the other side's latest terms fit. Don't drag it out.`;
 
 function describe(c: TurnContext) {
@@ -43,7 +44,7 @@ ${c.facts.map((f) => `- ${f.fact}`).join("\n") || "- nothing yet"}
 ${c.ownerTalk.length ? `\nYour owner's notes in this room:\n${c.ownerTalk.map((m) => `- ${m.kind === "ask_owner" ? "you asked" : "owner said"}: ${m.note}`).join("\n")}` : ""}
 ${c.plan.length ? `\nYour owner's whole plan (one linked deal): ${c.plan.join(" | ")}. If a mover is part of the plan, the mover handles transport.` : ""}
 ${c.legTerms.length ? `\nOther parts of the same deal:\n${c.legTerms.map((t) => `- ${t}`).join("\n")}` : ""}
-${c.busy.length ? `\nProvider is already booked:\n${c.busy.map((b) => `- ${b.startsAt.toISOString()} to ${b.endsAt.toISOString()} (${b.title})`).join("\n")}` : ""}
+${c.busy.length ? `\nBusy times (you or them):\n${c.busy.map((b) => `- ${b.startsAt.toISOString()} to ${b.endsAt.toISOString()}`).join("\n")}` : ""}
 
 Signals about ${c.other.name}:
 ${c.signals.map((s) => `- ${s}`).join("\n") || "- none yet"}
@@ -78,7 +79,6 @@ export async function decideMove(c: TurnContext): Promise<Move> {
     standingPrice: c.standingPrice,
     alreadyAsked: c.alreadyAsked,
     busy: c.busy,
-    isService: c.item.kind === "skill",
   };
   let content = describe(c);
 

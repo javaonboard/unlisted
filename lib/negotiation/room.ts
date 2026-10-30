@@ -131,8 +131,8 @@ export async function playRoom(roomId: string) {
 
   // A finished deal teaches each owner's agent something, and services get booked.
   if (room.status === "agreed") {
-    const { bookAgreedService } = await import("@/lib/bookings");
-    await bookAgreedService(roomId);
+    const { bookAgreedDeal } = await import("@/lib/bookings");
+    await bookAgreedDeal(roomId);
     const { learnFromRoom } = await import("@/lib/memory/extract");
     for (const ownerId of [room.buyerId, room.sellerId]) {
       learnFromRoom(roomId, ownerId).catch((e) => console.error("[memory] failed", e?.message));

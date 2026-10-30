@@ -71,8 +71,8 @@ async function Channel({ params }: { params: Promise<{ id: string }> }) {
           ))}
           {bookings.map((b) => (
             <p key={b.id} className="mx-2 my-1 rounded-xl bg-secondary px-3 py-2 text-sm">
-              📅 {names[b.providerId]?.split(" ")[0]} is booked {b.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}–
-              {b.endsAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} · {b.title}
+              📅 {b.title} · {b.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}–
+              {b.endsAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
             </p>
           ))}
         </div>

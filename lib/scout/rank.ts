@@ -51,7 +51,7 @@ export async function rankSellers(intentId: string, ownerArea: string): Promise<
 
       if (item.kind === "skill") {
         // Providers: free on Saturday morning matters most for a move.
-        const busy = await db.select().from(schema.bookings).where(eq(schema.bookings.providerId, item.ownerId));
+        const busy = await db.select().from(schema.bookings).where(eq(schema.bookings.userId, item.ownerId));
         const freeMorning = !busy.some((b) => b.startsAt.getTime() <= saturday.getTime() + 3 * 3_600_000 && b.endsAt > saturday);
         score += freeMorning ? 4 : -2;
         reasons.push(freeMorning ? "free Saturday morning" : "busy until the afternoon");

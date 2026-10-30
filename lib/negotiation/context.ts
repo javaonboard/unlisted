@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, ne } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { counterpartySignals } from "./signals";
+import { busyTimes } from "@/lib/bookings";
 import type { Limits } from "./guardrails";
 
 // Everything one side's agent needs for its next move, and nothing private
@@ -58,8 +59,8 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
     ? (await db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, deal.ownerId), eq(schema.intents.status, "open")))).map((i) => i.text)
     : [];
 
-  // A provider's booked time is public, like a free/busy calendar.
-  const busy = item.kind === "skill" ? await db.select().from(schema.bookings).where(eq(schema.bookings.providerId, item.ownerId)) : [];
+  // Both people's busy times, like a free/busy calendar. No details.
+  const busy = [...(await busyTimes(ownerId)), ...(await busyTimes(otherId))];
 
   const lastFromOther = [...moves].reverse().find((m) => m.fromUserId === otherId && m.price);
   const signals = counterpartySignals({

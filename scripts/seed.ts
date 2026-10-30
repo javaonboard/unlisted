@@ -43,7 +43,7 @@ async function main() {
   }
 
   await db.insert(schema.bookings).values(
-    data.bookings.map((b) => ({ providerId: b.providerId, title: b.title, startsAt: nextSaturday(b.startHour), endsAt: nextSaturday(b.endHour) })),
+    data.bookings.map((b) => ({ userId: b.providerId, title: b.title, startsAt: nextSaturday(b.startHour), endsAt: nextSaturday(b.endHour) })),
   );
   await db.insert(schema.memoryFacts).values(data.memoryFacts);
   await db.insert(schema.notifications).values(data.notifications);
