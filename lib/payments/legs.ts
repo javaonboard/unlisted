@@ -40,6 +40,17 @@ export async function approveDeal(dealId: string, ownerId: string) {
   await say(dealId, null, "✅ Plan approved. Each payer can now place a PayPal hold. Nobody is charged until the handoff.");
 }
 
+// A one-off negotiation (not part of a plan) becomes its own small deal.
+export async function confirmSoloDeal(roomId: string, viewerId: string) {
+  const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
+  if (!room || room.status !== "agreed" || room.dealId) return room?.dealId ?? null;
+  if (room.buyerId !== viewerId && room.sellerId !== viewerId) throw new Error("Not your deal.");
+  const [deal] = await db.insert(schema.deals).values({ ownerId: viewerId, title: room.label ?? "Deal" }).returning();
+  await db.update(schema.negotiations).set({ dealId: deal.id }).where(eq(schema.negotiations.id, roomId));
+  await approveDeal(deal.id, viewerId);
+  return deal.id;
+}
+
 // One PayPal order per payer, covering all their legs in this deal.
 export async function createPayerOrder(dealId: string, payerId: string) {
   const legs = await db

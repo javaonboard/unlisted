@@ -23,14 +23,14 @@ export async function playTurn(roomId: string): Promise<boolean> {
   const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
   if (!room || room.status !== "open") return false;
 
-  // Someone else already got this item in a parallel negotiation.
-  const [sold] = await db
-    .select({ id: schema.negotiations.id })
-    .from(schema.negotiations)
-    .where(and(eq(schema.negotiations.itemId, room.itemId!), eq(schema.negotiations.status, "agreed"), ne(schema.negotiations.id, roomId)));
-  if (sold) {
-    await db.update(schema.negotiations).set({ status: "closed", closedReason: "sold to someone else" }).where(eq(schema.negotiations.id, roomId));
-    console.log(`[room] ${roomId.slice(0, 8)} closed: sold to someone else`);
+  // A parallel negotiation already won: the item is sold, or the need is filled.
+  const agreed = and(eq(schema.negotiations.status, "agreed"), ne(schema.negotiations.id, roomId));
+  const [sold] = await db.select({ id: schema.negotiations.id }).from(schema.negotiations).where(and(eq(schema.negotiations.itemId, room.itemId!), agreed));
+  const [filled] = await db.select({ id: schema.negotiations.id }).from(schema.negotiations).where(and(eq(schema.negotiations.intentId, room.intentId!), agreed));
+  if (sold || filled) {
+    const closedReason = sold ? "sold to someone else" : "went with another option";
+    await db.update(schema.negotiations).set({ status: "closed", closedReason }).where(eq(schema.negotiations.id, roomId));
+    console.log(`[room] ${roomId.slice(0, 8)} closed: ${closedReason}`);
     return false;
   }
 

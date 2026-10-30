@@ -9,6 +9,7 @@ export const users = [
   { id: "bella", name: "Bella Diaz", area: "Windsor Park", paypalEmail: "unlisted-buyer2@personal.example.com", bio: "Needs a big sofa for movie nights." },
   { id: "omar", name: "Omar Haddad", area: "Holly", paypalEmail: null, bio: "Looking for a sectional for the den." },
   { id: "marco", name: "Marco Ruiz", area: "East Austin", paypalEmail: "unlisted-mover@business.example.com", bio: "Pickup truck, dolly and straps. Weekends." },
+  { id: "dev", name: "Dev Kapoor", area: "Windsor Park", paypalEmail: null, bio: "Van and two strong arms. Afternoons." },
   { id: "gus", name: "Gus Patel", area: "Mueller", paypalEmail: null, bio: "Has a tall ladder and free Saturdays." },
   { id: "lily", name: "Lily Nguyen", area: "Cherrywood", paypalEmail: null, bio: "Mows lawns around the neighborhood." },
   { id: "ivan", name: "Ivan Petrov", area: "Hyde Park", paypalEmail: null, bio: "IT person. Wi-Fi, TV mounting, PC builds." },
@@ -46,6 +47,7 @@ export const vaultItems: Item[] = [
   { key: "small-sofa", ownerId: "sara", kind: "goods", title: "Beige apartment sofa", category: "sofa", condition: "Good. Light wear on arm.", estimatedValue: "320.00", minPrice: "260.00", openToOffers: true, details: { seats: 2, widthIn: 74 } },
   // Local skills.
   { key: "moving", ownerId: "marco", kind: "skill", title: "Moving help with pickup truck", category: "moving", estimatedValue: "85.00", minPrice: "70.00", openToOffers: true, details: { days: ["Sat", "Sun"], equipment: ["truck", "dolly", "straps"] } },
+  { key: "moving-dev", ownerId: "dev", kind: "skill", title: "Moving help with a cargo van", category: "moving", estimatedValue: "95.00", minPrice: "85.00", openToOffers: true, details: { days: ["Sat afternoon"], equipment: ["van", "blankets"] } },
   { key: "gutters", ownerId: "gus", kind: "skill", title: "Gutter cleaning", category: "gutters", estimatedValue: "80.00", openToOffers: true, details: { equipment: ["ladder"] } },
   { key: "lawn", ownerId: "lily", kind: "skill", title: "Lawn mowing", category: "lawn", estimatedValue: "40.00", openToOffers: true, details: { equipment: ["mower", "trimmer"] } },
   { key: "it-setup", ownerId: "ivan", kind: "skill", title: "Wi-Fi, TV mounting and PC setup", category: "it-setup", estimatedValue: "60.00", openToOffers: true },
@@ -97,4 +99,7 @@ export const notifications = [
 ];
 
 // Marco already has a job Saturday morning; his agent must schedule around it.
-export const bookings = [{ providerId: "marco", title: "Other customer: apartment move", startHour: 8, endHour: 10 }];
+export const bookings = [
+  { providerId: "marco", title: "Other customer: apartment move", startHour: 8, endHour: 10 },
+  { providerId: "dev", title: "Other customer: office move", startHour: 8, endHour: 13 },
+];

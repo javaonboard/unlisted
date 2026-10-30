@@ -16,7 +16,8 @@ export async function onLegFinished(dealId: string) {
   const [deal] = await db.select().from(schema.deals).where(eq(schema.deals.id, dealId));
   const legs = await legsOf(dealId);
   const goods = legs.filter((l) => l.kind === "goods");
-  const service = legs.find((l) => l.kind === "skill");
+  const services = legs.filter((l) => l.kind === "skill");
+  const service = services.find((l) => l.room.status === "agreed") ?? services[0];
 
   // Ready when every item in the plan has a deal and nobody is still talking about it.
   const items = [...new Set(goods.map((l) => l.room.itemId))];
@@ -33,19 +34,25 @@ export async function onLegFinished(dealId: string) {
         .select()
         .from(schema.intents)
         .where(and(eq(schema.intents.ownerId, deal.ownerId), eq(schema.intents.type, "request_service")));
-      const [provider] = need ? (await findSupplyFor(need.id)).filter((i) => i.openToOffers) : [];
-      if (!provider) return;
-      const [user] = await db.select().from(schema.users).where(eq(schema.users.id, provider.ownerId));
-      const room = await openRoom({
-        dealId,
-        dependsOn: goods.filter((l) => l.room.status === "agreed").map((l) => l.room.id), // the mover serves these handoffs
-        label: `Mover · ${user.name.split(" ")[0]}`,
-        buyerId: deal.ownerId,
-        sellerId: provider.ownerId,
-        itemId: provider.id,
-        intentId: need.id,
-      });
-      await playRoom(room.id);
+      const providers = need ? (await findSupplyFor(need.id)).filter((i) => i.openToOffers).slice(0, 3) : [];
+      if (!providers.length) return;
+
+      // Talk to a few providers at once; the first fit wins and the rest close.
+      const users = await db.select().from(schema.users);
+      const rooms = await Promise.all(
+        providers.map((provider) =>
+          openRoom({
+            dealId,
+            label: `Mover · ${users.find((u) => u.id === provider.ownerId)?.name.split(" ")[0]}`,
+            dependsOn: goods.filter((l) => l.room.status === "agreed").map((l) => l.room.id), // the mover serves these handoffs
+            buyerId: deal.ownerId,
+            sellerId: provider.ownerId,
+            itemId: provider.id,
+            intentId: need.id,
+          }),
+        ),
+      );
+      await Promise.all(rooms.map((room) => playRoom(room.id)));
     } finally {
       starting.delete(dealId);
     }

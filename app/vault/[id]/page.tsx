@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { currentUserId } from "@/lib/session";
 import { getItemAnchor } from "@/lib/anchors/queries";
-import { Breadcrumb } from "@/components/anchors/Breadcrumb";
+import { BackLink } from "@/components/anchors/BackLink";
+import { Highlights } from "@/components/anchors/Highlights";
 import { NegotiationList } from "@/components/anchors/NegotiationList";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 
@@ -16,7 +17,7 @@ async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <LiveRefresh active={negotiations.some((n) => n.room.status === "open")} />
-      <Breadcrumb trail={[{ label: "My things", href: "/vault" }, { label: item.title }]} />
+      <BackLink href="/vault" label="Vault" />
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -42,6 +43,7 @@ async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
       </Card>
 
       <h2 className="mt-6 mb-3 font-medium">Agents interested</h2>
+      <Highlights entries={negotiations} buying={false} />
       <NegotiationList entries={negotiations} />
     </>
   );

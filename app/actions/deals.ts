@@ -9,8 +9,8 @@ import { applyOwnerReply } from "@/lib/negotiation/owner";
 import { playRoom } from "@/lib/negotiation/room";
 
 export async function planMovingDay() {
-  const deal = await startLinkedDeal(await currentUserId(), "Moving day");
-  redirect(`/deals/${deal.id}`);
+  await startLinkedDeal(await currentUserId(), "Moving day");
+  redirect("/vault");
 }
 
 // The owner answers their agent in their own words; the agent then carries on.

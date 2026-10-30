@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { currentUserId } from "@/lib/session";
 import { getNeedAnchor } from "@/lib/anchors/queries";
-import { Breadcrumb } from "@/components/anchors/Breadcrumb";
+import { BackLink } from "@/components/anchors/BackLink";
+import { Highlights } from "@/components/anchors/Highlights";
 import { NegotiationList } from "@/components/anchors/NegotiationList";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 
@@ -15,7 +16,7 @@ async function NeedAnchor({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <LiveRefresh active={negotiations.some((n) => n.room.status === "open")} />
-      <Breadcrumb trail={[{ label: "My needs", href: "/vault" }, { label: need.text }]} />
+      <BackLink href="/vault" label="Vault" />
       <Card>
         <CardHeader>
           <CardTitle>“{need.text}”</CardTitle>
@@ -27,6 +28,7 @@ async function NeedAnchor({ params }: { params: Promise<{ id: string }> }) {
         </CardHeader>
       </Card>
       <h2 className="mt-6 mb-3 font-medium">Agents offering</h2>
+      <Highlights entries={negotiations} buying={true} />
       <NegotiationList entries={negotiations} />
     </>
   );

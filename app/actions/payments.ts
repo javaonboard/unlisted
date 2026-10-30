@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { currentUserId } from "@/lib/session";
-import { approveDeal, cancelHold, confirmHandoff, createPayerOrder, holdPayment } from "@/lib/payments/legs";
+import { approveDeal, cancelHold, confirmHandoff, confirmSoloDeal, createPayerOrder, holdPayment } from "@/lib/payments/legs";
 
-const refresh = () => revalidatePath("/deals", "layout");
+const refresh = () => revalidatePath("/", "layout");
 
 export async function approveDealAction(dealId: string) {
   await approveDeal(dealId, await currentUserId());
@@ -32,5 +32,10 @@ export async function confirmHandoffAction(legId: string, code: string) {
 
 export async function cancelHoldAction(dealId: string) {
   await cancelHold(dealId, await currentUserId());
+  refresh();
+}
+
+export async function confirmSoloDealAction(roomId: string) {
+  await confirmSoloDeal(roomId, await currentUserId());
   refresh();
 }
