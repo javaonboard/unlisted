@@ -17,10 +17,14 @@ type Options<T extends z.ZodType> = {
 export async function askForData<T extends z.ZodType>(options: Options<T>): Promise<z.infer<T>> {
   await checkAiLimits(options.ip);
 
+  const model = options.model ?? MODELS.main;
   const message = await claude().messages.parse({
-    model: options.model ?? MODELS.main,
+    model,
     max_tokens: 4000,
-    output_config: { effort: "low", format: zodOutputFormat(options.schema) },
+    // Haiku does not take an effort setting.
+    output_config: model === MODELS.small
+      ? { format: zodOutputFormat(options.schema) }
+      : { effort: "low", format: zodOutputFormat(options.schema) },
     system: options.system,
     messages: [{ role: "user", content: options.content }],
   });

@@ -3,65 +3,86 @@ import { checkMove } from "./guardrails";
 import { Move } from "./moves";
 import type { TurnContext } from "./context";
 
-const system = (c: TurnContext) => `You are ${c.owner.name}'s negotiating agent on Unlisted, a local marketplace.
-You act only for ${c.owner.name}, as the ${c.side}. Goal: a fair deal, quickly.
+const system = (c: TurnContext) => `You are ${c.owner.name}'s agent on Unlisted, a local marketplace in Austin.
+You act only for ${c.owner.name}, as the ${c.side}. Get a good deal that actually works in real life.
 
-Rules:
-- Stay within your owner's limit. Never reveal the limit.
-- Be honest. Cite evidence ids for any claim about condition. Never invent defects, other offers or deadlines.
-- Use the signals about the other side to pick timing and framing (for example offer a fast pickup to someone in a hurry). Never pressure or exploit anyone.
-- Negotiate more than price when it helps: pickup time, extras, bundling.
-- Accept when the other side's latest price is within your limit and fair. Keep messages short and friendly.`;
+How to negotiate:
+- Talk like a real neighbor, at most two short sentences. Be warm, a bit playful, never rude.
+- Price is only one lever. Bargain over place (who drives where), time (fits the moving day?) and costs (stairs, helper, delivery, gas).
+- Aim for your target, never pass your hard limit. If the other side is reasonable and a deal slightly past your limit would clearly help your owner, use ask_owner with a short question and a suggested price.
+- Follow your owner's notes. They overrule everything else.
+- Be honest: cite evidence ids for condition claims. Never invent defects, other offers or deadlines. Never reveal your limit.
+- Read the signals about the other side for timing and framing. Never pressure or exploit anyone.
+- Services: propose a concrete slot (slotStart, ISO time) that does not clash with booked time, and price by stops and effort.
+- Accept when the other side's latest terms fit. Don't drag it out.`;
 
 function describe(c: TurnContext) {
-  const item = c.item;
   const history = c.moves.length
     ? c.moves
-        .map((m) => `- round ${m.round}, ${m.fromUserId === c.owner.id ? "you" : c.other.name}: ${m.kind}${m.price ? ` $${m.price}` : ""}. "${m.note ?? ""}"`)
+        .map((m) => {
+          const t = m.terms as { when?: string; place?: string; costs?: string };
+          const who = m.fromUserId === c.owner.id ? "you" : c.other.name;
+          return `- ${who}: ${m.kind}${m.price ? ` $${m.price}` : ""}${t.when ? `, ${t.when}` : ""}${t.place ? `, ${t.place}` : ""}${t.costs ? `, ${t.costs}` : ""}. "${m.note ?? ""}"`;
+        })
         .join("\n")
     : "- nothing yet, you open.";
 
-  return `Item: ${item.title} (${item.condition ?? "condition not stated"}), est. value $${item.estimatedValue ?? "?"}.
-Details: ${JSON.stringify(item.details)}
+  return `${c.item.kind === "skill" ? "Service" : "Item"}: ${c.item.title} (${c.item.condition ?? "no condition notes"}), est. value $${c.item.estimatedValue ?? "?"}.
+Details: ${JSON.stringify(c.item.details)}
 Evidence you may cite:
 ${c.evidence.map((e) => `- ${e.id}: ${e.summary} (${e.verified ? "verified" : "unverified claim"})`).join("\n") || "- none"}
 
-Buyer's request: "${c.intent.text}"
-Your limit: ${c.limits.role === "buyer" ? "pay at most" : "accept at least"} $${c.limits.limit}.
+Buyer's request: "${c.intent.text}". Buyer area: ${c.side === "buyer" ? c.owner.area : c.other.area}. Seller area: ${c.side === "seller" ? c.owner.area : c.other.area}.
+Your target: $${c.limits.target}. Your hard limit: ${c.limits.role === "buyer" ? "pay at most" : "accept at least"} $${c.limits.limit}.
 What you know about your owner:
 ${c.facts.map((f) => `- ${f.fact}`).join("\n") || "- nothing yet"}
+${c.ownerTalk.length ? `\nYour owner's notes in this room:\n${c.ownerTalk.map((m) => `- ${m.kind === "ask_owner" ? "you asked" : "owner said"}: ${m.note}`).join("\n")}` : ""}
+${c.plan.length ? `\nYour owner's whole plan (one linked deal): ${c.plan.join(" | ")}. If a mover is part of the plan, the mover handles transport.` : ""}
+${c.legTerms.length ? `\nOther parts of the same deal:\n${c.legTerms.map((t) => `- ${t}`).join("\n")}` : ""}
+${c.busy.length ? `\nProvider is already booked:\n${c.busy.map((b) => `- ${b.startsAt.toISOString()} to ${b.endsAt.toISOString()} (${b.title})`).join("\n")}` : ""}
 
 Signals about ${c.other.name}:
 ${c.signals.map((s) => `- ${s}`).join("\n") || "- none yet"}
 
-Room so far (round ${c.room.round + 1} of ${c.room.maxRounds}):
+Conversation so far (round ${c.room.round + 1} of ${c.room.maxRounds}):
 ${history}
 
-Make your next move.`;
+Your move.`;
 }
+
+const walkAway: Move = {
+  action: "walk_away",
+  price: null,
+  when: null,
+  slotStart: null,
+  place: null,
+  costs: null,
+  extras: [],
+  evidenceIds: [],
+  message: "Thanks, but I don't think we can make this one work.",
+  askOwner: null,
+  reasoning: "Could not find a move within your limits.",
+  signalsUsed: [],
+};
 
 // Asks the agent for one move and checks it. One retry with the problem
 // explained; if it still breaks the rules, the agent walks away.
 export async function decideMove(c: TurnContext): Promise<Move> {
-  const evidenceIds = c.evidence.map((e) => e.id);
+  const rules = {
+    limits: c.limits,
+    evidenceIds: c.evidence.map((e) => e.id),
+    standingPrice: c.standingPrice,
+    alreadyAsked: c.alreadyAsked,
+    busy: c.busy,
+  };
   let content = describe(c);
 
   for (let attempt = 0; attempt < 2; attempt++) {
     const move = await askForData({ schema: Move, system: system(c), content });
-    const problem = checkMove(move, c.limits, evidenceIds, c.standingPrice);
+    const problem = checkMove(move, rules);
     if (!problem) return move;
     console.warn("[agent] move rejected:", problem);
     content += `\n\nYour last move was not allowed: ${problem} Try again.`;
   }
-
-  return {
-    action: "walk_away",
-    price: null,
-    pickup: null,
-    extras: [],
-    evidenceIds: [],
-    message: "Thanks, but I don't think we can make this work.",
-    reasoning: "Could not find a move within your limits.",
-    signalsUsed: [],
-  };
+  return walkAway;
 }

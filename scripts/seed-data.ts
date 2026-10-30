@@ -42,7 +42,7 @@ export const vaultItems: Item[] = [
   { key: "lamp", ownerId: "maya", kind: "goods", title: "Brass floor lamp", category: "lighting", condition: "Like new", estimatedValue: "45.00" },
   { key: "quest3", ownerId: "maya", kind: "goods", title: "Meta Quest 3 (128GB)", category: "vr-headset", condition: "Good. Barely used.", estimatedValue: "320.00", details: { storageGb: 128 } },
   // Sofa sellers.
-  { key: "loveseat", ownerId: "sam", kind: "goods", title: "Navy loveseat, 2 seats", category: "sofa", condition: "Very good", estimatedValue: "300.00", minPrice: "240.00", openToOffers: true, details: { seats: 2, widthIn: 68 } },
+  { key: "loveseat", ownerId: "sam", kind: "goods", title: "Navy loveseat, 2 seats", category: "sofa", condition: "Very good", estimatedValue: "300.00", minPrice: "255.00", openToOffers: true, details: { seats: 2, widthIn: 68 } },
   { key: "small-sofa", ownerId: "sara", kind: "goods", title: "Beige apartment sofa", category: "sofa", condition: "Good. Light wear on arm.", estimatedValue: "320.00", minPrice: "260.00", openToOffers: true, details: { seats: 2, widthIn: 74 } },
   // Local skills.
   { key: "moving", ownerId: "marco", kind: "skill", title: "Moving help with pickup truck", category: "moving", estimatedValue: "85.00", minPrice: "70.00", openToOffers: true, details: { days: ["Sat", "Sun"], equipment: ["truck", "dolly", "straps"] } },
@@ -73,7 +73,7 @@ type Intent = {
 
 export const intents: Intent[] = [
   // Maya's linked deal: all three or nothing.
-  { key: "maya-sofa", ownerId: "maya", type: "buy", text: "A smaller sofa under $300, delivered by Saturday.", category: "sofa", maxPrice: "300.00", constraints: { maxWidthIn: 80 }, dependsOn: ["maya-sell", "maya-mover"], dueInDays: 3 },
+  { key: "maya-sofa", ownerId: "maya", type: "buy", text: "A smaller sofa under $250, delivered by Saturday.", category: "sofa", maxPrice: "250.00", constraints: { maxWidthIn: 80 }, dependsOn: ["maya-sell", "maya-mover"], dueInDays: 3 },
   { key: "maya-sell", ownerId: "maya", type: "sell", text: "Sell the sectional, only if I find the smaller sofa.", category: "sofa", minPrice: "150.00", dependsOn: ["maya-sofa"], dueInDays: 3 },
   { key: "maya-mover", ownerId: "maya", type: "request_service", text: "Mover for Saturday morning, both pickups.", category: "moving", maxPrice: "90.00", dueInDays: 3 },
   // Demand for her sectional she never listed.
@@ -95,3 +95,6 @@ export const memoryFacts = [
 export const notifications = [
   { userId: "maya", title: "3 people want a sectional like yours", body: "Ben, Bella and Omar are looking nearby. Your sectional is still private. Open it to offers?", link: "/vault" },
 ];
+
+// Marco already has a job Saturday morning; his agent must schedule around it.
+export const bookings = [{ providerId: "marco", title: "Other customer: apartment move", startHour: 8, endHour: 10 }];

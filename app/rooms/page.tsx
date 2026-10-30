@@ -7,6 +7,10 @@ import { currentUserId } from "@/lib/session";
 import { discoverFor } from "@/lib/matching/discover";
 import { listRooms } from "@/lib/negotiation/queries";
 import { startNegotiation } from "@/app/actions/rooms";
+import { planMovingDay } from "@/app/actions/deals";
+import { listDealsFor } from "@/lib/deals/queries";
+import { and, eq } from "drizzle-orm";
+import { db, schema } from "@/lib/db";
 
 async function Discover() {
   const userId = await currentUserId();
@@ -63,6 +67,29 @@ async function Discover() {
   );
 }
 
+async function Deals() {
+  const userId = await currentUserId();
+  const [deals, needs] = await Promise.all([
+    listDealsFor(userId),
+    db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, userId), eq(schema.intents.status, "open"))),
+  ]);
+  const canLink = needs.some((n) => n.type === "sell") && needs.some((n) => n.type === "buy");
+  return (
+    <div className="mb-6 flex flex-wrap items-center gap-2">
+      {deals.map((d) => (
+        <Link key={d.id} href={`/deals/${d.id}`} className="rounded-full border px-3 py-1 text-sm hover:bg-muted">
+          # {d.title.toLowerCase().replace(/\s+/g, "-")}
+        </Link>
+      ))}
+      {canLink && !deals.some((d) => d.ownerId === userId) && (
+        <form action={planMovingDay}>
+          <Button type="submit">Plan my moving day</Button>
+        </form>
+      )}
+    </div>
+  );
+}
+
 async function Rooms() {
   const rooms = await listRooms(await currentUserId());
   if (!rooms.length) return <p className="text-sm text-muted-foreground">No negotiations yet.</p>;
@@ -88,6 +115,11 @@ export default function RoomsPage() {
     <main className="mx-auto w-full max-w-3xl p-8">
       <h1 className="text-2xl font-semibold">Agents</h1>
       <p className="mt-1 mb-6 text-muted-foreground">How your agent finds people and what it says to their agents.</p>
+
+      <h2 className="mb-3 font-medium">Deals</h2>
+      <Suspense fallback={null}>
+        <Deals />
+      </Suspense>
 
       <h2 className="mb-3 font-medium">Discover</h2>
       <Suspense fallback={<p className="text-muted-foreground">Finding matches…</p>}>

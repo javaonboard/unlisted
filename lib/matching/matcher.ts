@@ -7,7 +7,8 @@ type Intent = typeof schema.intents.$inferSelect;
 // Hard rules first: same category, prices overlap, size fits.
 function fits(item: Item, intent: Intent) {
   if (item.category !== intent.category || item.ownerId === intent.ownerId) return false;
-  if (item.minPrice && intent.maxPrice && Number(item.minPrice) > Number(intent.maxPrice)) return false;
+  // Within 10% is still worth talking about; owners can stretch.
+  if (item.minPrice && intent.maxPrice && Number(item.minPrice) > Number(intent.maxPrice) * 1.1) return false;
 
   const wanted = intent.constraints as { minSeats?: number; maxWidthIn?: number };
   const details = item.details as { seats?: number; widthIn?: number };

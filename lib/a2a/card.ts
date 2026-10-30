@@ -25,9 +25,9 @@ export function agentCard(user: User, items: Item[], baseUrl: string): AgentCard
         id: "negotiate",
         name: "Negotiate a deal",
         description:
-          'Send an offer for one of the items. Include a data part {"unlisted.move": {action, price, pickup, itemId}} where action is offer, counter, question, accept or reject. Replies come back the same way. Max 6 rounds.',
+          'Send an offer for one of the items. Include a data part {"unlisted.move": {action, price, when, place, itemId}} where action is offer, counter, question, accept or reject. Replies come back the same way. Max 6 rounds.',
         tags: ["negotiate", "buy", "local", "service"],
-        examples: ['{"unlisted.move": {"action": "offer", "price": 180, "pickup": "Sat 9am", "itemId": "..."}}'],
+        examples: ['{"unlisted.move": {"action": "offer", "price": 180, "when": "Sat 9am", "itemId": "..."}}'],
         inputModes: [],
         outputModes: [],
         securityRequirements: [],

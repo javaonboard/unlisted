@@ -36,7 +36,7 @@ async function main() {
       contextId,
       taskId,
       role: Role.ROLE_USER,
-      parts: [text(say), data({ "unlisted.move": { action, price: myPrice, pickup: "Sat 9am", itemId } })],
+      parts: [text(say), data({ "unlisted.move": { action, price: myPrice, when: "Sat 9am", itemId } })],
       metadata: { from: "Pat's shopping bot" },
       extensions: [],
       referenceTaskIds: [],

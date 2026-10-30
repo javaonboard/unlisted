@@ -1,20 +1,38 @@
+import { Suspense } from "react";
+import { db, schema } from "@/lib/db";
 import { MoverSchedule } from "@/components/bryntum/MoverSchedule";
+import { nextSaturday } from "@/lib/dates";
 
-// Check page: Marco's Saturday with Maya's bundled pickup booked in.
-const day = "2026-10-31";
+async function Schedule() {
+  const [bookings, users] = await Promise.all([db.select().from(schema.bookings), db.select().from(schema.users)]);
+  const providers = [...new Set(bookings.map((b) => b.providerId))];
+  const day = nextSaturday();
+  const local = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+
+  return (
+    <MoverSchedule
+      day={local(day).slice(0, 10)}
+      movers={providers.map((id) => ({ id, name: users.find((u) => u.id === id)?.name ?? id }))}
+      jobs={bookings.map((b) => ({
+        id: b.id,
+        resourceId: b.providerId,
+        name: b.title,
+        startDate: local(b.startsAt),
+        endDate: local(b.endsAt),
+        eventColor: b.dealId ? "green" : "gray",
+      }))}
+    />
+  );
+}
 
 export default function SchedulePage() {
   return (
     <main className="mx-auto w-full max-w-4xl p-8">
-      <h1 className="mb-4 text-2xl font-semibold">Mover schedule</h1>
-      <MoverSchedule
-        day={day}
-        movers={[{ id: "marco", name: "Marco Ruiz" }]}
-        jobs={[
-          { id: "j1", resourceId: "marco", name: "Other customer", startDate: `${day}T08:00`, endDate: `${day}T09:30`, eventColor: "gray" },
-          { id: "j2", resourceId: "marco", name: "Maya: sectional + sofa pickup", startDate: `${day}T10:00`, endDate: `${day}T12:00`, eventColor: "green" },
-        ]}
-      />
+      <h1 className="mb-1 text-2xl font-semibold">Schedule</h1>
+      <p className="mb-4 text-muted-foreground">Local providers&apos; Saturday. Green jobs were booked by agents.</p>
+      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+        <Schedule />
+      </Suspense>
     </main>
   );
 }

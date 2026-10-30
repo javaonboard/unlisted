@@ -86,11 +86,15 @@ export const negotiations = pgTable("negotiations", {
   sellerId: text("seller_id").notNull().references(() => users.id),
   itemId: uuid("item_id").references(() => vaultItems.id),
   intentId: uuid("intent_id").references(() => intents.id),
-  status: text("status", { enum: ["open", "agreed", "closed"] })
+  dealId: uuid("deal_id").references(() => deals.id),
+  label: text("label"), // thread name in the deal channel, e.g. "Sectional → Ben"
+  status: text("status", { enum: ["open", "waiting_owner", "agreed", "closed"] })
     .default("open")
     .notNull(),
   round: integer("round").default(0).notNull(),
-  maxRounds: integer("max_rounds").default(6).notNull(),
+  maxRounds: integer("max_rounds").default(8).notNull(),
+  buyerLimit: money("buyer_limit"), // set when the buyer's owner changes the limit mid-room
+  sellerLimit: money("seller_limit"),
   agreedPrice: money("agreed_price"),
   closedReason: text("closed_reason"),
   createdAt: createdAt(),
@@ -102,7 +106,7 @@ export const offers = pgTable("offers", {
   fromUserId: text("from_user_id").notNull().references(() => users.id),
   round: integer("round").notNull(),
   kind: text("kind", {
-    enum: ["offer", "counter", "question", "accept", "reject", "walk_away"],
+    enum: ["offer", "counter", "question", "accept", "reject", "walk_away", "ask_owner", "owner_note"],
   }).notNull(),
   price: money("price"),
   terms: jsonb("terms").$type<Record<string, unknown>>().default({}).notNull(),
@@ -188,4 +192,15 @@ export const aiUsage = pgTable("ai_usage", {
   calls: integer("calls").default(0).notNull(),
   inputTokens: integer("input_tokens").default(0).notNull(),
   outputTokens: integer("output_tokens").default(0).notNull(),
+});
+
+// Time a provider is busy, shown on their Bryntum schedule.
+export const bookings = pgTable("bookings", {
+  id: id(),
+  providerId: text("provider_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  startsAt: timestamp("starts_at").notNull(),
+  endsAt: timestamp("ends_at").notNull(),
+  dealId: uuid("deal_id").references(() => deals.id),
+  createdAt: createdAt(),
 });

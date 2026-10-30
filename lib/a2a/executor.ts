@@ -6,7 +6,7 @@ import { db, schema } from "@/lib/db";
 import { openRoom, playTurn, recordOutsideMove } from "@/lib/negotiation/room";
 import type { Move } from "@/lib/negotiation/moves";
 
-type IncomingMove = Partial<Move> & { itemId?: string };
+type IncomingMove = Partial<Move> & { itemId?: string; pickup?: string };
 
 const text = (value: string): Part => ({ content: { $case: "text", value }, metadata: undefined, filename: "", mediaType: "" });
 const data = (value: unknown): Part => ({ content: { $case: "data", value }, metadata: undefined, filename: "", mediaType: "application/json" });
@@ -80,7 +80,7 @@ export class UnlistedAgent implements AgentExecutor {
     await recordOutsideMove(
       room.id,
       guestId,
-      { action: move.action, price: move.price ?? null, pickup: move.pickup ?? null, extras: move.extras ?? [], evidenceIds: [], message: words, reasoning: "", signalsUsed: [] },
+      { action: move.action, price: move.price ?? null, when: move.when ?? move.pickup ?? null, slotStart: null, place: move.place ?? null, costs: move.costs ?? null, extras: move.extras ?? [], evidenceIds: [], message: words, askOwner: null, reasoning: "", signalsUsed: [] },
       { parts: context.userMessage.parts.map((p) => ({ [p.content?.$case ?? "text"]: p.content?.value })), role: "ROLE_USER", contextId },
     );
     await playTurn(room.id); // our agent answers, unless the room just closed

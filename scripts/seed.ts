@@ -2,11 +2,12 @@
 import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import { nextSaturday } from "@/lib/dates";
 import * as data from "./seed-data";
 
 async function main() {
   await db.execute(sql`truncate users, mandates, vault_items, evidence, intents, negotiations,
-    offers, deals, deal_legs, activity, notifications, memory_facts restart identity cascade`);
+    offers, deals, deal_legs, bookings, activity, notifications, memory_facts restart identity cascade`);
 
   await db.insert(schema.users).values(data.users.map((u) => ({ ...u, connectorKey: randomBytes(12).toString("hex") })));
   await db.insert(schema.mandates).values(data.mandates);
@@ -28,7 +29,7 @@ async function main() {
     .values(
       data.intents.map(({ key: _key, dependsOn: _deps, dueInDays, ...intent }) => ({
         ...intent,
-        dueAt: dueInDays ? new Date(Date.now() + dueInDays * day) : null,
+        dueAt: intent.ownerId === "maya" ? nextSaturday(18) : dueInDays ? new Date(Date.now() + dueInDays * day) : null,
       })),
     )
     .returning({ id: schema.intents.id });
@@ -41,6 +42,9 @@ async function main() {
       .where(sql`${schema.intents.id} = ${intentId[intent.key]}`);
   }
 
+  await db.insert(schema.bookings).values(
+    data.bookings.map((b) => ({ providerId: b.providerId, title: b.title, startsAt: nextSaturday(b.startHour), endsAt: nextSaturday(b.endHour) })),
+  );
   await db.insert(schema.memoryFacts).values(data.memoryFacts);
   await db.insert(schema.notifications).values(data.notifications);
 
