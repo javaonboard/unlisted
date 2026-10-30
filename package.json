@@ -14,7 +14,8 @@
     "db:seed": "tsx --env-file=.env.local scripts/seed.ts",
     "photo:check": "tsx --env-file=.env.local scripts/photo-check.ts",
     "room:check": "tsx --env-file=.env.local scripts/room-check.ts",
-    "outside:agent": "tsx scripts/outside-agent.ts"
+    "outside:agent": "tsx scripts/outside-agent.ts",
+    "connector:check": "tsx --env-file=.env.local scripts/connector-check.ts"
   },
   "dependencies": {
     "@a2a-js/sdk": "1.3.0",

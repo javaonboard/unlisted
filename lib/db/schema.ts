@@ -21,6 +21,7 @@ export const users = pgTable("users", {
   area: text("area").notNull(), // neighborhood, never a street address
   paypalEmail: text("paypal_email"),
   bio: text("bio"),
+  connectorKey: text("connector_key").unique(), // secret part of the user's MCP connector link
   createdAt: createdAt(),
 });
 

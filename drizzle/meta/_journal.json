@@ -29,6 +29,13 @@
       "when": 1793303627653,
       "tag": "0003_drop_offer_accepted",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793337329701,
+      "tag": "0004_connector_key",
+      "breakpoints": true
     }
   ]
 }

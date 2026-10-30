@@ -1,4 +1,5 @@
 // Resets the demo world.  npm run db:seed
+import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import * as data from "./seed-data";
@@ -7,7 +8,7 @@ async function main() {
   await db.execute(sql`truncate users, mandates, vault_items, evidence, intents, negotiations,
     offers, deals, deal_legs, activity, notifications, memory_facts restart identity cascade`);
 
-  await db.insert(schema.users).values(data.users);
+  await db.insert(schema.users).values(data.users.map((u) => ({ ...u, connectorKey: randomBytes(12).toString("hex") })));
   await db.insert(schema.mandates).values(data.mandates);
 
   const items = await db
