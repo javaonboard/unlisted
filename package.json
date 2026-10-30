@@ -13,7 +13,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx --env-file=.env.local scripts/seed.ts",
     "photo:check": "tsx --env-file=.env.local scripts/photo-check.ts",
-    "room:check": "tsx --env-file=.env.local scripts/room-check.ts"
+    "room:check": "tsx --env-file=.env.local scripts/room-check.ts",
+    "outside:agent": "tsx scripts/outside-agent.ts"
   },
   "dependencies": {
     "@a2a-js/sdk": "1.3.0",
