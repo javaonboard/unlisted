@@ -11,8 +11,10 @@ export async function bookAgreedService(roomId: string) {
   const existing = await db.select().from(schema.bookings).where(eq(schema.bookings.providerId, room.sellerId));
   if (existing.some((b) => b.title.includes(roomId.slice(0, 8)))) return;
 
-  const [last] = await db.select().from(schema.offers).where(eq(schema.offers.negotiationId, roomId)).orderBy(desc(schema.offers.round)).limit(1);
-  const start = new Date(((last?.terms ?? {}) as { slotStart?: string }).slotStart ?? "");
+  // The accept usually doesn't repeat the time: use the latest message that named a slot.
+  const moves = await db.select().from(schema.offers).where(eq(schema.offers.negotiationId, roomId)).orderBy(desc(schema.offers.round));
+  const slot = moves.map((m) => (m.terms as { slotStart?: string }).slotStart).find(Boolean);
+  const start = new Date(slot ?? "");
   if (Number.isNaN(start.getTime())) return;
 
   await db.insert(schema.bookings).values({
