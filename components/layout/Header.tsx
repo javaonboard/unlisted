@@ -5,7 +5,7 @@ import { PersonaSwitcher } from "./PersonaSwitcher";
 
 const links = [
   { href: "/", label: "Inbox" },
-  { href: "/vault", label: "Vault" },
+  { href: "/vault", label: "My stuff" },
   { href: "/connect", label: "Connect your AI" },
 ];
 

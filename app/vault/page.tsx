@@ -11,7 +11,7 @@ import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { PhotoToVault } from "@/components/vault/PhotoToVault";
 import { TellAgent } from "@/components/vault/TellAgent";
 
-async function Vault() {
+async function MyStuff() {
   const userId = await currentUserId();
   const [items, needs, users, plans] = await Promise.all([
     db.select().from(schema.vaultItems).where(eq(schema.vaultItems.ownerId, userId)).orderBy(asc(schema.vaultItems.createdAt)),
@@ -27,6 +27,31 @@ async function Vault() {
   const interested = Object.fromEntries(await Promise.all(items.map(async (i) => [i.id, (await findDemandFor(i.id)).length] as const)));
   const activePlans = plans.filter((p) => p.status !== "cancelled");
   const canPlan = needs.some((n) => n.type === "sell") && needs.some((n) => n.type === "buy") && activePlans.length === 0;
+
+  // One card per item, with where its negotiations stand.
+  const itemGrid = (title: string, empty: string, list: typeof items) => (
+    <>
+      <h2 className="mt-8 mb-3 font-medium first:mt-0">{title}</h2>
+      {list.length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {list.map((item) => (
+          <Link key={item.id} href={`/vault/${item.id}`} className="flex gap-3 rounded-2xl border p-3 hover:bg-muted/40">
+            {item.photos[0] ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={item.photos[0]} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
+            ) : (
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-2xl">{iconFor(item.category)}</div>
+            )}
+            <div className="min-w-0">
+              <p className="font-medium">{item.title}</p>
+              <p className="truncate text-sm text-muted-foreground">{item.condition ?? item.category} · ~${Number(item.estimatedValue ?? 0).toFixed(0)}{item.kind === "skill" ? "/job" : ""}</p>
+              <p className="mt-1 text-sm">{statusLine(rooms.filter((r) => r.itemId === item.id), names, userId, interested[item.id])} ▸</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </>
+  );
 
   return (
     <>
@@ -47,26 +72,10 @@ async function Vault() {
       <TellAgent />
       <PhotoToVault />
 
-      <h2 className="mb-3 font-medium">My things</h2>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {items.map((item) => (
-          <Link key={item.id} href={`/vault/${item.id}`} className="flex gap-3 rounded-2xl border p-3 hover:bg-muted/40">
-            {item.photos[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={item.photos[0]} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
-            ) : (
-              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-2xl">{iconFor(item.category)}</div>
-            )}
-            <div className="min-w-0">
-              <p className="font-medium">{item.title}</p>
-              <p className="truncate text-sm text-muted-foreground">{item.condition ?? item.category} · ~${Number(item.estimatedValue ?? 0).toFixed(0)}</p>
-              <p className="mt-1 text-sm">{statusLine(rooms.filter((r) => r.itemId === item.id), names, userId, interested[item.id])} ▸</p>
-            </div>
-          </Link>
-        ))}
-      </div>
+      {itemGrid("Things I have", "Nothing yet. Snap a photo of a room or garage.", items.filter((i) => i.kind === "goods"))}
+      {itemGrid("What I can do", "No services yet. Tell your agent, e.g. “I can clean gutters, I have a ladder”.", items.filter((i) => i.kind === "skill"))}
 
-      <h2 className="mt-8 mb-3 font-medium">My needs</h2>
+      <h2 className="mt-8 mb-3 font-medium">What I need</h2>
       <div className="flex flex-col gap-2">
         {needs.filter((n) => n.type !== "sell").map((need) => (
           <Link key={need.id} href={`/needs/${need.id}`} className="flex items-center justify-between rounded-2xl border p-3 text-sm hover:bg-muted/40">
@@ -80,13 +89,13 @@ async function Vault() {
   );
 }
 
-export default function VaultPage() {
+export default function MyStuffPage() {
   return (
     <main className="mx-auto w-full max-w-3xl p-8">
-      <h1 className="text-2xl font-semibold">Vault</h1>
+      <h1 className="text-2xl font-semibold">My stuff</h1>
       <p className="mt-1 mb-6 text-muted-foreground">What you own, what you can do, and what you need. Private until you say yes.</p>
       <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
-        <Vault />
+        <MyStuff />
       </Suspense>
     </main>
   );

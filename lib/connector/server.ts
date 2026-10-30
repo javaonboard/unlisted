@@ -17,13 +17,13 @@ export function unlistedServer(userId: string) {
   const server = new McpServer({ name: "unlisted", version: "1.0.0" });
 
   server.registerTool(
-    "my_vault",
+    "my_stuff",
     { description: "List what the user owns and what they can do. Private items stay private until the user agrees to a buyer." },
     async () => json(await listVault(userId)),
   );
 
   server.registerTool(
-    "add_to_vault",
+    "add_to_my_stuff",
     {
       description: `Remember something the user owns (goods) or can do (skill). Use a short category such as: ${CATEGORIES}.`,
       inputSchema: {

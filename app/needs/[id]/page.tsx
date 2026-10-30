@@ -16,7 +16,7 @@ async function NeedAnchor({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <LiveRefresh active={negotiations.some((n) => n.room.status === "open")} />
-      <BackLink href="/vault" label="Vault" />
+      <BackLink href="/vault" label="My stuff" />
       <Card>
         <CardHeader>
           <CardTitle>“{need.text}”</CardTitle>

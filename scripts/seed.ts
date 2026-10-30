@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { nextSaturday } from "@/lib/dates";
+import { openRoom, playRoom } from "@/lib/negotiation/room";
 import * as data from "./seed-data";
 
 async function main() {
@@ -49,6 +50,17 @@ async function main() {
   await db.insert(schema.notifications).values(data.notifications);
 
   console.log(`seeded ${data.users.length} users, ${items.length} vault items, ${rows.length} intents`);
+
+  // Real agents, one room at a time so calendars don't clash. Skip with --quiet.
+  if (!process.argv.includes("--quiet")) {
+    const owners = Object.fromEntries(data.vaultItems.map((item) => [item.key, item.ownerId]));
+    const buyers = Object.fromEntries(data.intents.map((intent) => [intent.key, intent.ownerId]));
+    for (const talk of data.talks) {
+      const room = await openRoom({ label: talk.label, buyerId: buyers[talk.intentKey], sellerId: owners[talk.itemKey], itemId: itemId[talk.itemKey], intentId: intentId[talk.intentKey] });
+      const done = await playRoom(room.id);
+      console.log(`talk: ${talk.intentKey} → ${done.status}${done.agreedPrice ? ` $${done.agreedPrice}` : ""}`);
+    }
+  }
   process.exit(0);
 }
 

@@ -109,3 +109,10 @@ export const bookings = [
   { providerId: "marco", title: "Other customer: apartment move", startHour: 8, endHour: 10 },
   { providerId: "dev", title: "Other customer: office move", startHour: 8, endHour: 13 },
 ];
+
+// A few real negotiations so the market isn't empty. Maya and Ben are left for the live demo.
+export const talks = [
+  { itemKey: "gutters", intentKey: "sara-gutters", label: "Gutter cleaning" },
+  { itemKey: "gutters", intentKey: "omar-gutters", label: "Gutter cleaning" },
+  { itemKey: "lawn", intentKey: "bella-lawn", label: "Lawn mowing" },
+];

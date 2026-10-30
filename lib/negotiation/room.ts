@@ -24,8 +24,10 @@ export async function playTurn(roomId: string): Promise<boolean> {
   if (!room || room.status !== "open") return false;
 
   // A parallel negotiation already won: the item is sold, or the need is filled.
+  // A service isn't used up: a provider can take many jobs.
   const agreed = and(eq(schema.negotiations.status, "agreed"), ne(schema.negotiations.id, roomId));
-  const [sold] = await db.select({ id: schema.negotiations.id }).from(schema.negotiations).where(and(eq(schema.negotiations.itemId, room.itemId!), agreed));
+  const [item] = await db.select({ kind: schema.vaultItems.kind }).from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!));
+  const [sold] = item?.kind === "goods" ? await db.select({ id: schema.negotiations.id }).from(schema.negotiations).where(and(eq(schema.negotiations.itemId, room.itemId!), agreed)) : [];
   const [filled] = await db.select({ id: schema.negotiations.id }).from(schema.negotiations).where(and(eq(schema.negotiations.intentId, room.intentId!), agreed));
   if (sold || filled) {
     const closedReason = sold ? "sold to someone else" : "went with another option";

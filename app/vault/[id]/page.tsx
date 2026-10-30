@@ -17,7 +17,7 @@ async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <LiveRefresh active={negotiations.some((n) => n.room.status === "open")} />
-      <BackLink href="/vault" label="Vault" />
+      <BackLink href="/vault" label="My stuff" />
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

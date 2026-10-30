@@ -17,7 +17,7 @@ async function Room({ params }: { params: Promise<{ id: string }> }) {
   const first = (id: string) => names[id]?.split(" ")[0] ?? id;
   const isSeller = room.sellerId === viewerId;
   const other = first(isSeller ? room.buyerId : room.sellerId);
-  const back = isSeller ? { href: `/vault/${item.id}`, label: item.title } : room.buyerId === viewerId ? { href: `/needs/${need.id}`, label: need.text } : { href: "/vault", label: "Vault" };
+  const back = isSeller ? { href: `/vault/${item.id}`, label: item.title } : room.buyerId === viewerId ? { href: `/needs/${need.id}`, label: need.text } : { href: "/vault", label: "My stuff" };
 
   return (
     <>
