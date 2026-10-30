@@ -18,7 +18,7 @@ async function Channel({ params }: { params: Promise<{ id: string }> }) {
   const { deal, rooms, messages, bookings, names } = data;
   const thread = Object.fromEntries(rooms.map((r) => [r.id, r.label ?? "deal"]));
   // Keep refreshing while agents talk, and in the gap before the mover leg starts.
-  const active = rooms.some((r) => r.status === "open") || (deal.status === "proposed" && rooms.every((r) => r.status === "agreed"));
+  const active = rooms.some((r) => r.status === "open" || r.status === "waiting_owner") || (deal.status === "proposed" && !rooms.some((r) => r.label?.startsWith("Mover")));
   const net = rooms.reduce((sum, r) => {
     if (r.status !== "agreed" || !r.agreedPrice) return sum;
     return r.sellerId === viewerId ? sum + Number(r.agreedPrice) : r.buyerId === viewerId ? sum - Number(r.agreedPrice) : sum;
@@ -37,10 +37,10 @@ async function Channel({ params }: { params: Promise<{ id: string }> }) {
             </Link>
             {d.id === deal.id &&
               rooms.map((r) => (
-                <p key={r.id} className="flex items-center gap-2 py-1 pl-5 text-muted-foreground">
+                <Link key={r.id} href={`/rooms/${r.id}`} className="flex items-center gap-2 py-1 pl-5 text-muted-foreground hover:text-foreground">
                   <span className={`size-2 rounded-full ${dot(r.status)}`} />
                   {r.label}
-                </p>
+                </Link>
               ))}
           </div>
         ))}

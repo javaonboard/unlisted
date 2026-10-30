@@ -65,7 +65,6 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
   const signals = counterpartySignals({
     moves,
     counterpartyId: otherId,
-    counterpartyBio: other.bio,
     counterpartyDueAt: side === "seller" ? intent.dueAt : null,
     competingInterest: side === "seller" ? competing.length : 0,
     round: room.round,

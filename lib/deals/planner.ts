@@ -27,14 +27,19 @@ export async function startLinkedDeal(ownerId: string, title: string) {
   if (!buyers.length || !sellers.length) throw new Error("No match yet for one side of the deal.");
 
   const [deal] = await db.insert(schema.deals).values({ ownerId, title }).returning();
-  const sellRoom = await openRoom({
-    dealId: deal.id,
-    label: `${item.title.replace(/^Grey /, "")} → ${first(buyers[0].ownerId)}`,
-    buyerId: buyers[0].ownerId,
-    sellerId: ownerId,
-    itemId: item.id,
-    intentId: buyers[0].id,
-  });
+  // Talk to up to three buyers at once. The first to agree gets it.
+  const sellRooms = await Promise.all(
+    buyers.slice(0, 3).map((buyer) =>
+      openRoom({
+        dealId: deal.id,
+        label: `${item.title.replace(/^Grey /, "")} → ${first(buyer.ownerId)}`,
+        buyerId: buyer.ownerId,
+        sellerId: ownerId,
+        itemId: item.id,
+        intentId: buyer.id,
+      }),
+    ),
+  );
   const buyRoom = await openRoom({
     dealId: deal.id,
     label: `${sellers[0].title} ← ${first(sellers[0].ownerId)}`,
@@ -45,7 +50,7 @@ export async function startLinkedDeal(ownerId: string, title: string) {
   });
 
   after(() =>
-    Promise.all([playRoom(sellRoom.id), playRoom(buyRoom.id)]).catch((e) => console.error("[deal] failed", e?.message)),
+    Promise.all([...sellRooms.map((r) => playRoom(r.id)), playRoom(buyRoom.id)]).catch((e) => console.error("[deal] failed", e?.message)),
   );
   return deal;
 }

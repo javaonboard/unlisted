@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { OwnerQuestion } from "./OwnerQuestion";
 
 type Message = {
@@ -33,7 +34,7 @@ export function ChatMessage({ m, viewerId, name, thread, waiting }: { m: Message
         <div className="flex flex-wrap items-baseline gap-2 text-xs text-muted-foreground">
           <span className="text-sm font-semibold text-foreground">{fromOwner ? "You" : `${name}'s agent`}</span>
           <span>{time}</span>
-          <span className="rounded-full border px-2">{thread}</span>
+          {thread && <Link href={`/rooms/${m.negotiationId}`} className="rounded-full border px-2 hover:bg-muted">{thread} ▸</Link>}
           <span>{label[m.kind] ?? m.kind}</span>
         </div>
         <p className="text-sm">{asksMe ? `🔔 ${m.note}` : m.note}</p>

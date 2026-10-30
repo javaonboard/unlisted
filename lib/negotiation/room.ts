@@ -1,11 +1,11 @@
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { logActivity } from "@/lib/db/activity";
 import { loadTurnContext } from "./context";
 import { decideMove } from "./agent";
 import { toA2AMessage, type Move } from "./moves";
 
-type NewRoom = { id?: string; dealId?: string; label?: string; buyerId: string; sellerId: string; itemId: string; intentId: string };
+type NewRoom = { id?: string; dealId?: string; dependsOn?: string[]; label?: string; buyerId: string; sellerId: string; itemId: string; intentId: string };
 
 export async function openRoom(input: NewRoom) {
   const [room] = await db.insert(schema.negotiations).values(input).returning();
@@ -22,6 +22,17 @@ const termsOf = (move: Move) => ({ when: move.when, slotStart: move.slotStart, p
 export async function playTurn(roomId: string): Promise<boolean> {
   const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
   if (!room || room.status !== "open") return false;
+
+  // Someone else already got this item in a parallel negotiation.
+  const [sold] = await db
+    .select({ id: schema.negotiations.id })
+    .from(schema.negotiations)
+    .where(and(eq(schema.negotiations.itemId, room.itemId!), eq(schema.negotiations.status, "agreed"), ne(schema.negotiations.id, roomId)));
+  if (sold) {
+    await db.update(schema.negotiations).set({ status: "closed", closedReason: "sold to someone else" }).where(eq(schema.negotiations.id, roomId));
+    console.log(`[room] ${roomId.slice(0, 8)} closed: sold to someone else`);
+    return false;
+  }
 
   const side = (room.round + 1) % 2 === 1 ? "buyer" : "seller";
   const context = await loadTurnContext(roomId, side);

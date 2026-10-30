@@ -1,64 +1,54 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { currentUserId } from "@/lib/session";
-import { getRoom } from "@/lib/negotiation/queries";
-import { Transcript } from "@/components/rooms/Transcript";
+import { getRoomView } from "@/lib/anchors/queries";
+import { Breadcrumb } from "@/components/anchors/Breadcrumb";
+import { ChatMessage } from "@/components/deals/ChatMessage";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 
 async function Room({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const [data, viewerId] = await Promise.all([getRoom(id), currentUserId()]);
+  const viewerId = await currentUserId();
+  const data = await getRoomView((await params).id, viewerId);
   if (!data) notFound();
+  const { room, deal, item, need, names, messages, parents, children } = data;
 
-  const { room, item, intent, moves, buyer, seller } = data;
-  const names = { [buyer.id]: buyer.name, [seller.id]: seller.name };
-  const last = moves.at(-1);
-  const pickup = last ? (last.terms as { pickup?: string }).pickup : undefined;
+  const isSeller = room.sellerId === viewerId;
+  const isBuyer = room.buyerId === viewerId;
+  const other = names[isSeller ? room.buyerId : room.sellerId]?.split(" ")[0];
+  const trail = isSeller
+    ? [{ label: "My things", href: "/vault" }, { label: item.title, href: `/vault/${item.id}` }, { label: `${other}'s agent` }]
+    : isBuyer
+      ? [{ label: "My needs", href: "/vault" }, { label: need.text, href: `/needs/${need.id}` }, { label: `${other}'s agent` }]
+      : [{ label: "My plans" }, { label: deal?.title ?? "Plan", href: deal ? `/deals/${deal.id}` : undefined }, { label: room.label ?? "Negotiation" }];
 
   return (
     <>
       <LiveRefresh active={room.status === "open"} />
-      <div className="grid gap-6 lg:grid-cols-[1fr_2fr_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Why they matched</CardTitle>
-            <CardDescription>Found by the marketplace, not by a listing.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2 text-sm">
-            <p><span className="font-medium">{buyer.name}</span> asked: “{intent.text}”</p>
-            <p><span className="font-medium">{seller.name}</span> owns: {item.title}</p>
-            <ul className="list-disc pl-5 text-muted-foreground">
-              <li>Same category: {item.category}</li>
-              <li>Price ranges overlap (neither side sees the other&apos;s limit)</li>
-              <li>Both in Austin: {buyer.area} and {seller.area}</li>
-            </ul>
-          </CardContent>
-        </Card>
+      <Breadcrumb trail={trail} />
 
-        <section>
-          <h2 className="mb-3 font-medium">Agent conversation</h2>
-          <Transcript moves={moves} viewerId={viewerId} names={names} />
-        </section>
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+        <Badge variant={room.status === "agreed" ? "default" : "secondary"}>
+          {room.status === "agreed" ? `Agreed $${Number(room.agreedPrice).toFixed(0)}` : room.status === "waiting_owner" ? "Waiting for an owner" : room.status === "open" ? `Talking · round ${room.round}` : `Closed: ${room.closedReason}`}
+        </Badge>
+        {deal && <Link href={`/deals/${deal.id}`} className="rounded-full border px-3 py-0.5 hover:bg-muted">Part of plan: {deal.title}</Link>}
+        {parents.map((p) => <Link key={p.id} href={`/rooms/${p.id}`} className="rounded-full border px-3 py-0.5 hover:bg-muted">Serves: {p.label} ▸</Link>)}
+        {children.map((c) => <Link key={c.id} href={`/rooms/${c.id}`} className="rounded-full border px-3 py-0.5 hover:bg-muted">Depends on this: {c.label} ▸</Link>)}
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Deal</CardTitle>
-            <CardDescription>Round {room.round} of {room.maxRounds}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm">
-            <Badge variant={room.status === "agreed" ? "default" : "secondary"} className="self-start">
-              {room.status === "open" ? "Negotiating…" : room.status === "agreed" ? "Agreed" : `Closed: ${room.closedReason}`}
-            </Badge>
-            {room.agreedPrice && <p className="text-2xl font-semibold">${Number(room.agreedPrice).toFixed(0)}</p>}
-            {pickup && <p>Pickup: {pickup}</p>}
-            {room.status === "agreed" && (
-              <Button disabled className="whitespace-normal">Approve with PayPal</Button>
-            )}
-          </CardContent>
-        </Card>
+      <div className="flex flex-col gap-1 rounded-2xl border p-2">
+        {messages.length === 0 && <p className="p-2 text-sm text-muted-foreground">Agents are getting ready…</p>}
+        {messages.map((m) => (
+          <ChatMessage
+            key={m.id}
+            m={m}
+            viewerId={viewerId}
+            name={names[m.fromUserId]?.split(" ")[0] ?? m.fromUserId}
+            thread=""
+            waiting={room.status === "waiting_owner"}
+          />
+        ))}
       </div>
     </>
   );
@@ -66,8 +56,8 @@ async function Room({ params }: { params: Promise<{ id: string }> }) {
 
 export default function RoomPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <main className="mx-auto w-full max-w-6xl p-8">
-      <Suspense fallback={<p className="text-muted-foreground">Loading room…</p>}>
+    <main className="mx-auto w-full max-w-3xl p-8">
+      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <Room params={params} />
       </Suspense>
     </main>

@@ -86,7 +86,8 @@ export const negotiations = pgTable("negotiations", {
   sellerId: text("seller_id").notNull().references(() => users.id),
   itemId: uuid("item_id").references(() => vaultItems.id),
   intentId: uuid("intent_id").references(() => intents.id),
-  dealId: uuid("deal_id").references(() => deals.id),
+  dealId: uuid("deal_id").references(() => deals.id), // the plan this is part of, if any
+  dependsOn: jsonb("depends_on").$type<string[]>().default([]).notNull(), // negotiations this one serves, e.g. a mover for a sale
   label: text("label"), // thread name in the deal channel, e.g. "Sectional → Ben"
   status: text("status", { enum: ["open", "waiting_owner", "agreed", "closed"] })
     .default("open")

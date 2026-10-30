@@ -43,6 +43,13 @@
       "when": 1793374256634,
       "tag": "0005_deal_threads",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793377436940,
+      "tag": "0006_depends_on",
+      "breakpoints": true
     }
   ]
 }

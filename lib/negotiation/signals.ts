@@ -1,12 +1,11 @@
 // Behavioral signals about the other side. Only from what they did in this
-// room or stated in public, never from their private vault or memory.
+// room, never from their profile, private vault or memory.
 
 type PastMove = { fromUserId: string; price: string | null; kind: string };
 
 export function counterpartySignals(input: {
   moves: PastMove[];
   counterpartyId: string;
-  counterpartyBio: string | null;
   counterpartyDueAt: Date | null;
   competingInterest: number; // other open intents for the same thing
   round: number;
@@ -29,7 +28,6 @@ export function counterpartySignals(input: {
     const days = Math.ceil((input.counterpartyDueAt.getTime() - Date.now()) / 86_400_000);
     if (days <= 3) signals.push(`Their stated deadline is in ${days} day(s): speed matters to them.`);
   }
-  if (input.counterpartyBio) signals.push(`Their public note: "${input.counterpartyBio}"`);
   if (input.competingInterest > 0) {
     signals.push(`${input.competingInterest} other people want the same thing (verified count).`);
   }

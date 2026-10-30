@@ -1,0 +1,1 @@
+ALTER TABLE "negotiations" ADD COLUMN "depends_on" jsonb DEFAULT '[]'::jsonb NOT NULL;

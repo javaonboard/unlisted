@@ -1,0 +1,43 @@
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { currentUserId } from "@/lib/session";
+import { getNeedAnchor } from "@/lib/anchors/queries";
+import { Breadcrumb } from "@/components/anchors/Breadcrumb";
+import { NegotiationList } from "@/components/anchors/NegotiationList";
+import { LiveRefresh } from "@/components/rooms/LiveRefresh";
+
+async function NeedAnchor({ params }: { params: Promise<{ id: string }> }) {
+  const data = await getNeedAnchor((await params).id, await currentUserId());
+  if (!data) notFound();
+  const { need, negotiations } = data;
+
+  return (
+    <>
+      <LiveRefresh active={negotiations.some((n) => n.room.status === "open")} />
+      <Breadcrumb trail={[{ label: "My needs", href: "/vault" }, { label: need.text }]} />
+      <Card>
+        <CardHeader>
+          <CardTitle>“{need.text}”</CardTitle>
+          <CardDescription>
+            {need.type === "request_service" ? "Service" : "To buy"} · {need.category}
+            {need.maxPrice && ` · up to $${Number(need.maxPrice).toFixed(0)} (only you see this)`}
+            {need.dueAt && ` · by ${need.dueAt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+      <h2 className="mt-6 mb-3 font-medium">Agents offering</h2>
+      <NegotiationList entries={negotiations} />
+    </>
+  );
+}
+
+export default function NeedPage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <main className="mx-auto w-full max-w-3xl p-8">
+      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+        <NeedAnchor params={params} />
+      </Suspense>
+    </main>
+  );
+}

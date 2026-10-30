@@ -18,8 +18,15 @@ export async function onLegFinished(dealId: string) {
   const goods = legs.filter((l) => l.kind === "goods");
   const service = legs.find((l) => l.kind === "skill");
 
-  // Once both goods legs agree, book the mover around their times.
-  if (!service && goods.length && goods.every((l) => l.room.status === "agreed") && !starting.has(dealId)) {
+  // Ready when every item in the plan has a deal and nobody is still talking about it.
+  const items = [...new Set(goods.map((l) => l.room.itemId))];
+  const ready = items.every((id) => {
+    const rooms = goods.filter((l) => l.room.itemId === id).map((l) => l.room);
+    return rooms.some((r) => r.status === "agreed") && !rooms.some((r) => r.status === "open" || r.status === "waiting_owner");
+  });
+
+  // Once the goods are settled, book the mover around their times.
+  if (!service && goods.length && ready && !starting.has(dealId)) {
     starting.add(dealId);
     try {
       const [need] = await db
@@ -31,6 +38,7 @@ export async function onLegFinished(dealId: string) {
       const [user] = await db.select().from(schema.users).where(eq(schema.users.id, provider.ownerId));
       const room = await openRoom({
         dealId,
+        dependsOn: goods.filter((l) => l.room.status === "agreed").map((l) => l.room.id), // the mover serves these handoffs
         label: `Mover · ${user.name.split(" ")[0]}`,
         buyerId: deal.ownerId,
         sellerId: provider.ownerId,
