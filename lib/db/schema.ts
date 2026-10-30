@@ -153,6 +153,7 @@ export const dealLegs = pgTable("deal_legs", {
     .default("pending")
     .notNull(),
   handoffCode: text("handoff_code"), // the payee shows it, the payer enters it to confirm
+  heldAt: timestamp("held_at"), // when the PayPal hold was placed
   handoffAt: timestamp("handoff_at"),
   createdAt: createdAt(),
 });
