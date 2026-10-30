@@ -129,8 +129,10 @@ export async function playRoom(roomId: string) {
   while (await playTurn(roomId)) {}
   const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
 
-  // A finished deal teaches each owner's agent something. Runs on the side.
+  // A finished deal teaches each owner's agent something, and services get booked.
   if (room.status === "agreed") {
+    const { bookAgreedService } = await import("@/lib/bookings");
+    await bookAgreedService(roomId);
     const { learnFromRoom } = await import("@/lib/memory/extract");
     for (const ownerId of [room.buyerId, room.sellerId]) {
       learnFromRoom(roomId, ownerId).catch((e) => console.error("[memory] failed", e?.message));

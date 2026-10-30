@@ -4,6 +4,7 @@ import { findDemandFor, findSupplyFor } from "@/lib/matching/matcher";
 import { skillDemand } from "@/lib/vault/demand";
 import { milesBetween } from "@/lib/places";
 import { suggest } from "./suggest";
+import { openRoom, playRoom } from "@/lib/negotiation/room";
 
 const WAIT = 2 * 3_600_000; // time to answer before the next wave
 
@@ -26,7 +27,11 @@ export async function runWave(needId: string, wave: number): Promise<void> {
 
   const users = await db.select().from(schema.users);
   const asker = users.find((u) => u.id === need.ownerId)!;
-  const asked = (await db.select().from(schema.suggestions).where(eq(schema.suggestions.needId, needId))).map((s) => s.userId);
+  // Everyone already reached for this need: suggested to, or already talking.
+  const asked = [
+    ...(await db.select().from(schema.suggestions).where(eq(schema.suggestions.needId, needId))).map((s) => s.userId),
+    ...(await db.select().from(schema.negotiations).where(eq(schema.negotiations.intentId, needId))).map((r) => r.sellerId),
+  ];
   const typical = (await skillDemand(need.category, "")).perJob;
   let sent = 0;
 
@@ -38,6 +43,20 @@ export async function runWave(needId: string, wave: number): Promise<void> {
       .slice(0, wave === 1 ? 3 : 7);
 
     for (const { item, miles } of supply) {
+      // Already offered openly: their agent just starts talking. Private: ask first.
+      if (item.openToOffers) {
+        const room = await openRoom({ label: item.title, buyerId: need.ownerId, sellerId: item.ownerId, itemId: item.id, intentId: needId });
+        await db.insert(schema.notifications).values({
+          userId: item.ownerId,
+          title: `Your agent is talking to ${first(asker.name)}`,
+          body: `About “${need.text}”, ${miles} mi away. You'll be asked before anything is final.`,
+          link: `/rooms/${room.id}`,
+        });
+        playRoom(room.id).catch((e) => console.error("[waves] room failed", e?.message));
+        sent++;
+        continue;
+      }
+
       const ok = await suggest({
         userId: item.ownerId,
         needId,

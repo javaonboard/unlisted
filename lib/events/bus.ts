@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db, pg, schema } from "@/lib/db";
 
 export type EventType = "need.posted" | "vault.added";
@@ -16,9 +16,13 @@ type Handler = (type: EventType, payload: Record<string, string>) => Promise<voi
 // Reacts to each event once, as soon as it is published.
 export async function listen(handle: Handler) {
   await pg.listen(CHANNEL, async (eventId) => {
-    const [event] = await db.select().from(schema.events).where(eq(schema.events.id, eventId));
-    if (!event || event.processedAt) return;
-    await db.update(schema.events).set({ processedAt: new Date() }).where(eq(schema.events.id, eventId));
+    // Claim it in one step, so only one server handles each event.
+    const [event] = await db
+      .update(schema.events)
+      .set({ processedAt: new Date() })
+      .where(and(eq(schema.events.id, eventId), isNull(schema.events.processedAt)))
+      .returning();
+    if (!event) return;
     try {
       await handle(event.type as EventType, event.payload);
     } catch (error) {

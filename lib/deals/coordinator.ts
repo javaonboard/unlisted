@@ -62,21 +62,8 @@ export async function onLegFinished(dealId: string) {
     return;
   }
 
-  // When the mover agrees, put the job on their schedule.
+  // The mover's job is booked when their room agrees (see lib/bookings.ts).
   if (service?.room.status === "agreed") {
-    const [existing] = await db.select().from(schema.bookings).where(eq(schema.bookings.dealId, dealId));
-    const [last] = (await db.select().from(schema.offers).where(eq(schema.offers.negotiationId, service.room.id))).filter((m) => m.price).slice(-1);
-    const start = new Date(((last?.terms ?? {}) as { slotStart?: string }).slotStart ?? "");
-    if (!existing && !Number.isNaN(start.getTime())) {
-      await db.insert(schema.bookings).values({
-        providerId: service.room.sellerId,
-        title: `${deal.title}: both stops`,
-        startsAt: start,
-        endsAt: new Date(start.getTime() + 2 * 3_600_000),
-        dealId,
-      });
-      console.log("[deal] mover booked", start.toISOString());
-    }
     await db.update(schema.deals).set({ status: "approved" }).where(eq(schema.deals.id, dealId));
   }
 }
