@@ -12,7 +12,7 @@ type Busy = { startsAt: Date; endsAt: Date };
 // Returns an error to send back to the agent, or null if the move is fine.
 export function checkMove(
   move: Move,
-  rules: { limits: Limits; evidenceIds: string[]; standingPrice: number | null; alreadyAsked: boolean; busy: Busy[] },
+  rules: { limits: Limits; evidenceIds: string[]; standingPrice: number | null; alreadyAsked: boolean; busy: Busy[]; isService: boolean },
 ) {
   const { limits } = rules;
 
@@ -36,6 +36,9 @@ export function checkMove(
       return `$${price} is below your owner's minimum of $${limits.limit}. Counter higher, or use ask_owner if this deal is worth it.`;
     }
   }
+
+  // A service offer must name an exact start time, so it can be booked.
+  if (rules.isService && needsPrice && !move.slotStart) return "For a service, set slotStart to the exact ISO start time you propose.";
 
   if (move.slotStart) {
     const start = new Date(move.slotStart);

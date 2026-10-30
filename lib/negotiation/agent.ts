@@ -2,6 +2,7 @@ import { askForData } from "@/lib/ai/structured";
 import { checkMove } from "./guardrails";
 import { Move } from "./moves";
 import type { TurnContext } from "./context";
+import { nextSaturday } from "@/lib/dates";
 
 const system = (c: TurnContext) => `You are ${c.owner.name}'s agent on Unlisted, a local marketplace in Austin.
 You act only for ${c.owner.name}, as the ${c.side}. Get a good deal that actually works in real life.
@@ -27,7 +28,10 @@ function describe(c: TurnContext) {
         .join("\n")
     : "- nothing yet, you open.";
 
-  return `${c.item.kind === "skill" ? "Service" : "Item"}: ${c.item.title} (${c.item.condition ?? "no condition notes"}), est. value $${c.item.estimatedValue ?? "?"}.
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" });
+  const saturday = nextSaturday(9).toISOString();
+  return `Today is ${today} (Austin time). This Saturday 9am is ${saturday}.
+${c.item.kind === "skill" ? "Service" : "Item"}: ${c.item.title} (${c.item.condition ?? "no condition notes"}), est. value $${c.item.estimatedValue ?? "?"}.
 Details: ${JSON.stringify(c.item.details)}
 Evidence you may cite:
 ${c.evidence.map((e) => `- ${e.id}: ${e.summary} (${e.verified ? "verified" : "unverified claim"})`).join("\n") || "- none"}
@@ -74,6 +78,7 @@ export async function decideMove(c: TurnContext): Promise<Move> {
     standingPrice: c.standingPrice,
     alreadyAsked: c.alreadyAsked,
     busy: c.busy,
+    isService: c.item.kind === "skill",
   };
   let content = describe(c);
 
