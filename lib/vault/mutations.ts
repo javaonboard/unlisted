@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import { publish } from "@/lib/events/bus";
 
 type NewItem = {
   kind: "goods" | "skill";
@@ -8,6 +9,7 @@ type NewItem = {
   condition?: string;
   estimatedValue?: number;
   minPrice?: number;
+  openToOffers?: boolean;
 };
 
 // New things start private. Nobody sees them until the owner says yes to a buyer.
@@ -22,8 +24,10 @@ export async function addVaultItem(ownerId: string, item: NewItem) {
       condition: item.condition,
       estimatedValue: item.estimatedValue?.toFixed(2),
       minPrice: item.minPrice?.toFixed(2),
+      openToOffers: item.openToOffers ?? false,
     })
     .returning();
+  await publish("vault.added", { itemId: row.id });
   return row;
 }
 

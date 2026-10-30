@@ -14,4 +14,4 @@ const sql = postgres(url, {
 });
 
 export const db = drizzle(sql, { schema });
-export { schema };
+export { schema, sql as pg }; // pg: the raw client, used for LISTEN/NOTIFY

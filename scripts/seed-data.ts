@@ -48,6 +48,7 @@ export const vaultItems: Item[] = [
   // Local skills.
   { key: "moving", ownerId: "marco", kind: "skill", title: "Moving help with pickup truck", category: "moving", estimatedValue: "85.00", minPrice: "70.00", openToOffers: true, details: { days: ["Sat", "Sun"], equipment: ["truck", "dolly", "straps"] } },
   { key: "moving-dev", ownerId: "dev", kind: "skill", title: "Moving help with a cargo van", category: "moving", estimatedValue: "95.00", minPrice: "85.00", openToOffers: true, details: { days: ["Sat afternoon"], equipment: ["van", "blankets"] } },
+  { key: "ladder", ownerId: "kai", kind: "goods", title: "Extension ladder, 24 ft", category: "tools", condition: "Good", estimatedValue: "120.00" },
   { key: "gutters", ownerId: "gus", kind: "skill", title: "Gutter cleaning", category: "gutters", estimatedValue: "80.00", openToOffers: true, details: { equipment: ["ladder"] } },
   { key: "lawn", ownerId: "lily", kind: "skill", title: "Lawn mowing", category: "lawn", estimatedValue: "40.00", openToOffers: true, details: { equipment: ["mower", "trimmer"] } },
   { key: "it-setup", ownerId: "ivan", kind: "skill", title: "Wi-Fi, TV mounting and PC setup", category: "it-setup", estimatedValue: "60.00", openToOffers: true },

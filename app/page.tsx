@@ -4,16 +4,34 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { currentUserId } from "@/lib/session";
 import { getUser } from "@/lib/users/queries";
 import { listNotifications } from "@/lib/notifications/queries";
+import { and, desc, eq } from "drizzle-orm";
+import { db, schema } from "@/lib/db";
+import { SuggestionCard } from "@/components/inbox/SuggestionCard";
+import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 
 async function Inbox() {
   const userId = await currentUserId();
-  const [user, notifications] = await Promise.all([getUser(userId), listNotifications(userId)]);
+  const [user, notifications, suggestions] = await Promise.all([
+    getUser(userId),
+    listNotifications(userId),
+    db.select().from(schema.suggestions).where(and(eq(schema.suggestions.userId, userId), eq(schema.suggestions.status, "new"))).orderBy(desc(schema.suggestions.createdAt)),
+  ]);
 
   return (
     <>
       <h1 className="text-2xl font-semibold">Hi {user?.name.split(" ")[0]}</h1>
       <p className="mt-1 text-muted-foreground">{user?.bio}</p>
       <Link href="/memory" className="mt-2 inline-block text-sm text-primary hover:underline">What my agent knows about me ▸</Link>
+
+      <LiveRefresh active every={5000} />
+      {suggestions.length > 0 && (
+        <>
+          <h2 className="mt-8 mb-3 font-medium">Your agent suggests</h2>
+          <div className="flex flex-col gap-3">
+            {suggestions.map((s) => <SuggestionCard key={s.id} s={s} />)}
+          </div>
+        </>
+      )}
 
       <h2 className="mt-8 mb-3 font-medium">Inbox</h2>
       {notifications.length === 0 && <p className="text-sm text-muted-foreground">Nothing new.</p>}

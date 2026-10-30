@@ -9,6 +9,7 @@ import { iconFor, statusLine } from "@/lib/anchors/status";
 import { planMovingDay } from "@/app/actions/deals";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { PhotoToVault } from "@/components/vault/PhotoToVault";
+import { TellAgent } from "@/components/vault/TellAgent";
 
 async function Vault() {
   const userId = await currentUserId();
@@ -43,6 +44,7 @@ async function Vault() {
         </Link>
       ))}
 
+      <TellAgent />
       <PhotoToVault />
 
       <h2 className="mb-3 font-medium">My things</h2>

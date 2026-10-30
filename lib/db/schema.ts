@@ -77,6 +77,8 @@ export const intents = pgTable("intents", {
   status: text("status", { enum: ["open", "matched", "done", "expired"] })
     .default("open")
     .notNull(),
+  wave: integer("wave").default(0).notNull(), // how far we've widened the search for this need
+  nextWaveAt: timestamp("next_wave_at"),
   createdAt: createdAt(),
 });
 
@@ -207,5 +209,30 @@ export const bookings = pgTable("bookings", {
   startsAt: timestamp("starts_at").notNull(),
   endsAt: timestamp("ends_at").notNull(),
   dealId: uuid("deal_id").references(() => deals.id),
+  createdAt: createdAt(),
+});
+
+// Things that happened. Saved, then announced with Postgres NOTIFY so listeners react at once.
+export const events = pgTable("events", {
+  id: id(),
+  type: text("type").notNull(), // "need.posted", "vault.added", ...
+  payload: jsonb("payload").$type<Record<string, string>>().notNull(),
+  processedAt: timestamp("processed_at"),
+  createdAt: createdAt(),
+});
+
+// What a user's agent suggests to them. One tap to say yes.
+export const suggestions = pgTable("suggestions", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id),
+  kind: text("kind", {
+    enum: ["open_item", "offer_skill", "add_skill", "raise_offer", "post_need"],
+  }).notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  action: jsonb("action").$type<Record<string, string | number>>().notNull(), // what "Yes" does
+  needId: uuid("need_id").references(() => intents.id), // the demand this answers, if any
+  wave: integer("wave").default(1).notNull(),
+  status: text("status", { enum: ["new", "accepted", "dismissed"] }).default("new").notNull(),
   createdAt: createdAt(),
 });

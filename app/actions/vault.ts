@@ -6,6 +6,8 @@ import { currentUserId } from "@/lib/session";
 import { analyzePhoto } from "@/lib/vault/photo";
 import { addVaultItem, setPhoto } from "@/lib/vault/mutations";
 import { skillDemand } from "@/lib/vault/demand";
+import { understandText, type Card } from "@/lib/vault/understand";
+import { postNeed } from "@/lib/intents/mutations";
 import { AiLimitError } from "@/lib/ai/limits";
 
 export type Suggestion = {
@@ -44,6 +46,28 @@ export async function addSuggestions(picked: Suggestion[], thumbnail: string) {
       estimatedValue: s.value ?? s.demand?.perJob ?? undefined,
     });
     if (s.kind === "goods") await setPhoto(item.id, thumbnail);
+  }
+  revalidatePath("/vault");
+}
+
+// What the owner typed, turned into cards to check. Nothing is saved yet.
+export async function understandAction(text: string): Promise<{ cards: Card[]; error: string | null }> {
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0] ?? "local";
+  try {
+    return { ...(await understandText(text, ip)), error: null };
+  } catch (error) {
+    return { cards: [], error: error instanceof AiLimitError ? error.message : "Your agent couldn't follow that. Try saying it another way." };
+  }
+}
+
+export async function saveCards(cards: Card[]) {
+  const userId = await currentUserId();
+  for (const c of cards) {
+    if (c.kind === "need") {
+      await postNeed(userId, { type: c.needType ?? "buy", text: c.title, category: c.category, maxPrice: c.maxPrice ?? undefined, dueInDays: c.dueInDays ?? undefined });
+    } else {
+      await addVaultItem(userId, { kind: c.kind, title: c.title, category: c.category, condition: c.condition ?? undefined, estimatedValue: c.value ?? undefined });
+    }
   }
   revalidatePath("/vault");
 }

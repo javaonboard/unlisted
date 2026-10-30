@@ -3,13 +3,13 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-// Re-renders the page every few seconds while agents are still talking.
-export function LiveRefresh({ active }: { active: boolean }) {
+// Re-renders the page every few seconds while something is still happening.
+export function LiveRefresh({ active, every = 2000 }: { active: boolean; every?: number }) {
   const router = useRouter();
   useEffect(() => {
     if (!active) return;
-    const timer = setInterval(() => router.refresh(), 2000);
+    const timer = setInterval(() => router.refresh(), every);
     return () => clearInterval(timer);
-  }, [active, router]);
+  }, [active, every, router]);
   return null;
 }
