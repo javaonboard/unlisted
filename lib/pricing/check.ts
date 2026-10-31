@@ -40,7 +40,7 @@ export async function checkPrice(thing: { title: string; condition?: string | nu
     output_config: { effort: "low" },
     ...FALLBACK,
     tools: [
-      { type: "web_search_20260209", name: "web_search", max_uses: 3 },
+      { type: "web_search_20260209", name: "web_search", max_uses: 5 },
       betaZodTool({
         name: "look_up_product",
         description: "Look up the product's new retail price and specs.",
@@ -62,7 +62,10 @@ export async function checkPrice(thing: { title: string; condition?: string | nu
         role: "user",
         content: `Find a fair price in ${thing.area}, Austin, TX.
 ${thing.kind === "service" ? `A local service, priced per job: "${thing.title}".` : thing.kind === "budget" ? `Someone wants to buy: "${thing.title}". What should they budget, used?` : `Used, for sale: "${thing.title}"${thing.condition ? `, condition: ${thing.condition}` : ""}.`}
-Search the web for recent used prices or local rates (marketplace and sold listings are best), and look up the new price.
+Always start with a web search for recent used prices or local rates. Then look up the new price.
+Use pages that actually show prices: eBay sold listings, resale price guides, cost guides for services.
+Marketplace search pages (Facebook, Craigslist, OfferUp) usually don't show prices in results, so don't rely on them. One search at a time.
+Put every page you took a price from in sources (title and url), so the owner can check it.
 Sold on Unlisted in this category: ${local.length ? local.join("; ") : "nothing yet"}.
 Then call submit_price.`,
       },
