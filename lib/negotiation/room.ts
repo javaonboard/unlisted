@@ -1,5 +1,6 @@
 import { and, eq, ne } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import { notify } from "@/lib/notifications/notify";
 import { logActivity } from "@/lib/db/activity";
 import { loadTurnContext } from "./context";
 import { decideMove } from "./agent";
@@ -53,12 +54,7 @@ export async function playTurn(roomId: string): Promise<boolean> {
       signalsUsed: move.signalsUsed,
     });
     await db.update(schema.negotiations).set({ status: "waiting_owner" }).where(eq(schema.negotiations.id, roomId));
-    await db.insert(schema.notifications).values({
-      userId: context.owner.id,
-      title: "Your agent has a question",
-      body: move.askOwner.question,
-      link: room.dealId ? `/deals/${room.dealId}` : `/rooms/${roomId}`,
-    });
+    await notify(context.owner.id, "A quick question", move.askOwner.question, roomId);
     console.log(`[room] ${roomId.slice(0, 8)} ${side} asks owner: ${move.askOwner.question}`);
     return false;
   }
@@ -136,7 +132,7 @@ export async function playRoom(roomId: string) {
   if (room.status === "closed" && booked) {
     [room] = await db.update(schema.negotiations).set({ status: "agreed", closedReason: null }).where(eq(schema.negotiations.id, roomId)).returning();
     for (const userId of [room.buyerId, room.sellerId]) {
-      await db.insert(schema.notifications).values({ userId, title: "No better time found", body: "The old time stands. Confirm it or ask again.", link: `/rooms/${roomId}` });
+      await notify(userId, "No better time found", "The old time stands. Confirm it or ask again.", roomId);
     }
   }
 

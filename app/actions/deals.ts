@@ -18,7 +18,7 @@ export async function planMovingDay() {
 export async function replyToAgent(roomId: string, words: string) {
   await applyOwnerReply(roomId, await currentUserId(), words);
   after(() => playRoom(roomId).catch((e) => console.error("[room] failed", roomId, e?.message)));
-  revalidatePath("/deals", "layout");
+  revalidatePath("/", "layout");
 }
 
 export async function confirmTimeAction(roomId: string) {

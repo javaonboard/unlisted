@@ -6,13 +6,13 @@ import { getRoomView } from "@/lib/anchors/queries";
 import { BackLink } from "@/components/anchors/BackLink";
 import { ChatMessage } from "@/components/deals/ChatMessage";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
-import { NextSteps } from "@/components/rooms/NextSteps";
+import { RoomNextSteps } from "@/components/rooms/RoomNextSteps";
 
 async function Room({ params }: { params: Promise<{ id: string }> }) {
   const viewerId = await currentUserId();
   const data = await getRoomView((await params).id, viewerId);
   if (!data) notFound();
-  const { room, deal, item, need, names, messages, childSummaries } = data;
+  const { room, item, need, names, messages, childSummaries } = data;
 
   const first = (id: string) => names[id]?.split(" ")[0] ?? id;
   const isSeller = room.sellerId === viewerId;
@@ -39,26 +39,7 @@ async function Room({ params }: { params: Promise<{ id: string }> }) {
         )}
       </div>
 
-      {room.status === "agreed" && (
-        <NextSteps
-          roomId={room.id}
-          dealId={room.dealId}
-          isPlan={!!deal && deal.title !== room.label}
-          isPlanOwner={deal?.ownerId === viewerId}
-          planSettled={data.planSettled}
-          hasLegs={data.hasLegs}
-          viewerId={viewerId}
-          first={first}
-          leg={data.leg}
-          payTotal={data.payTotal}
-          when={data.when}
-          place={data.place}
-          booking={data.booking}
-          waitingOn={data.waitingOn}
-          buyerId={room.buyerId}
-          clientId={process.env.PAYPAL_CLIENT_ID ?? ""}
-        />
-      )}
+      {room.status === "agreed" && <RoomNextSteps data={data} viewerId={viewerId} />}
 
       {childSummaries.length > 0 && (
         <div className="mt-3 rounded-2xl border p-4 text-sm">

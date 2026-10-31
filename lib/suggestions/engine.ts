@@ -1,5 +1,6 @@
 import { and, eq, ilike, lte, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import { notify } from "@/lib/notifications/notify";
 import { findDemandFor, findSupplyFor } from "@/lib/matching/matcher";
 import { skillDemand } from "@/lib/vault/demand";
 import { milesBetween } from "@/lib/places";
@@ -46,12 +47,7 @@ export async function runWave(needId: string, wave: number): Promise<void> {
       // Already offered openly: their agent just starts talking. Private: ask first.
       if (item.openToOffers) {
         const room = await openRoom({ label: item.title, buyerId: need.ownerId, sellerId: item.ownerId, itemId: item.id, intentId: needId });
-        await db.insert(schema.notifications).values({
-          userId: item.ownerId,
-          title: `Your agent is talking to ${first(asker.name)}`,
-          body: `About “${need.text}”, ${miles} mi away. You'll be asked before anything is final.`,
-          link: `/rooms/${room.id}`,
-        });
+        await notify(item.ownerId, `I'm talking to ${first(asker.name)}`, `About “${need.text}”, ${miles} mi away. I'll ask you before anything is final.`, room.id);
         playRoom(room.id).catch((e) => console.error("[waves] room failed", e?.message));
         sent++;
         continue;

@@ -106,6 +106,13 @@
       "when": 1793398434871,
       "tag": "0014_free_times",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1793414108583,
+      "tag": "0015_inbox_chat",
+      "breakpoints": true
     }
   ]
 }

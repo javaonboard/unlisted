@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/lib/db";
+import { notify } from "@/lib/notifications/notify";
 import { askForData } from "@/lib/ai/structured";
 import { MODELS } from "@/lib/ai/client";
 import { confirmTime } from "@/lib/bookings";
@@ -64,6 +65,6 @@ export async function askForNewTime(roomId: string, ownerId: string, words: stri
     .where(eq(schema.negotiations.id, roomId));
 
   const other = askerIsBuyer ? room.sellerId : room.buyerId;
-  await db.insert(schema.notifications).values({ userId: other, title: "They asked for another time", body: words, link: `/rooms/${roomId}` });
+  await notify(other, "They asked for another time", `“${words}” I'm working it out with their agent.`, roomId);
   console.log(`[room] ${roomId.slice(0, 8)} new time asked: "${words}"`);
 }

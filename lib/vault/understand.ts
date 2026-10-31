@@ -1,25 +1,26 @@
 import { z } from "zod";
 import { askForData } from "@/lib/ai/structured";
 import { MODELS } from "@/lib/ai/client";
+import { Card, missing } from "./card";
 
-export const Card = z.object({
-  kind: z.enum(["goods", "skill", "need"]).describe("goods: something they own. skill: a service they can offer. need: something they want"),
-  title: z.string().describe("Short title, e.g. 'Mountain bike, size L' or 'Wi-Fi setup'"),
-  category: z.string().describe("Lowercase slug, e.g. sofa, bike, tools, gpu, moving, gutters, lawn, car-care, it-setup, washing"),
-  condition: z.string().nullable().describe("Goods only: condition in their words"),
-  value: z.number().nullable().describe("Goods: rough used value. Skill: typical price per job. USD"),
-  needType: z.enum(["buy", "request_service"]).nullable().describe("Needs only"),
-  maxPrice: z.number().nullable().describe("Needs only, if they said a budget"),
-  dueInDays: z.number().nullable().describe("Needs only, if they said when"),
-});
-export type Card = z.infer<typeof Card>;
-
-// "I have a ladder and free Saturdays" → a card the owner can check and save.
+// "I have a ladder and free Saturdays" → cards to check, plus one short question if something is missing.
+// The owner's answers are added to the same text and it runs again.
 export async function understandText(text: string, ip?: string) {
-  return askForData({
-    schema: z.object({ cards: z.array(Card).describe("One card per thing they mentioned, at most three") }),
+  const now = new Date();
+  const { cards, question } = await askForData({
+    schema: z.object({
+      cards: z.array(Card).describe("One card per thing they mentioned, at most three"),
+      question: z.string().nullable().describe("One short, friendly question asking for what's missing, or null"),
+    }),
     model: MODELS.small,
     ip,
-    content: `A person told their marketplace agent: "${text}". Turn it into cards. Don't invent details they didn't say.`,
+    content: `Today is ${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} (${now.toISOString()}), Austin time.
+A person told their marketplace agent: "${text}"
+Turn it into cards. Don't invent details they didn't say.
+Must-haves: needs → budget and when; goods to sell → condition and lowest price; services they offer → price per job and when they're free.
+For a service they need, also ask about the job size if it isn't clear (e.g. how big the yard, one or two stories).
+If anything is missing, ask for all of it in one short question. Otherwise question is null.`,
   });
+  const gaps = cards.flatMap(missing);
+  return { cards, question: question ?? (gaps.length ? `Quick question: ${gaps.join(", ")}?` : null) };
 }

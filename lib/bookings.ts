@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import { notify } from "@/lib/notifications/notify";
 
 // When a deal is agreed with a time, put it on both people's calendars as tentative.
 // It is final once both confirm: the payer by placing the PayPal hold, the other side with "Confirm time".
@@ -26,7 +27,7 @@ export async function bookAgreedDeal(roomId: string) {
   if (existing.length) {
     await db.update(schema.bookings).set({ startsAt: start, endsAt: end }).where(eq(schema.bookings.roomId, roomId));
     for (const row of existing.filter((b) => !b.confirmedAt)) {
-      await db.insert(schema.notifications).values({ userId: row.userId, title: "New time to confirm", body: `${row.title}, ${when}`, link: `/rooms/${roomId}` });
+      await notify(row.userId, "New time to confirm", `${row.title}, ${when}.`, roomId);
     }
     console.log("[booking] moved", start.toISOString());
     return;
@@ -36,12 +37,9 @@ export async function bookAgreedDeal(roomId: string) {
     { userId: room.sellerId, roomId, dealId: room.dealId, startsAt: start, endsAt: end, title: service ? `${item.title} for ${first(room.buyerId)}` : `Hand off ${what} to ${first(room.buyerId)}` },
     { userId: room.buyerId, roomId, dealId: room.dealId, startsAt: start, endsAt: end, title: service ? `${first(room.sellerId)}: ${what}` : `Pick up ${what} from ${first(room.sellerId)}` },
   ]);
-  await db.insert(schema.notifications).values({
-    userId: room.sellerId,
-    title: "Confirm the time",
-    body: `${service ? `${item.title} for ${first(room.buyerId)}` : `Hand off ${what} to ${first(room.buyerId)}`}, ${when}`,
-    link: `/rooms/${roomId}`,
-  });
+  const price = `$${Number(room.agreedPrice).toFixed(0)}`;
+  await notify(room.sellerId, `Deal with ${first(room.buyerId)} at ${price}`, `${service ? `${item.title} for ${first(room.buyerId)}` : `Hand off ${what} to ${first(room.buyerId)}`}, ${when}. Please confirm the time.`, roomId);
+  await notify(room.buyerId, `Deal with ${first(room.sellerId)} at ${price}`, `${service ? `${first(room.sellerId)}: ${what}` : `Pick up ${what} from ${first(room.sellerId)}`}, ${when}. Holding the payment confirms it.`, roomId);
   console.log("[booking] booked both sides (tentative)", start.toISOString());
 }
 

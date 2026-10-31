@@ -101,7 +101,7 @@ export const memoryFacts = [
 ];
 
 export const notifications = [
-  { userId: "maya", title: "3 people want a sectional like yours", body: "Ben, Bella and Omar are looking nearby. Your sectional is still private. Open it to offers?", link: "/vault" },
+  { userId: "maya", title: "3 people want a sectional like yours", body: "Ben, Bella and Omar are looking nearby, and it's still private. Since you're also buying a smaller sofa and need a mover, I can plan your whole moving day. Open My stuff ▸", link: "/vault" },
 ];
 
 // Marco already has a job Saturday morning; his agent must schedule around it.

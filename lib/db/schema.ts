@@ -177,6 +177,8 @@ export const notifications = pgTable("notifications", {
   title: text("title").notNull(),
   body: text("body").notNull(),
   link: text("link"),
+  roomId: uuid("room_id").references(() => negotiations.id), // the deal this is about; the inbox shows its next step
+  fromMe: boolean("from_me").default(false).notNull(), // what the owner told their agent
   read: boolean("read").default(false).notNull(),
   createdAt: createdAt(),
 });

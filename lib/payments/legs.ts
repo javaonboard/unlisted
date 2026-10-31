@@ -6,6 +6,7 @@ import { createAuthorizeOrder, authorizeOrder } from "@/lib/paypal/orders";
 import { captureAuthorization, voidAuthorization } from "@/lib/paypal/payments";
 import { sendPayout } from "@/lib/paypal/payouts";
 import { confirmTime, waitingOn } from "@/lib/bookings";
+import { notify } from "@/lib/notifications/notify";
 
 const FEE = 0.05; // Unlisted keeps 5% of each payout
 const money = (n: number) => n.toFixed(2);
@@ -76,6 +77,10 @@ export async function holdPayment(orderId: string, payerId: string) {
   for (const leg of legs) if (leg.roomId) await confirmTime(leg.roomId, payerId); // paying is saying yes to the time
   const total = legs.reduce((sum, l) => sum + Number(l.amount), 0);
   await say(legs[0].dealId, payerId, `💳 PayPal hold placed: $${total.toFixed(0)} for ${legs.map((l) => l.description).join(" + ")}. Not charged yet.`, { orderId, authorizationId });
+  for (const leg of legs) {
+    await notify(payerId, "💳 Payment held", `$${Number(leg.amount).toFixed(0)} is held by PayPal, not charged. It goes through when you confirm the handoff.`, leg.roomId);
+    await notify(leg.payeeId, "💳 They paid into hold", `$${Number(leg.amount).toFixed(0)} is held by PayPal. Show your code at the handoff to get paid.`, leg.roomId);
+  }
 }
 
 // The payer got the item or the job is done: take the money and pay the other side.
@@ -92,6 +97,7 @@ export async function confirmHandoff(legId: string, payerId: string, code: strin
   const { captureId } = await captureAuthorization(leg.authorizationId!, leg.amount, final);
   await db.update(schema.dealLegs).set({ captureId, status: "captured", handoffAt: new Date() }).where(eq(schema.dealLegs.id, legId));
   await say(leg.dealId, payerId, `🤝 Handoff confirmed for ${leg.description}. PayPal captured $${Number(leg.amount).toFixed(0)}.`, { legId, captureId });
+  await notify(payerId, "🤝 Handoff done", `PayPal charged $${Number(leg.amount).toFixed(0)}.`, leg.roomId);
 
   const [payee] = await db.select().from(schema.users).where(eq(schema.users.id, leg.payeeId));
   const payout = Number(leg.amount) * (1 - FEE);
@@ -99,6 +105,7 @@ export async function confirmHandoff(legId: string, payerId: string, code: strin
   const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`);
   await db.update(schema.dealLegs).set({ payoutBatchId: batchId, status: "paid_out" }).where(eq(schema.dealLegs.id, legId));
   await say(leg.dealId, leg.payeeId, `💸 Paid out $${payout.toFixed(2)} to ${payee.name.split(" ")[0]} (after Unlisted's ${FEE * 100}% fee).`, { legId, batchId });
+  await notify(leg.payeeId, "💸 You got paid", `$${payout.toFixed(2)} sent to your PayPal (after Unlisted's ${FEE * 100}% fee).`, leg.roomId);
 }
 
 // Before any handoff, a payer can cancel: the whole hold is released.
@@ -114,4 +121,8 @@ export async function cancelHold(dealId: string, payerId: string) {
   await voidAuthorization(held[0].authorizationId!);
   await db.update(schema.dealLegs).set({ status: "voided" }).where(inArray(schema.dealLegs.id, held.map((l) => l.id)));
   await say(dealId, payerId, "↩️ Hold released. Nothing was charged.");
+  for (const leg of held) {
+    await notify(payerId, "↩️ Hold released", "Nothing was charged.", leg.roomId);
+    await notify(leg.payeeId, "↩️ They cancelled", "The buyer released the hold before the handoff. Nothing was charged.", leg.roomId);
+  }
 }

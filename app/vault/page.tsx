@@ -69,7 +69,7 @@ async function MyStuff() {
         </Link>
       ))}
 
-      <TellAgent />
+      <div className="mb-6"><TellAgent /></div>
       <PhotoToVault />
 
       {itemGrid("Things I have", "Nothing yet. Snap a photo of a room or garage.", items.filter((i) => i.kind === "goods"))}

@@ -18,7 +18,7 @@ export async function postNeed(ownerId: string, need: NewNeed) {
       text: need.text,
       category: need.category,
       maxPrice: need.maxPrice?.toFixed(2),
-      dueAt: need.dueInDays ? new Date(Date.now() + need.dueInDays * 86_400_000) : null,
+      dueAt: need.dueInDays != null ? new Date(Date.now() + Math.max(1, need.dueInDays) * 86_400_000) : null,
     })
     .returning();
   await publish("need.posted", { needId: row.id });

@@ -10,6 +10,7 @@ type NewItem = {
   estimatedValue?: number;
   minPrice?: number;
   openToOffers?: boolean;
+  details?: Record<string, unknown>;
 };
 
 // New things start private. Nobody sees them until the owner says yes to a buyer.
@@ -25,6 +26,7 @@ export async function addVaultItem(ownerId: string, item: NewItem) {
       estimatedValue: item.estimatedValue?.toFixed(2),
       minPrice: item.minPrice?.toFixed(2),
       openToOffers: item.openToOffers ?? false,
+      details: item.details ?? {},
     })
     .returning();
   await publish("vault.added", { itemId: row.id });
