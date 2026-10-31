@@ -1,4 +1,5 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
+import { distanceText } from "@/lib/places";
 import { db, schema } from "@/lib/db";
 import { meetingPoint, type MeetAt } from "@/lib/deals/meet";
 
@@ -9,6 +10,13 @@ async function names() {
   return Object.fromEntries(users.map((u) => [u.id, u.name]));
 }
 
+// How far apart two people are, roughly (neighborhood to neighborhood).
+async function apart(aId: string, bId: string) {
+  const people = await db.select({ id: schema.users.id, area: schema.users.area }).from(schema.users).where(inArray(schema.users.id, [aId, bId]));
+  const area = (id: string) => people.find((p) => p.id === id)?.area ?? "";
+  return distanceText(area(aId), area(bId));
+}
+
 // Each negotiation with who is on the other side and the latest price.
 async function summarize(rooms: Room[], viewerId: string) {
   const who = await names();
@@ -17,7 +25,7 @@ async function summarize(rooms: Room[], viewerId: string) {
       const moves = await db.select().from(schema.offers).where(eq(schema.offers.negotiationId, room.id));
       const last = moves.filter((m) => m.price && m.kind !== "ask_owner").sort((a, b) => b.round - a.round)[0];
       const otherId = room.buyerId === viewerId ? room.sellerId : room.buyerId;
-      return { room, other: who[otherId] ?? otherId, lastPrice: last?.price ?? null };
+      return { room, other: who[otherId] ?? otherId, lastPrice: last?.price ?? null, distance: await apart(viewerId, otherId) };
     }),
   );
 }
@@ -78,6 +86,7 @@ export async function getRoomView(roomId: string, viewerId: string) {
   return {
     leg,
     meet,
+    distance: await apart(room.buyerId, room.sellerId),
     payTotal: myPending.reduce((sum, l) => sum + Number(l.amount), 0),
     planSettled: all.length > 0 && !all.some((r) => r.status === "open" || r.status === "waiting_owner"),
     hasLegs: legs.length > 0,

@@ -29,7 +29,7 @@ async function Room({ params }: { params: Promise<{ id: string }> }) {
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
         <RoleBadge role={roleOf(data, viewerId)} />
         <StatusPill next={nextFor(data, viewerId)} />
-        <span className="text-sm text-muted-foreground">{roleOf(data, viewerId).title}</span>
+        <span className="text-sm text-muted-foreground">{roleOf(data, viewerId).title} · {data.distance}</span>
       </div>
 
       <div className="flex flex-col gap-1 rounded-2xl border p-2">

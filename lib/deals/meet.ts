@@ -2,23 +2,9 @@ import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { confirmTime } from "@/lib/bookings";
-import { milesBetween } from "@/lib/places";
+import { distanceText, publicSpot } from "@/lib/places";
 
 export type MeetAt = "seller_home" | "buyer_home" | "public";
-
-// Busy, well-lit public places for handing over goods. Demo data.
-const PUBLIC_SPOTS = [
-  { name: "East Austin rec center, front lobby", address: "211 Comal Example St, Austin, TX", area: "East Austin" },
-  { name: "Mueller town square, by the fountain", address: "1900 Aldrich Example St, Austin, TX", area: "Mueller" },
-  { name: "Hyde Park library, front steps", address: "4500 Duval Example St, Austin, TX", area: "Hyde Park" },
-  { name: "Windsor Park shopping center, front lot", address: "6700 Berkman Example Dr, Austin, TX", area: "Windsor Park" },
-];
-
-// The public spot that is easiest for both people.
-export function publicSpot(areaA: string, areaB: string) {
-  const trip = (spot: (typeof PUBLIC_SPOTS)[number]) => milesBetween(areaA, spot.area) + milesBetween(areaB, spot.area);
-  return [...PUBLIC_SPOTS].sort((x, y) => trip(x) - trip(y))[0];
-}
 
 // Where to meet. The street address is private, so it's only filled in when `reveal` is true
 // (both accepted and the payment is held).
@@ -29,11 +15,14 @@ export async function meetingPoint(room: { buyerId: string; sellerId: string }, 
 
   if (meetAt === "public") {
     const spot = publicSpot(person(room.buyerId)?.area ?? "", person(room.sellerId)?.area ?? "");
-    return { meetAt, label: `Public spot: ${spot.name}`, address: reveal ? spot.address : null };
+    const otherId = viewerId === room.buyerId ? room.sellerId : room.buyerId;
+    const trip = `${distanceText(person(viewerId)?.area ?? "", spot.area)} for you, ${distanceText(person(otherId)?.area ?? "", spot.area)} for ${first(otherId)}`;
+    return { meetAt, label: `Public spot: ${spot.name} (${trip})`, address: reveal ? spot.address : null };
   }
   const hostId = meetAt === "seller_home" ? room.sellerId : room.buyerId;
   const guestId = hostId === room.sellerId ? room.buyerId : room.sellerId;
-  const label = hostId === viewerId ? `Your place: ${first(guestId)} comes to you` : `${first(hostId)}'s place`;
+  const trip = distanceText(person(hostId)?.area ?? "", person(guestId)?.area ?? "");
+  const label = hostId === viewerId ? `Your place: ${first(guestId)} comes to you (${trip})` : `${first(hostId)}'s place (${trip} away)`;
   return { meetAt, label, address: reveal ? (person(hostId)?.address ?? null) : null };
 }
 

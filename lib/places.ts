@@ -20,3 +20,24 @@ export function milesBetween(a: string, b: string) {
 
 // A link that opens the address in Google Maps.
 export const mapsLink = (address: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+
+// Rough distance in words. Neighborhood to neighborhood on purpose, so nobody's exact spot shows.
+export function distanceText(a: string, b: string) {
+  if (a === b) return "same neighborhood";
+  const miles = milesBetween(a, b);
+  return miles < 1 ? "under a mile" : `about ${Math.round(miles)} mi`;
+}
+
+// Busy, well-lit public places for handing over goods. Demo data.
+const PUBLIC_SPOTS = [
+  { name: "East Austin rec center, front lobby", address: "211 Comal Example St, Austin, TX", area: "East Austin" },
+  { name: "Mueller town square, by the fountain", address: "1900 Aldrich Example St, Austin, TX", area: "Mueller" },
+  { name: "Hyde Park library, front steps", address: "4500 Duval Example St, Austin, TX", area: "Hyde Park" },
+  { name: "Windsor Park shopping center, front lot", address: "6700 Berkman Example Dr, Austin, TX", area: "Windsor Park" },
+];
+
+// The public spot that is easiest for both people.
+export function publicSpot(areaA: string, areaB: string) {
+  const trip = (spot: (typeof PUBLIC_SPOTS)[number]) => milesBetween(areaA, spot.area) + milesBetween(areaB, spot.area);
+  return [...PUBLIC_SPOTS].sort((x, y) => trip(x) - trip(y))[0];
+}

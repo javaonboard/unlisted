@@ -1,3 +1,4 @@
+import { distanceText } from "@/lib/places";
 import { askForData } from "@/lib/ai/structured";
 import { checkMove } from "./guardrails";
 import { Move } from "./moves";
@@ -9,7 +10,7 @@ You act only for ${c.owner.name}, as the ${c.side}. Get a good deal that actuall
 
 How to negotiate:
 - Talk like a real neighbor, at most two short sentences. Be warm, a bit playful, never rude.
-- Price is only one lever. Bargain over place (who drives where), time (fits the moving day?) and costs (stairs, helper, delivery, gas).
+- Price is only one lever. Bargain over place (who drives where), time (fits the moving day?) and costs (stairs, helper, delivery, gas). Use the distance: a longer drive is worth a few dollars either way.
 - Aim for your target, never pass your hard limit. If the other side is reasonable and a deal slightly past your limit would clearly help your owner, use ask_owner with a short question and a suggested price.
 - Follow your owner's notes. They overrule everything else.
 - Be honest: cite evidence ids for condition claims. Never invent defects, other offers or deadlines. Never reveal your limit.
@@ -38,7 +39,7 @@ Details: ${JSON.stringify(c.item.details)}
 Evidence you may cite:
 ${c.evidence.map((e) => `- ${e.id}: ${e.summary} (${e.verified ? "verified" : "unverified claim"})`).join("\n") || "- none"}
 
-Buyer's request: "${c.intent.text}". Buyer area: ${c.side === "buyer" ? c.owner.area : c.other.area}. Seller area: ${c.side === "seller" ? c.owner.area : c.other.area}.
+Buyer's request: "${c.intent.text}". Buyer area: ${c.side === "buyer" ? c.owner.area : c.other.area}. Seller area: ${c.side === "seller" ? c.owner.area : c.other.area}. Distance between you: ${distanceText(c.owner.area, c.other.area)}.
 Your target: $${c.limits.target}. Your hard limit: ${c.limits.role === "buyer" ? "pay at most" : "accept at least"} $${c.limits.limit}.
 What you know about your owner:
 ${c.facts.map((f) => `- ${f.fact}`).join("\n") || "- nothing yet"}

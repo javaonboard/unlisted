@@ -19,6 +19,7 @@ export async function RoomActions({ roomId, viewerId }: { roomId: string; viewer
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <RoleBadge role={role} />
         <StatusPill next={next} />
+        <span className="text-muted-foreground">{data.distance}</span>
       </div>
       {room.status === "waiting_owner" && question && (
         <>
