@@ -6,7 +6,7 @@ export const Move = z.object({
   action: z.enum(["offer", "counter", "question", "accept", "reject", "walk_away", "ask_owner"]),
   price: z.number().nullable().describe("USD. Required for offer and counter."),
   when: z.string().nullable().describe("Proposed time in plain words, e.g. 'Sat 10am'"),
-  slotStart: z.string().nullable().describe("Services only: ISO start time of the proposed slot"),
+  slotStart: z.string().nullable().describe("ISO start time of the handoff or job"),
   place: z.string().nullable().describe("Where the handoff or job happens, e.g. 'buyer picks up in East Austin'"),
   costs: z.string().nullable().describe("Extra costs and who pays, e.g. 'buyer brings a helper for the stairs'"),
   extras: z.array(z.string()).describe("Things added to the deal, e.g. 'includes cushions'"),
