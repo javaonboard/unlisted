@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { FormattedText } from "@/components/FormattedText";
 import { Bot, Check, CircleAlert } from "lucide-react";
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
@@ -74,7 +75,7 @@ async function Inbox() {
           return (
             <Bubble key={n.id} id={anchor(item)} at={n.createdAt} needsYou={!!n.roomId && latest.get(n.roomId) === n.id && needs.roomIds.includes(n.roomId)}>
               {n.title && <p className="font-medium">{n.title}</p>}
-              <p className="text-muted-foreground">{n.body}</p>
+              <FormattedText text={n.body} className="text-muted-foreground" />
               {n.roomId && latest.get(n.roomId) === n.id ? (
                 <RoomActions roomId={n.roomId} viewerId={userId} />
               ) : n.link ? (

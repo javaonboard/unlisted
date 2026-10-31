@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { FormattedText } from "@/components/FormattedText";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { currentUserId } from "@/lib/session";
@@ -50,7 +51,7 @@ async function Channel({ params }: { params: Promise<{ id: string }> }) {
       <section className="flex flex-col overflow-y-auto p-4">
         <h1 className="mb-3 text-lg font-semibold"># {deal.title.toLowerCase().replace(/\s+/g, "-")}</h1>
         {deal.scoutNote && deal.ownerId === viewerId && (
-          <p className="mb-3 rounded-xl bg-accent px-3 py-2 text-sm"><span className="font-medium">Your scout:</span> {deal.scoutNote}</p>
+          <div className="mb-3 rounded-xl bg-accent px-3 py-2 text-sm"><span className="font-medium">Your scout:</span> <FormattedText text={deal.scoutNote} className="mt-1" /></div>
         )}
         {messages.length === 0 && <p className="text-sm text-muted-foreground">Agents are joining…</p>}
         <div className="flex flex-col gap-1">

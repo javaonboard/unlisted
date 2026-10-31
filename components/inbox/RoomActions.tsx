@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FormattedText } from "@/components/FormattedText";
 import { getRoomView } from "@/lib/anchors/queries";
 import { nextFor, roleOf } from "@/lib/anchors/next";
 import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
@@ -23,7 +24,7 @@ export async function RoomActions({ roomId, viewerId }: { roomId: string; viewer
       </div>
       {room.status === "waiting_owner" && question && (
         <>
-          <p className="mt-1 text-muted-foreground">{question.note}</p>
+          <FormattedText text={question.note ?? ""} className="mt-1 text-muted-foreground" />
           <OwnerQuestion roomId={room.id} suggestedPrice={question.price ? Number(question.price) : null} />
         </>
       )}

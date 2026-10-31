@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/db/activity";
 import { loadTurnContext } from "./context";
 import { decideMove } from "./agent";
 import { toA2AMessage, type Move } from "./moves";
+import { claimAgreement } from "./claim";
 
 type NewRoom = { id?: string; dealId?: string; dependsOn?: string[]; label?: string; buyerId: string; sellerId: string; itemId: string; intentId: string };
 
@@ -77,13 +78,16 @@ export async function playTurn(roomId: string): Promise<boolean> {
   console.log(`[room] ${roomId.slice(0, 8)} round ${round} ${side}: ${move.action}${price ? ` $${price}` : ""}`);
 
   const closing = ["accept", "reject", "walk_away"].includes(move.action) || round >= room.maxRounds;
+  if (move.action === "accept") {
+    await claimAgreement(roomId, round, price?.toFixed(2)); // only one deal per goods or need
+    return false;
+  }
   await db
     .update(schema.negotiations)
     .set({
       round,
-      status: move.action === "accept" ? "agreed" : closing ? "closed" : "open",
-      agreedPrice: move.action === "accept" ? price?.toFixed(2) : undefined,
-      closedReason: closing && move.action !== "accept" ? (round >= room.maxRounds ? "round limit" : move.action) : undefined,
+      status: closing ? "closed" : "open",
+      closedReason: closing ? (round >= room.maxRounds ? "round limit" : move.action) : undefined,
     })
     .where(eq(schema.negotiations.id, roomId));
 
@@ -110,15 +114,14 @@ export async function recordOutsideMove(roomId: string, fromUserId: string, move
     a2a,
   });
 
-  const closing = ["accept", "reject", "walk_away"].includes(move.action) || round >= room.maxRounds;
+  if (move.action === "accept") {
+    await claimAgreement(roomId, round, price?.toFixed(2));
+    return;
+  }
+  const closing = ["reject", "walk_away"].includes(move.action) || round >= room.maxRounds;
   await db
     .update(schema.negotiations)
-    .set({
-      round,
-      status: move.action === "accept" ? "agreed" : closing ? "closed" : "open",
-      agreedPrice: move.action === "accept" ? price?.toFixed(2) : undefined,
-      closedReason: closing && move.action !== "accept" ? move.action : undefined,
-    })
+    .set({ round, status: closing ? "closed" : "open", closedReason: closing ? move.action : undefined })
     .where(eq(schema.negotiations.id, roomId));
 }
 

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { FormattedText } from "@/components/FormattedText";
 import Link from "next/link";
 import { and, asc, eq, inArray, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
@@ -59,7 +60,7 @@ async function MyStuff() {
       {activePlans.map((p) => (
         <Link key={p.id} href={`/deals/${p.id}`} className="mb-6 block rounded-2xl bg-accent p-4 text-sm hover:bg-accent/70">
           <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Plan: <span className="font-medium">{p.title}</span> · see every part, the total and Saturday&apos;s timeline <ChevronRight className="size-4" /></span>
-          {p.scoutNote && <span className="mt-2 flex gap-2 text-muted-foreground"><Compass className="mt-0.5 size-4 shrink-0" /> {p.scoutNote}</span>}
+          {p.scoutNote && <div className="mt-2 flex gap-2 text-muted-foreground"><Compass className="mt-0.5 size-4 shrink-0" /> <FormattedText text={p.scoutNote} /></div>}
         </Link>
       ))}
 

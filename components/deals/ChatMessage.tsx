@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FormattedText } from "@/components/FormattedText";
 import { Clock, DollarSign, MapPin, Receipt } from "lucide-react";
 import { OwnerQuestion } from "./OwnerQuestion";
 
@@ -40,7 +41,7 @@ export function ChatMessage({ m, viewerId, name, thread, waiting }: { m: Message
           {thread && <Link href={`/rooms/${m.negotiationId}`} className="rounded-full border px-2 hover:bg-muted">{thread}</Link>}
           <span>{label[m.kind] ?? m.kind}</span>
         </div>
-        <p className="text-sm">{m.note}</p>
+        <FormattedText text={m.note ?? ""} className="text-sm" />
         <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
           {m.price && !fromOwner && <span className={chip}><DollarSign className="size-3" />{Number(m.price).toFixed(0)}</span>}
           {t.when && <span className={chip}><Clock className="size-3" />{t.when}</span>}
