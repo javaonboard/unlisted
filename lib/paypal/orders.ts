@@ -7,6 +7,10 @@ import { paypalClient } from "./client";
 
 const orders = () => new OrdersController(paypalClient());
 
+// Where PayPal sends the buyer back if the popup falls back to a full-page redirect.
+// Render sets RENDER_EXTERNAL_URL to the public address.
+const appUrl = () => process.env.RENDER_EXTERNAL_URL ?? "http://localhost:3000";
+
 type NewOrder = {
   amount: string; // "210.00"
   payeeEmail?: string; // who receives the money (empty = the platform)
@@ -30,8 +34,8 @@ export async function createAuthorizeOrder(order: NewOrder) {
       paymentSource: {
         paypal: {
           experienceContext: {
-            returnUrl: order.returnUrl ?? "http://localhost:3000/paypal/return",
-            cancelUrl: order.returnUrl ?? "http://localhost:3000/paypal/return",
+            returnUrl: order.returnUrl ?? `${appUrl()}/`,
+            cancelUrl: order.returnUrl ?? `${appUrl()}/`,
           },
         },
       },
@@ -50,7 +54,7 @@ export async function createAuthorizeOrder(order: NewOrder) {
 export async function authorizeOrder(orderId: string) {
   const { result } = await orders().authorizeOrder({
     id: orderId,
-    paypalRequestId: randomUUID(),
+    paypalRequestId: `authorize-${orderId}`, // a retry cannot place a second hold
   });
 
   const authorization =

@@ -12,10 +12,11 @@ export async function captureAuthorization(
   authorizationId: string,
   amount?: string,
   final = true,
+  requestId: string = randomUUID(), // pass a stable one (per leg) so a retry cannot capture twice
 ) {
   const { result } = await payments().captureAuthorizedPayment({
     authorizationId,
-    paypalRequestId: randomUUID(),
+    paypalRequestId: requestId,
     body: { amount: amount ? usd(amount) : undefined, finalCapture: final },
   });
   console.log("[paypal] captured", authorizationId, result.id, result.status);
@@ -26,7 +27,7 @@ export async function captureAuthorization(
 export async function voidAuthorization(authorizationId: string) {
   await payments().voidPayment({
     authorizationId,
-    paypalRequestId: randomUUID(),
+    paypalRequestId: `void-${authorizationId}`,
   });
   console.log("[paypal] voided", authorizationId);
 }

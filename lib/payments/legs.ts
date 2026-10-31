@@ -107,7 +107,7 @@ export async function confirmHandoff(legId: string, payerId: string, code: strin
   const sameHold = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.authorizationId, leg.authorizationId!));
   const final = sameHold.every((l) => l.id === leg.id || l.status !== "held");
 
-  const { captureId } = await captureAuthorization(leg.authorizationId!, leg.amount, final);
+  const { captureId } = await captureAuthorization(leg.authorizationId!, leg.amount, final, `capture-${leg.id}`);
   await db.update(schema.dealLegs).set({ captureId, status: "captured", handoffAt: new Date() }).where(eq(schema.dealLegs.id, legId));
   await say(leg.dealId, payerId, `Handoff confirmed for ${leg.description}. PayPal captured $${Number(leg.amount).toFixed(0)}.`, { legId, captureId });
   await notify(payerId, "Handoff done", `PayPal charged $${Number(leg.amount).toFixed(0)}.`, leg.roomId);
@@ -115,7 +115,7 @@ export async function confirmHandoff(legId: string, payerId: string, code: strin
   const [payee] = await db.select().from(schema.users).where(eq(schema.users.id, leg.payeeId));
   const payout = payoutOf(Number(leg.amount));
   if (!payee.paypalEmail) return;
-  const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`);
+  const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`, leg.id);
   await db.update(schema.dealLegs).set({ payoutBatchId: batchId, status: "paid_out" }).where(eq(schema.dealLegs.id, legId));
   await say(leg.dealId, leg.payeeId, `Paid out $${payout.toFixed(2)} to ${payee.name.split(" ")[0]} (after Unlisted's ${FEE * 100}% fee).`, { legId, batchId });
   await notify(leg.payeeId, "You got paid", `$${payout.toFixed(2)} sent to your PayPal (after Unlisted's ${FEE * 100}% fee).`, leg.roomId);
@@ -130,14 +130,14 @@ export async function confirmReturn(legId: string, payeeId: string, goodShape: b
 
   const sameHold = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.authorizationId, leg.authorizationId!));
   const final = sameHold.every((l) => l.id === leg.id || !["held", "in_use"].includes(l.status));
-  const { captureId } = await captureAuthorization(leg.authorizationId!, money(take), final);
+  const { captureId } = await captureAuthorization(leg.authorizationId!, money(take), final, `capture-${leg.id}`);
   await db.update(schema.dealLegs).set({ captureId, status: "captured" }).where(eq(schema.dealLegs.id, legId));
   await notify(leg.payerId, goodShape ? "Returned, deposit released" : "Returned with a problem", goodShape ? `PayPal charged the $${take.toFixed(0)} fee and released your deposit.` : `The owner kept the deposit. PayPal charged $${take.toFixed(0)}.`, leg.roomId);
 
   const [payee] = await db.select().from(schema.users).where(eq(schema.users.id, leg.payeeId));
   const payout = payoutOf(take);
   if (!payee.paypalEmail) return;
-  const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`);
+  const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`, leg.id);
   await db.update(schema.dealLegs).set({ payoutBatchId: batchId, status: "paid_out" }).where(eq(schema.dealLegs.id, legId));
   await notify(leg.payeeId, "You got paid", `$${payout.toFixed(2)} sent to your PayPal (after Unlisted's ${FEE * 100}% fee).`, leg.roomId);
 }
