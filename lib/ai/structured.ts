@@ -1,13 +1,13 @@
 import type { z } from "zod";
 import type Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { claude, MODELS } from "./client";
+import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
+import { claude, FALLBACK, MODELS } from "./client";
 import { checkAiLimits, recordAiUsage } from "./limits";
 
 type Options<T extends z.ZodType> = {
   schema: T;
   system?: string;
-  content: Anthropic.MessageParam["content"];
+  content: Anthropic.Beta.BetaMessageParam["content"];
   model?: (typeof MODELS)[keyof typeof MODELS];
   ip?: string;
 };
@@ -18,13 +18,13 @@ export async function askForData<T extends z.ZodType>(options: Options<T>): Prom
   await checkAiLimits(options.ip);
 
   const model = options.model ?? MODELS.main;
-  const message = await claude().messages.parse({
+  const message = await claude().beta.messages.parse({
     model,
     max_tokens: 4000,
-    // Haiku does not take an effort setting.
-    output_config: model === MODELS.small
-      ? { format: zodOutputFormat(options.schema) }
-      : { effort: "low", format: zodOutputFormat(options.schema) },
+    // Haiku does not take an effort setting. The main model can fall back to another if a request is refused.
+    ...(model === MODELS.small
+      ? { output_config: { format: betaZodOutputFormat(options.schema) } }
+      : { output_config: { effort: "low" as const, format: betaZodOutputFormat(options.schema) }, ...FALLBACK }),
     system: options.system,
     messages: [{ role: "user", content: options.content }],
   });
