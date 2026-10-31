@@ -48,9 +48,9 @@ export function nextFor(data: RoomView, viewerId: string): Next {
   const accepted = !data.waitingOn.includes(viewerId);
   if (isPlan && deal.ownerId === viewerId) {
     if (!data.hasLegs) return data.planSettled ? { state: "needs_you", label: "Approve the plan" } : { state: "waiting", label: "Waiting for the rest of the plan" };
-    if (!accepted) return { state: "needs_you", label: "Accept the time" };
+    if (!accepted) return { state: "needs_you", label: "Accept the time and place" };
   } else if (!accepted) {
-    return { state: "needs_you", label: isPlan || data.hasLegs ? "Accept the time" : "Accept the deal" };
+    return { state: "needs_you", label: isPlan || data.hasLegs ? "Accept the time and place" : "Accept the deal" };
   } else if (!data.hasLegs) {
     return { state: "waiting", label: isPlan ? `Waiting for ${first(deal.ownerId)} to approve` : `Waiting for ${other} to accept` };
   }
@@ -59,7 +59,7 @@ export function nextFor(data: RoomView, viewerId: string): Next {
     return leg.payerId === viewerId ? { state: "needs_you", label: "Hold the payment" } : { state: "waiting", label: `Waiting for ${first(leg.payerId)} to pay` };
   }
   const notMe = data.waitingOn.filter((id) => id !== viewerId);
-  if (notMe.length) return { state: "waiting", label: `Waiting for ${notMe.map(first).join(" and ")} to accept the time` };
+  if (notMe.length) return { state: "waiting", label: `Waiting for ${notMe.map(first).join(" and ")} to accept the time and place` };
 
   const when = data.booking ? data.booking.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" }) : "soon";
   return { state: "upcoming", label: `Handoff ${when}` };

@@ -1,0 +1,1 @@
+ALTER TABLE "negotiations" ADD COLUMN "meet_at" text;

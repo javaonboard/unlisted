@@ -7,6 +7,7 @@ import { currentUserId } from "@/lib/session";
 import { startLinkedDeal } from "@/lib/deals/planner";
 import { applyOwnerReply, askForNewTime } from "@/lib/negotiation/owner";
 import { acceptDeal } from "@/lib/deals/accept";
+import { changeMeetAt, type MeetAt } from "@/lib/deals/meet";
 import { playRoom } from "@/lib/negotiation/room";
 
 export async function planMovingDay() {
@@ -30,5 +31,10 @@ export async function acceptDealAction(roomId: string) {
 export async function changeTimeAction(roomId: string, words: string) {
   await askForNewTime(roomId, await currentUserId(), words);
   after(() => playRoom(roomId).catch((e) => console.error("[room] failed", roomId, e?.message)));
+  revalidatePath("/", "layout");
+}
+
+export async function changeMeetAtAction(roomId: string, meetAt: MeetAt) {
+  await changeMeetAt(roomId, await currentUserId(), meetAt);
   revalidatePath("/", "layout");
 }

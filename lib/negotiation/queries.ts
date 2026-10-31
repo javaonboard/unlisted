@@ -9,7 +9,7 @@ export async function listRooms(userId: string) {
     .orderBy(desc(schema.negotiations.createdAt));
 
   const items = await db.select().from(schema.vaultItems);
-  const users = await db.select().from(schema.users);
+  const users = await publicUsers();
   return rooms.map((room) => ({
     ...room,
     item: items.find((i) => i.id === room.itemId),
@@ -25,7 +25,7 @@ export async function getRoom(roomId: string) {
   const [[item], [intent], users, moves] = await Promise.all([
     db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!)),
     db.select().from(schema.intents).where(eq(schema.intents.id, room.intentId!)),
-    db.select().from(schema.users),
+    publicUsers(),
     db.select().from(schema.offers).where(eq(schema.offers.negotiationId, roomId)).orderBy(asc(schema.offers.round)),
   ]);
 
@@ -37,4 +37,9 @@ export async function getRoom(roomId: string) {
     buyer: users.find((u) => u.id === room.buyerId)!,
     seller: users.find((u) => u.id === room.sellerId)!,
   };
+}
+
+// Only what anyone may see about a person. Emails, addresses and connector keys stay out.
+function publicUsers() {
+  return db.select({ id: schema.users.id, name: schema.users.name, area: schema.users.area }).from(schema.users);
 }

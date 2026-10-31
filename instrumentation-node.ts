@@ -2,6 +2,7 @@ import { listen } from "./lib/events/bus";
 import { onNeedPosted, onVaultAdded, runDueWaves } from "./lib/suggestions/engine";
 import { runTimeouts } from "./lib/jobs/timeouts";
 import { resumeStuckRooms } from "./lib/negotiation/resume";
+import { remindToday } from "./lib/jobs/reminders";
 
 // React to new needs and vault items the moment they are saved.
 await listen(async (type, payload) => {
@@ -9,8 +10,10 @@ await listen(async (type, payload) => {
   if (type === "vault.added") await onVaultAdded(payload.itemId);
 });
 
-// Every 10 minutes: needs nobody answered widen to the next wave, and rooms a restart stopped carry on.
+// Every 10 minutes: needs nobody answered widen to the next wave, rooms a restart stopped carry on,
+// and people with a handoff today get a reminder.
 setInterval(() => {
+  remindToday().catch((e) => console.error("[reminders] failed", e?.message));
   runDueWaves().catch((e) => console.error("[waves] failed", e?.message));
   resumeStuckRooms().catch((e) => console.error("[resume] failed", e?.message));
 }, 10 * 60 * 1000);

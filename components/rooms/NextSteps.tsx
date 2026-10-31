@@ -5,6 +5,9 @@ import { PayButton } from "@/components/payments/PayButton";
 import { ConfirmHandoff } from "@/components/payments/LegActions";
 import { AcceptDeal } from "@/components/rooms/AcceptDeal";
 import { FEE, feeOf, money, payoutOf } from "@/lib/payments/fees";
+import { MapPin } from "lucide-react";
+import { mapsLink } from "@/lib/places";
+import type { MeetAt } from "@/lib/deals/meet";
 
 type Props = {
   roomId: string;
@@ -22,7 +25,10 @@ type Props = {
   booking: { startsAt: Date; endsAt: Date } | null;
   waitingOn: string[];
   price: number;
+  meet: { meetAt: MeetAt; label: string; address: string | null } | null;
+  isSeller: boolean;
   buyerId: string;
+  sellerId: string;
   clientId: string;
 };
 
@@ -49,10 +55,10 @@ export function NextSteps(p: Props) {
       <p className="mb-3 font-medium">Next steps</p>
       <ol className="flex flex-col gap-3">
         <li>
-          <span className={stepOneDone ? done : ""}>1. {p.isPlan && p.isPlanOwner ? "Approve the plan" : p.isPlan || p.hasLegs ? "Accept the time" : "Accept the deal"}</span>
+          <span className={stepOneDone ? done : ""}>1. {p.isPlan && p.isPlanOwner ? "Approve the plan" : p.isPlan || p.hasLegs ? "Accept the time and place" : "Accept the deal"}</span>
           <p className="mt-1 text-muted-foreground">
             {p.booking ? `${p.booking.startsAt.toLocaleDateString("en-US", { weekday: "short" })} ${time(p.booking.startsAt)}–${time(p.booking.endsAt)}` : (p.when ?? "")}
-            {p.place ? ` · ${p.place}` : ""}
+            {p.meet ? ` · ${p.meet.label}` : p.place ? ` · ${p.place}` : ""}
             {p.booking && (p.waitingOn.length === 0 ? " · accepted by both" : others ? ` · waiting for ${others}` : "")}
           </p>
           {!closed && p.isPlan && p.isPlanOwner && !p.hasLegs && (
@@ -64,7 +70,13 @@ export function NextSteps(p: Props) {
               )}
             </div>
           )}
-          {!closed && p.booking && <AcceptDeal roomId={p.roomId} canAccept={!accepted && !(p.isPlan && p.isPlanOwner && !p.hasLegs)} />}
+          {!closed && p.booking && p.meet && (
+            <AcceptDeal
+              roomId={p.roomId}
+              canAccept={!accepted && !(p.isPlan && p.isPlanOwner && !p.hasLegs)}
+              place={{ meetAt: p.meet.meetAt, isSeller: p.isSeller, other: p.first(p.isSeller ? p.buyerId : p.sellerId) }}
+            />
+          )}
           {p.isPlan && !p.isPlanOwner && accepted && !p.hasLegs && <p className="mt-1 text-muted-foreground">Waiting for the plan owner to approve</p>}
         </li>
 
@@ -85,6 +97,14 @@ export function NextSteps(p: Props) {
 
         <li className={handedOff ? done : ""}>
           3. Hand off, then PayPal pays out
+          {p.meet?.address ? (
+            <p className="mt-1 flex flex-wrap items-center gap-1">
+              <MapPin className="size-4 text-primary" /> {p.meet.label} · {p.meet.address} ·{" "}
+              <a href={mapsLink(p.meet.address)} target="_blank" rel="noreferrer" className="text-primary hover:underline">Open in Maps</a>
+            </p>
+          ) : (
+            !handedOff && leg?.status !== "voided" && <p className="mt-1 text-muted-foreground">The exact address shows here once the payment is held.</p>
+          )}
           {leg?.status === "held" && iGetPaid && <p className="mt-1">Show this code at the handoff: <span className="font-mono text-base font-semibold">{leg.handoffCode}</span></p>}
           {leg?.status === "held" && iPay && <ConfirmHandoff legId={leg.id} />}
           {leg?.status === "held" && iPay && (

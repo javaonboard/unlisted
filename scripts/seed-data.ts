@@ -2,19 +2,19 @@
 // Everyone else only lives in the database (other bidders, other providers).
 
 export const users = [
-  { id: "maya", name: "Maya Lee", area: "East Austin", paypalEmail: "unlisted-maya@personal.example.com", bio: "Moving across town on Saturday." },
-  { id: "sam", name: "Sam Ortiz", area: "Mueller", paypalEmail: "unlisted-seller@personal.example.com", bio: "Selling a navy loveseat." },
-  { id: "sara", name: "Sara Kim", area: "Hyde Park", paypalEmail: "unlisted-seller2@personal.example.com", bio: "Selling a beige sofa. Needs gutters cleaned." },
-  { id: "ben", name: "Ben Carter", area: "Cherrywood", paypalEmail: "unlisted-buyer@personal.example.com", bio: "First apartment: wants a sectional and gutter help." },
-  { id: "bella", name: "Bella Diaz", area: "Windsor Park", paypalEmail: "unlisted-buyer2@personal.example.com", bio: "Wants a big sofa and lawn mowing." },
-  { id: "omar", name: "Omar Haddad", area: "Holly", paypalEmail: null, bio: "Wants a sectional. Gutters overflowing." },
-  { id: "marco", name: "Marco Ruiz", area: "East Austin", paypalEmail: "unlisted-mover@business.example.com", bio: "Mover with a pickup truck. Weekends." },
-  { id: "dev", name: "Dev Kapoor", area: "Windsor Park", paypalEmail: null, bio: "Mover with a cargo van. Afternoons." },
-  { id: "gus", name: "Gus Patel", area: "Mueller", paypalEmail: null, bio: "Cleans gutters. Has a tall ladder." },
-  { id: "lily", name: "Lily Nguyen", area: "Cherrywood", paypalEmail: null, bio: "Mows lawns around the neighborhood." },
-  { id: "ivan", name: "Ivan Petrov", area: "Hyde Park", paypalEmail: null, bio: "IT help: Wi-Fi, TV mounting, PC builds." },
-  { id: "kai", name: "Kai Johnson", area: "Holly", paypalEmail: null, bio: "Wants a Quest 3. Owns a long ladder." },
-  { id: "priya", name: "Priya Shah", area: "Mueller", paypalEmail: null, bio: "Building a gaming PC. Needs an oil change." },
+  { id: "maya", name: "Maya Lee", area: "East Austin", address: "1418 Larkspur Example Ln, Apt 2B, Austin, TX", paypalEmail: "unlisted-maya@personal.example.com", bio: "Moving across town on Saturday." },
+  { id: "sam", name: "Sam Ortiz", area: "Mueller", address: "2207 Bluebonnet Example Ct, Austin, TX", paypalEmail: "unlisted-seller@personal.example.com", bio: "Selling a navy loveseat." },
+  { id: "sara", name: "Sara Kim", area: "Hyde Park", address: "4312 Oakmont Example Ave, Austin, TX", paypalEmail: "unlisted-seller2@personal.example.com", bio: "Selling a beige sofa. Needs gutters cleaned." },
+  { id: "ben", name: "Ben Carter", area: "Cherrywood", address: "3105 Pecan Example St, Unit 4, Austin, TX", paypalEmail: "unlisted-buyer@personal.example.com", bio: "First apartment: wants a sectional and gutter help." },
+  { id: "bella", name: "Bella Diaz", area: "Windsor Park", address: "6021 Cedar Example Dr, Austin, TX", paypalEmail: "unlisted-buyer2@personal.example.com", bio: "Wants a big sofa and lawn mowing." },
+  { id: "omar", name: "Omar Haddad", area: "Holly", address: "1904 Riverbend Example Rd, Austin, TX", paypalEmail: null, bio: "Wants a sectional. Gutters overflowing." },
+  { id: "marco", name: "Marco Ruiz", area: "East Austin", address: "1120 Mesquite Example St, Austin, TX", paypalEmail: "unlisted-mover@business.example.com", bio: "Mover with a pickup truck. Weekends." },
+  { id: "dev", name: "Dev Kapoor", area: "Windsor Park", address: "5815 Juniper Example Way, Austin, TX", paypalEmail: null, bio: "Mover with a cargo van. Afternoons." },
+  { id: "gus", name: "Gus Patel", area: "Mueller", address: "2410 Sage Example Ln, Austin, TX", paypalEmail: null, bio: "Cleans gutters. Has a tall ladder." },
+  { id: "lily", name: "Lily Nguyen", area: "Cherrywood", address: "3300 Willow Example St, Austin, TX", paypalEmail: null, bio: "Mows lawns around the neighborhood." },
+  { id: "ivan", name: "Ivan Petrov", area: "Hyde Park", address: "4708 Elm Example Ave, Austin, TX", paypalEmail: null, bio: "IT help: Wi-Fi, TV mounting, PC builds." },
+  { id: "kai", name: "Kai Johnson", area: "Holly", address: "2001 Magnolia Example Ct, Austin, TX", paypalEmail: null, bio: "Wants a Quest 3. Owns a long ladder." },
+  { id: "priya", name: "Priya Shah", area: "Mueller", address: "2650 Aspen Example Dr, Austin, TX", paypalEmail: null, bio: "Building a gaming PC. Needs an oil change." },
 ];
 
 export const mandates = users.map((u) => ({

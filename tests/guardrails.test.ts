@@ -5,7 +5,7 @@ import type { Move } from "@/lib/negotiation/moves";
 
 const sat9 = "2026-10-31T14:00:00.000Z";
 const move = (m: Partial<Move>): Move =>
-  ({ action: "offer", price: 200, when: null, slotStart: sat9, place: null, costs: null, extras: [], evidenceIds: [], message: "hi", askOwner: null, reasoning: "", signalsUsed: [], ...m }) as Move;
+  ({ action: "offer", price: 200, when: null, slotStart: sat9, place: null, meetAt: null, costs: null, extras: [], evidenceIds: [], message: "hi", askOwner: null, reasoning: "", signalsUsed: [], ...m }) as Move;
 const rules = (r: Partial<Parameters<typeof checkMove>[1]> = {}) => ({
   limits: { role: "buyer" as const, limit: 250, target: 210 },
   evidenceIds: ["ev1"],

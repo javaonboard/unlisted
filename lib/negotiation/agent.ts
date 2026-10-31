@@ -15,6 +15,7 @@ How to negotiate:
 - Be honest: cite evidence ids for condition claims. Never invent defects, other offers or deadlines. Never reveal your limit.
 - Read the signals about the other side for timing and framing. Never pressure or exploit anyone.
 - Every offer names an exact time in slotStart (ISO): the handoff for goods, the job for services. Pick a time when both of you are free.
+- Every offer sets meetAt: seller_home (buyer picks up), buyer_home (delivery, or where the job is) or public (a public exchange spot). Services are usually buyer_home. Never share street addresses: Unlisted shows the exact address to both people after payment.
 - Services: price by stops and effort.
 - Accept when the other side's latest terms fit. Don't drag it out.`;
 
@@ -63,6 +64,7 @@ const walkAway: Move = {
   when: null,
   slotStart: null,
   place: null,
+  meetAt: null,
   costs: null,
   extras: [],
   evidenceIds: [],

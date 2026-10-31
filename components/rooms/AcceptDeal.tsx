@@ -2,12 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { acceptDealAction, changeTimeAction } from "@/app/actions/deals";
+import { acceptDealAction, changeMeetAtAction, changeTimeAction } from "@/app/actions/deals";
+import type { MeetAt } from "@/lib/deals/meet";
 
-// Accept the deal and its time, or ask for another time in your own words.
-export function AcceptDeal({ roomId, canAccept }: { roomId: string; canAccept: boolean }) {
+type Place = { meetAt: MeetAt; isSeller: boolean; other: string };
+
+// Accept the deal with its time and place, or change either one.
+export function AcceptDeal({ roomId, canAccept, place }: { roomId: string; canAccept: boolean; place: Place }) {
   const [words, setWords] = useState("");
   const [asking, setAsking] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const mine: MeetAt = place.isSeller ? "seller_home" : "buyer_home";
+  const theirs: MeetAt = place.isSeller ? "buyer_home" : "seller_home";
+  const options: [MeetAt, string][] = [[mine, "My place"], [theirs, `${place.other}'s place`], ["public", "A public spot"]];
   const [pending, start] = useTransition();
 
   return (
@@ -15,7 +22,18 @@ export function AcceptDeal({ roomId, canAccept }: { roomId: string; canAccept: b
       <div className="flex flex-wrap gap-2">
         {canAccept && <Button size="sm" disabled={pending} onClick={() => start(() => acceptDealAction(roomId))}>Accept</Button>}
         <Button size="sm" variant="outline" disabled={pending} onClick={() => setAsking(!asking)}>Change time</Button>
+        <Button size="sm" variant="outline" disabled={pending} onClick={() => setMoving(!moving)}>Change place</Button>
       </div>
+      {moving && (
+        <div className="flex flex-wrap gap-2">
+          {options.map(([value, text]) => (
+            <Button key={value} size="sm" variant={value === place.meetAt ? "default" : "secondary"} disabled={pending || value === place.meetAt}
+              onClick={() => start(async () => { await changeMeetAtAction(roomId, value); setMoving(false); })}>
+              {text}
+            </Button>
+          ))}
+        </div>
+      )}
       {asking && (
         <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (words.trim()) start(() => changeTimeAction(roomId, words)); }}>
           <input

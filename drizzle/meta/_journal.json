@@ -113,6 +113,20 @@
       "when": 1793414108583,
       "tag": "0015_inbox_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793425586627,
+      "tag": "0016_user_address",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793425713873,
+      "tag": "0017_room_meet_at",
+      "breakpoints": true
     }
   ]
 }

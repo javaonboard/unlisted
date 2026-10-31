@@ -4,6 +4,8 @@ import { currentUserId } from "@/lib/session";
 import { listFacts } from "@/lib/memory/queries";
 import { BackLink } from "@/components/anchors/BackLink";
 import { confirmFactAction, deleteFactAction, editFactAction } from "@/app/actions/memory";
+import { setAddressAction } from "@/app/actions/profile";
+import { getUser } from "@/lib/users/queries";
 
 async function Facts() {
   const facts = await listFacts(await currentUserId());
@@ -31,6 +33,21 @@ async function Facts() {
   );
 }
 
+// The street address lives here, private. Agents only ever see the neighborhood.
+async function Address() {
+  const user = await getUser(await currentUserId());
+  return (
+    <form action={setAddressAction} className="mb-8 rounded-2xl border p-4 text-sm">
+      <p className="font-medium">Your address</p>
+      <p className="mt-1 text-muted-foreground">Private. Agents only see your neighborhood ({user?.area}). It&apos;s shown to the other person only after both of you accept and the payment is held.</p>
+      <div className="mt-3 flex gap-2">
+        <input name="address" defaultValue={user?.address ?? ""} placeholder="Street, unit, city" className="h-10 flex-1 rounded-full border bg-background px-4" />
+        <Button type="submit" variant="outline">Save</Button>
+      </div>
+    </form>
+  );
+}
+
 export default function MemoryPage() {
   return (
     <main className="mx-auto w-full max-w-2xl p-8">
@@ -43,6 +60,7 @@ export default function MemoryPage() {
         <a href="/memory/export" className="shrink-0 rounded-full border px-3 py-1.5 text-sm hover:bg-muted">Export</a>
       </div>
       <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+        <Address />
         <Facts />
       </Suspense>
     </main>

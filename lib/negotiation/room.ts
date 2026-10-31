@@ -16,7 +16,7 @@ export async function openRoom(input: NewRoom) {
   return room;
 }
 
-const termsOf = (move: Move) => ({ when: move.when, slotStart: move.slotStart, place: move.place, costs: move.costs, extras: move.extras });
+const termsOf = (move: Move) => ({ when: move.when, slotStart: move.slotStart, place: move.place, meetAt: move.meetAt, costs: move.costs, extras: move.extras });
 
 // Plays the next turn. The buyer opens, then sides alternate.
 // Returns false when the room is closed or waiting for an owner.

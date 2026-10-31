@@ -17,3 +17,6 @@ export function milesBetween(a: string, b: string) {
   const dLng = (p[1] - q[1]) * 60;
   return Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 10) / 10;
 }
+
+// A link that opens the address in Google Maps.
+export const mapsLink = (address: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;

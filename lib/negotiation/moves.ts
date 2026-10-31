@@ -8,6 +8,7 @@ export const Move = z.object({
   when: z.string().nullable().describe("Proposed time in plain words, e.g. 'Sat 10am'"),
   slotStart: z.string().nullable().describe("ISO start time of the handoff or job"),
   place: z.string().nullable().describe("Where the handoff or job happens, e.g. 'buyer picks up in East Austin'"),
+  meetAt: z.enum(["seller_home", "buyer_home", "public"]).nullable().describe("Who goes where: seller_home (buyer picks up), buyer_home (delivery or the job), or public (a public exchange spot)"),
   costs: z.string().nullable().describe("Extra costs and who pays, e.g. 'buyer brings a helper for the stairs'"),
   extras: z.array(z.string()).describe("Things added to the deal, e.g. 'includes cushions'"),
   evidenceIds: z.array(z.string()).describe("Evidence ids that back up any claim in the message"),

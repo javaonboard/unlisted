@@ -35,7 +35,7 @@ test("first step for both sides: accept the deal and its time", () => {
 
 test("after the seller accepts, the buyer still accepts before paying", () => {
   const v = view({ waitingOn: ["sara"] });
-  assert.deepEqual(nextFor(v, "sara"), { state: "needs_you", label: "Accept the time" });
+  assert.deepEqual(nextFor(v, "sara"), { state: "needs_you", label: "Accept the time and place" });
   assert.deepEqual(nextFor(v, "gus"), { state: "waiting", label: "Waiting for Sara to pay" });
 });
 
@@ -52,8 +52,8 @@ test("held and accepted by both: the handoff is next, nothing needs anyone", () 
 
 test("a new time after paying is accepted again by whoever didn't ask for it", () => {
   const v = view({ waitingOn: ["sara"], leg: { id: "l1", payerId: "sara", payeeId: "gus", status: "held" } });
-  assert.equal(nextFor(v, "sara").label, "Accept the time");
-  assert.equal(nextFor(v, "gus").label, "Waiting for Sara to accept the time");
+  assert.equal(nextFor(v, "sara").label, "Accept the time and place");
+  assert.equal(nextFor(v, "gus").label, "Waiting for Sara to accept the time and place");
 });
 
 test("paid out or cancelled deals are done", () => {
@@ -69,7 +69,7 @@ test("in a plan, only the plan owner approves, after every part is settled", () 
   const base = { room, deal: plan, item, names, hasLegs: false, leg: null };
   assert.equal(nextFor(view({ ...base, planSettled: false }), "maya").label, "Waiting for the rest of the plan");
   assert.equal(nextFor(view({ ...base, planSettled: true }), "maya").label, "Approve the plan");
-  assert.equal(nextFor(view({ ...base, planSettled: true, waitingOn: ["ben"] }), "ben").label, "Accept the time");
+  assert.equal(nextFor(view({ ...base, planSettled: true, waitingOn: ["ben"] }), "ben").label, "Accept the time and place");
   assert.equal(nextFor(view({ ...base, planSettled: true }), "ben").label, "Waiting for Maya to approve");
 });
 

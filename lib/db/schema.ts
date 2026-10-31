@@ -18,7 +18,8 @@ const money = (name: string) => numeric(name, { precision: 10, scale: 2 });
 export const users = pgTable("users", {
   id: text("id").primaryKey(), // "maya", "sam", ...
   name: text("name").notNull(),
-  area: text("area").notNull(), // neighborhood, never a street address
+  area: text("area").notNull(), // neighborhood; this is all other people and agents see
+  address: text("address"), // private: shown only to the other side of a paid-into-hold deal
   paypalEmail: text("paypal_email"),
   bio: text("bio"),
   connectorKey: text("connector_key").unique(), // secret part of the user's MCP connector link
@@ -91,6 +92,7 @@ export const negotiations = pgTable("negotiations", {
   dealId: uuid("deal_id").references(() => deals.id), // the plan this is part of, if any
   dependsOn: jsonb("depends_on").$type<string[]>().default([]).notNull(), // negotiations this one serves, e.g. a mover for a sale
   label: text("label"), // thread name in the deal channel, e.g. "Sectional → Ben"
+  meetAt: text("meet_at", { enum: ["seller_home", "buyer_home", "public"] }), // set by hand; otherwise what the agents agreed
   status: text("status", { enum: ["open", "waiting_owner", "agreed", "closed"] })
     .default("open")
     .notNull(),
