@@ -8,6 +8,9 @@ import { ScheduleView } from "@/components/bryntum/ScheduleView";
 import { Button } from "@/components/ui/button";
 import { freeTimes } from "@/lib/availability";
 import { clearFreeAction, markFreeAction, moveBookingAction } from "@/app/actions/schedule";
+import { getRoomView } from "@/lib/anchors/queries";
+import { nextFor, pillClass, pillText, roleOf } from "@/lib/anchors/next";
+import { TimeConfirm } from "@/components/rooms/TimeConfirm";
 
 // Local time as "YYYY-MM-DDTHH:mm", which Bryntum reads without shifting.
 const local = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
@@ -24,6 +27,10 @@ async function MySchedule() {
     const who = roomId ? waiting[roomId] : [];
     return !who.length ? null : who.includes(userId) ? "Waiting for you" : "Waiting for them";
   };
+  // Each deal's role and next step, the same as in the inbox.
+  const views = Object.fromEntries(
+    await Promise.all(upcoming.filter((b) => b.roomId).map(async (b) => [b.roomId!, await getRoomView(b.roomId!, userId)] as const)),
+  );
 
   return (
     <>
@@ -42,15 +49,26 @@ async function MySchedule() {
       </div>
       <ul className="mt-4 flex flex-col gap-2 text-sm">
         {upcoming.length === 0 && <li className="text-muted-foreground">Nothing booked this week.</li>}
-        {upcoming.map((b) => (
-          <li key={b.id} className="flex justify-between rounded-xl border p-3">
-            <span>{b.roomId ? <Link href={`/rooms/${b.roomId}`} className="hover:underline">{b.title}</Link> : b.title}</span>
-            <span className="text-muted-foreground">
-              {status(b.roomId) && <span className="mr-2 rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-800">{status(b.roomId)}</span>}
-              {b.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}
-            </span>
-          </li>
-        ))}
+        {upcoming.map((b) => {
+          const view = b.roomId ? views[b.roomId] : null;
+          const next = view ? nextFor(view, userId) : null;
+          return (
+            <li key={b.id} className="rounded-xl border p-3">
+              <div className="flex justify-between gap-2">
+                <span>{b.roomId ? <Link href={`/rooms/${b.roomId}`} className="hover:underline">{b.title}</Link> : b.title}</span>
+                <span className="shrink-0 text-muted-foreground">{b.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}</span>
+              </div>
+              {view && next && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-full border px-2 py-0.5">{roleOf(view, userId).badge}</span>
+                  <span className={`rounded-full px-2 py-0.5 ${pillClass(next)}`}>{pillText(next)}</span>
+                </div>
+              )}
+              {/* The buyer confirms by holding the payment; anyone else can confirm here. */}
+              {view && view.waitingOn.includes(userId) && (view.room.buyerId !== userId || (view.leg && view.leg.status !== "pending")) && <TimeConfirm roomId={b.roomId!} canConfirm />}
+            </li>
+          );
+        })}
       </ul>
     </>
   );

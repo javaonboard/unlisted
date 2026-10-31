@@ -10,8 +10,9 @@ export function statusLine(rooms: Room[], names: Record<string, string>, viewerI
   const first = (id: string) => names[id]?.split(" ")[0] ?? id;
   const other = (r: Room) => first(r.buyerId === viewerId ? r.sellerId : r.buyerId);
 
-  const deal = rooms.find((r) => r.status === "agreed");
-  if (deal) return `✓ Deal with ${other(deal)} · $${Number(deal.agreedPrice).toFixed(0)}`;
+  const deals = rooms.filter((r) => r.status === "agreed");
+  if (deals.length > 1) return `✓ ${deals.length} deals: ${deals.map(other).join(", ")}`;
+  if (deals.length) return `✓ Deal with ${other(deals[0])} · $${Number(deals[0].agreedPrice).toFixed(0)}`;
   if (rooms.some((r) => r.status === "waiting_owner")) return "🔔 Your agent has a question";
   const talking = rooms.filter((r) => r.status === "open").length;
   if (talking) return `🟢 ${talking} ${talking === 1 ? "agent" : "agents"} talking`;

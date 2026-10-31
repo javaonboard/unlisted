@@ -7,6 +7,7 @@ import { BackLink } from "@/components/anchors/BackLink";
 import { ChatMessage } from "@/components/deals/ChatMessage";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { RoomNextSteps } from "@/components/rooms/RoomNextSteps";
+import { nextFor, pillClass, pillText, roleOf } from "@/lib/anchors/next";
 
 async function Room({ params }: { params: Promise<{ id: string }> }) {
   const viewerId = await currentUserId();
@@ -24,7 +25,11 @@ async function Room({ params }: { params: Promise<{ id: string }> }) {
       <LiveRefresh active={room.status === "open" || childSummaries.some((c) => c.room.status === "open")} />
       <BackLink {...back} />
       <h1 className="mb-1 text-xl font-semibold">{other}&apos;s agent</h1>
-      <p className="mb-4 text-sm text-muted-foreground">{room.label}</p>
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+        <span className="rounded-full border px-2 py-0.5">{roleOf(data, viewerId).badge}</span>
+        <span className={`rounded-full px-2 py-0.5 ${pillClass(nextFor(data, viewerId))}`}>{pillText(nextFor(data, viewerId))}</span>
+        <span className="text-sm text-muted-foreground">{roleOf(data, viewerId).title}</span>
+      </div>
 
       <div className="flex flex-col gap-1 rounded-2xl border p-2">
         {messages.length === 0 && <p className="p-2 text-sm text-muted-foreground">Agents are getting ready…</p>}

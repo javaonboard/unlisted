@@ -3,18 +3,18 @@
 
 export const users = [
   { id: "maya", name: "Maya Lee", area: "East Austin", paypalEmail: "unlisted-maya@personal.example.com", bio: "Moving across town on Saturday." },
-  { id: "sam", name: "Sam Ortiz", area: "Mueller", paypalEmail: "unlisted-seller@personal.example.com", bio: "Selling a loveseat before a new baby arrives." },
-  { id: "sara", name: "Sara Kim", area: "Hyde Park", paypalEmail: "unlisted-seller2@personal.example.com", bio: "Downsizing after a move." },
-  { id: "ben", name: "Ben Carter", area: "Cherrywood", paypalEmail: "unlisted-buyer@personal.example.com", bio: "Furnishing a first apartment." },
-  { id: "bella", name: "Bella Diaz", area: "Windsor Park", paypalEmail: "unlisted-buyer2@personal.example.com", bio: "Needs a big sofa for movie nights." },
-  { id: "omar", name: "Omar Haddad", area: "Holly", paypalEmail: null, bio: "Looking for a sectional for the den." },
-  { id: "marco", name: "Marco Ruiz", area: "East Austin", paypalEmail: "unlisted-mover@business.example.com", bio: "Pickup truck, dolly and straps. Weekends." },
-  { id: "dev", name: "Dev Kapoor", area: "Windsor Park", paypalEmail: null, bio: "Van and two strong arms. Afternoons." },
-  { id: "gus", name: "Gus Patel", area: "Mueller", paypalEmail: null, bio: "Has a tall ladder and free Saturdays." },
+  { id: "sam", name: "Sam Ortiz", area: "Mueller", paypalEmail: "unlisted-seller@personal.example.com", bio: "Selling a navy loveseat." },
+  { id: "sara", name: "Sara Kim", area: "Hyde Park", paypalEmail: "unlisted-seller2@personal.example.com", bio: "Selling a beige sofa. Needs gutters cleaned." },
+  { id: "ben", name: "Ben Carter", area: "Cherrywood", paypalEmail: "unlisted-buyer@personal.example.com", bio: "First apartment: wants a sectional and gutter help." },
+  { id: "bella", name: "Bella Diaz", area: "Windsor Park", paypalEmail: "unlisted-buyer2@personal.example.com", bio: "Wants a big sofa and lawn mowing." },
+  { id: "omar", name: "Omar Haddad", area: "Holly", paypalEmail: null, bio: "Wants a sectional. Gutters overflowing." },
+  { id: "marco", name: "Marco Ruiz", area: "East Austin", paypalEmail: "unlisted-mover@business.example.com", bio: "Mover with a pickup truck. Weekends." },
+  { id: "dev", name: "Dev Kapoor", area: "Windsor Park", paypalEmail: null, bio: "Mover with a cargo van. Afternoons." },
+  { id: "gus", name: "Gus Patel", area: "Mueller", paypalEmail: null, bio: "Cleans gutters. Has a tall ladder." },
   { id: "lily", name: "Lily Nguyen", area: "Cherrywood", paypalEmail: null, bio: "Mows lawns around the neighborhood." },
-  { id: "ivan", name: "Ivan Petrov", area: "Hyde Park", paypalEmail: null, bio: "IT person. Wi-Fi, TV mounting, PC builds." },
-  { id: "kai", name: "Kai Johnson", area: "Holly", paypalEmail: null, bio: "Wants to try VR." },
-  { id: "priya", name: "Priya Shah", area: "Mueller", paypalEmail: null, bio: "Building a gaming PC." },
+  { id: "ivan", name: "Ivan Petrov", area: "Hyde Park", paypalEmail: null, bio: "IT help: Wi-Fi, TV mounting, PC builds." },
+  { id: "kai", name: "Kai Johnson", area: "Holly", paypalEmail: null, bio: "Wants a Quest 3. Owns a long ladder." },
+  { id: "priya", name: "Priya Shah", area: "Mueller", paypalEmail: null, bio: "Building a gaming PC. Needs an oil change." },
 ];
 
 export const mandates = users.map((u) => ({

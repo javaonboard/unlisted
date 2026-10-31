@@ -1,0 +1,73 @@
+import type { getRoomView } from "./queries";
+
+type RoomView = NonNullable<Awaited<ReturnType<typeof getRoomView>>>;
+export type Next = { state: "needs_you" | "waiting" | "upcoming" | "talking" | "done"; label: string };
+
+// Who the viewer is in this deal, in plain words.
+export function roleOf(data: RoomView, viewerId: string) {
+  const { room, item, names } = data;
+  const first = (id: string) => names[id]?.split(" ")[0] ?? id;
+  const service = item.kind === "skill";
+  const price = room.agreedPrice ? `$${Number(room.agreedPrice).toFixed(0)}` : null;
+  const what = item.title.toLowerCase();
+
+  if (room.sellerId === viewerId) {
+    return service
+      ? { badge: "🛠️ You do the job", title: `Your job for ${first(room.buyerId)}${price ? ` · you get ${price}` : ""}` }
+      : { badge: "💰 You're selling", title: `Selling your ${what} to ${first(room.buyerId)}${price ? ` · you get ${price}` : ""}` };
+  }
+  if (room.buyerId === viewerId) {
+    return service
+      ? { badge: "🙋 You hired", title: `${first(room.sellerId)} does your ${what}${price ? ` · you pay ${price}` : ""}` }
+      : { badge: "🛒 You're buying", title: `Buying ${first(room.sellerId)}'s ${what}${price ? ` · you pay ${price}` : ""}` };
+  }
+  return { badge: "📋 Your plan", title: room.label ?? item.title };
+}
+
+// What happens next in this deal, and whether it's on the viewer.
+export function nextFor(data: RoomView, viewerId: string): Next {
+  const { room, deal, leg, names } = data;
+  const first = (id: string) => names[id]?.split(" ")[0] ?? id;
+  const isBuyer = room.buyerId === viewerId;
+  const other = first(isBuyer ? room.sellerId : room.buyerId);
+
+  if (room.status === "waiting_owner") {
+    const asked = data.messages.some((m) => m.kind === "ask_owner" && m.fromUserId === viewerId);
+    return asked ? { state: "needs_you", label: "Answer your agent" } : { state: "talking", label: `${other} is checking with their agent` };
+  }
+  if (room.status === "open") return { state: "talking", label: "Agents are talking" };
+  if (room.status === "closed") return { state: "done", label: `Closed: ${room.closedReason}` };
+
+  // Agreed. Steps in order: approve, confirm the time, hold the payment, hand off.
+  if (leg?.status === "paid_out" || leg?.status === "captured") return { state: "done", label: "Done and paid" };
+  if (leg?.status === "voided") return { state: "done", label: "Cancelled, nothing charged" };
+
+  if (!data.hasLegs) {
+    const isPlan = !!deal && deal.title !== room.label;
+    if (!isPlan) return { state: "needs_you", label: "Confirm the deal" };
+    if (!data.planSettled) return { state: "waiting", label: "Waiting for the rest of the plan" };
+    return deal.ownerId === viewerId ? { state: "needs_you", label: "Approve the plan" } : { state: "waiting", label: `Waiting for ${first(deal.ownerId)} to approve` };
+  }
+
+  const held = leg && leg.status !== "pending";
+  if (data.waitingOn.includes(viewerId) && (!isBuyer || held)) return { state: "needs_you", label: "Confirm the time" };
+  if (leg?.status === "pending") {
+    return leg.payerId === viewerId ? { state: "needs_you", label: "Hold the payment" } : { state: "waiting", label: `Waiting for ${first(leg.payerId)} to pay` };
+  }
+  const notMe = data.waitingOn.filter((id) => id !== viewerId);
+  if (notMe.length) return { state: "waiting", label: `Waiting for ${notMe.map(first).join(" and ")} to confirm the time` };
+
+  const when = data.booking ? data.booking.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" }) : "soon";
+  return { state: "upcoming", label: `Handoff ${when}` };
+}
+
+const PILL = {
+  needs_you: "bg-red-100 text-red-800",
+  waiting: "bg-amber-100 text-amber-800",
+  upcoming: "bg-sky-100 text-sky-800",
+  talking: "bg-secondary text-secondary-foreground",
+  done: "bg-emerald-100 text-emerald-800",
+};
+const DOT = { needs_you: "🔴 Needs you: ", waiting: "⏳ ", upcoming: "📅 ", talking: "💬 ", done: "✅ " };
+export const pillClass = (n: Next) => PILL[n.state];
+export const pillText = (n: Next) => `${DOT[n.state]}${n.label}`;

@@ -3,7 +3,7 @@ import { db, schema } from "@/lib/db";
 
 export async function listPersonas() {
   return db
-    .select({ id: schema.users.id, name: schema.users.name, area: schema.users.area })
+    .select({ id: schema.users.id, name: schema.users.name, area: schema.users.area, bio: schema.users.bio })
     .from(schema.users)
     .orderBy(asc(schema.users.name));
 }
