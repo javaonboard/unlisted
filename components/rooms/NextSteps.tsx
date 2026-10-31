@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { approveDealAction, cancelHoldAction, confirmSoloDealAction } from "@/app/actions/payments";
+import { approveDealAction, cancelHoldAction } from "@/app/actions/payments";
 import { PayButton } from "@/components/payments/PayButton";
 import { ConfirmHandoff } from "@/components/payments/LegActions";
-import { TimeConfirm } from "@/components/rooms/TimeConfirm";
+import { AcceptDeal } from "@/components/rooms/AcceptDeal";
 
 type Props = {
   roomId: string;
@@ -26,53 +26,49 @@ type Props = {
 
 const done = "text-muted-foreground line-through";
 
-// What happens after the agents agree: schedule, approve, pay, hand off.
+// What happens after the agents agree: accept the deal and time, pay, hand off.
 export function NextSteps(p: Props) {
   const leg = p.leg;
   const iPay = leg?.payerId === p.viewerId;
   const iGetPaid = leg?.payeeId === p.viewerId;
   const time = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
-  const approved = p.hasLegs;
   const held = leg && leg.status !== "pending";
   const handedOff = leg && (leg.status === "captured" || leg.status === "paid_out");
+  const closed = handedOff || leg?.status === "voided";
 
-  // The buyer says yes to the time by placing the hold; after that, like anyone else.
-  const final = p.booking && p.waitingOn.length === 0;
-  const waiting = p.waitingOn.map((id) => (id === p.viewerId ? "you" : p.first(id))).join(" and ");
-  const canConfirm = p.waitingOn.includes(p.viewerId) && (p.buyerId !== p.viewerId || !!held);
+  // Step 1 is one "Accept" for the deal and its time. In a plan, the owner approves the whole plan instead.
+  const accepted = !p.waitingOn.includes(p.viewerId);
+  const stepOneDone = p.isPlan ? (p.isPlanOwner ? p.hasLegs : accepted) : p.hasLegs && accepted;
+  const others = p.waitingOn.filter((id) => id !== p.viewerId).map(p.first).join(" and ");
 
   return (
     <div className="mt-3 rounded-2xl border p-4 text-sm">
       <p className="mb-3 font-medium">Next steps</p>
-      <p className="mb-3 text-muted-foreground">
-        {p.booking ? `${p.booking.startsAt.toLocaleDateString("en-US", { weekday: "short" })} ${time(p.booking.startsAt)}–${time(p.booking.endsAt)}` : p.when ? p.when : ""}
-        {p.place ? ` · ${p.place}` : ""}
-        {p.booking && (final ? " · Time confirmed by both" : ` · Tentative, waiting for ${waiting}`)}
-      </p>
-      {p.booking && !handedOff && leg?.status !== "voided" && <div className="-mt-2 mb-3"><TimeConfirm roomId={p.roomId} canConfirm={canConfirm} /></div>}
-
       <ol className="flex flex-col gap-3">
-        <li className={approved ? done : ""}>
-          1. {p.isPlan ? "Approve the plan" : "Confirm the deal"}
-          {!approved && (
-            <div className="mt-1">
-              {!p.isPlan ? (
-                <form action={confirmSoloDealAction.bind(null, p.roomId)}><Button size="sm">Confirm deal</Button></form>
-              ) : !p.planSettled ? (
-                <span className="text-muted-foreground"> · waiting for the other parts of the plan</span>
-              ) : p.isPlanOwner ? (
+        <li>
+          <span className={stepOneDone ? done : ""}>1. {p.isPlan && p.isPlanOwner ? "Approve the plan" : p.isPlan || p.hasLegs ? "Accept the time" : "Accept the deal"}</span>
+          <p className="mt-1 text-muted-foreground">
+            {p.booking ? `${p.booking.startsAt.toLocaleDateString("en-US", { weekday: "short" })} ${time(p.booking.startsAt)}–${time(p.booking.endsAt)}` : (p.when ?? "")}
+            {p.place ? ` · ${p.place}` : ""}
+            {p.booking && (p.waitingOn.length === 0 ? " · accepted by both" : others ? ` · waiting for ${others}` : "")}
+          </p>
+          {!closed && p.isPlan && p.isPlanOwner && !p.hasLegs && (
+            <div className="mt-2">
+              {p.planSettled ? (
                 <form action={approveDealAction.bind(null, p.dealId!)}><Button size="sm">Approve plan</Button></form>
               ) : (
-                <span className="text-muted-foreground"> · waiting for the plan owner</span>
+                <span className="text-muted-foreground">Waiting for the other parts of the plan</span>
               )}
             </div>
           )}
+          {!closed && p.booking && <AcceptDeal roomId={p.roomId} canAccept={!accepted && !(p.isPlan && p.isPlanOwner && !p.hasLegs)} />}
+          {p.isPlan && !p.isPlanOwner && accepted && !p.hasLegs && <p className="mt-1 text-muted-foreground">Waiting for the plan owner to approve</p>}
         </li>
 
         <li className={held ? done : ""}>
-          2. Hold the payment with PayPal{iPay && !held ? " (this also confirms your time)" : ""}
-          {approved && leg?.status === "pending" && (
+          2. Hold the payment with PayPal
+          {stepOneDone && leg?.status === "pending" && (
             <div className="mt-2">
               {iPay ? <PayButton dealId={p.dealId!} clientId={p.clientId} total={p.payTotal} /> : <span className="text-muted-foreground"> · waiting for {p.first(leg.payerId)}</span>}
             </div>

@@ -38,24 +38,26 @@ export function nextFor(data: RoomView, viewerId: string): Next {
   if (room.status === "open") return { state: "talking", label: "Agents are talking" };
   if (room.status === "closed") return { state: "done", label: `Closed: ${room.closedReason}` };
 
-  // Agreed. Steps in order: approve, confirm the time, hold the payment, hand off.
+  // Agreed. Steps in order: accept the deal and time (or approve the plan), hold the payment, hand off.
   if (leg?.status === "paid_out" || leg?.status === "captured") return { state: "done", label: "Done and paid" };
   if (leg?.status === "voided") return { state: "done", label: "Cancelled, nothing charged" };
 
-  if (!data.hasLegs) {
-    const isPlan = !!deal && deal.title !== room.label;
-    if (!isPlan) return { state: "needs_you", label: "Confirm the deal" };
-    if (!data.planSettled) return { state: "waiting", label: "Waiting for the rest of the plan" };
-    return deal.ownerId === viewerId ? { state: "needs_you", label: "Approve the plan" } : { state: "waiting", label: `Waiting for ${first(deal.ownerId)} to approve` };
+  const isPlan = !!deal && deal.title !== room.label;
+  const accepted = !data.waitingOn.includes(viewerId);
+  if (isPlan && deal.ownerId === viewerId) {
+    if (!data.hasLegs) return data.planSettled ? { state: "needs_you", label: "Approve the plan" } : { state: "waiting", label: "Waiting for the rest of the plan" };
+    if (!accepted) return { state: "needs_you", label: "Accept the time" };
+  } else if (!accepted) {
+    return { state: "needs_you", label: isPlan || data.hasLegs ? "Accept the time" : "Accept the deal" };
+  } else if (!data.hasLegs) {
+    return { state: "waiting", label: isPlan ? `Waiting for ${first(deal.ownerId)} to approve` : `Waiting for ${other} to accept` };
   }
 
-  const held = leg && leg.status !== "pending";
-  if (data.waitingOn.includes(viewerId) && (!isBuyer || held)) return { state: "needs_you", label: "Confirm the time" };
   if (leg?.status === "pending") {
     return leg.payerId === viewerId ? { state: "needs_you", label: "Hold the payment" } : { state: "waiting", label: `Waiting for ${first(leg.payerId)} to pay` };
   }
   const notMe = data.waitingOn.filter((id) => id !== viewerId);
-  if (notMe.length) return { state: "waiting", label: `Waiting for ${notMe.map(first).join(" and ")} to confirm the time` };
+  if (notMe.length) return { state: "waiting", label: `Waiting for ${notMe.map(first).join(" and ")} to accept the time` };
 
   const when = data.booking ? data.booking.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" }) : "soon";
   return { state: "upcoming", label: `Handoff ${when}` };

@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { changeTimeAction, confirmTimeAction } from "@/app/actions/deals";
+import { acceptDealAction, changeTimeAction } from "@/app/actions/deals";
 
-// Say yes to the agreed time, or ask for another one in your own words.
-export function TimeConfirm({ roomId, canConfirm }: { roomId: string; canConfirm: boolean }) {
+// Accept the deal and its time, or ask for another time in your own words.
+export function AcceptDeal({ roomId, canAccept }: { roomId: string; canAccept: boolean }) {
   const [words, setWords] = useState("");
   const [asking, setAsking] = useState(false);
   const [pending, start] = useTransition();
@@ -13,7 +13,7 @@ export function TimeConfirm({ roomId, canConfirm }: { roomId: string; canConfirm
   return (
     <div className="mt-2 flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
-        {canConfirm && <Button size="sm" disabled={pending} onClick={() => start(() => confirmTimeAction(roomId))}>Confirm time</Button>}
+        {canAccept && <Button size="sm" disabled={pending} onClick={() => start(() => acceptDealAction(roomId))}>Accept</Button>}
         <Button size="sm" variant="outline" disabled={pending} onClick={() => setAsking(!asking)}>Change time</Button>
       </div>
       {asking && (

@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { currentUserId } from "@/lib/session";
 import { startLinkedDeal } from "@/lib/deals/planner";
 import { applyOwnerReply, askForNewTime } from "@/lib/negotiation/owner";
-import { confirmTime } from "@/lib/bookings";
+import { acceptDeal } from "@/lib/deals/accept";
 import { playRoom } from "@/lib/negotiation/room";
 
 export async function planMovingDay() {
@@ -21,8 +21,8 @@ export async function replyToAgent(roomId: string, words: string) {
   revalidatePath("/", "layout");
 }
 
-export async function confirmTimeAction(roomId: string) {
-  await confirmTime(roomId, await currentUserId());
+export async function acceptDealAction(roomId: string) {
+  await acceptDeal(roomId, await currentUserId());
   revalidatePath("/", "layout");
 }
 

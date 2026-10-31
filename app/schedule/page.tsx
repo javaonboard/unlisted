@@ -11,7 +11,7 @@ import { clearFreeAction, markFreeAction, moveBookingAction } from "@/app/action
 import { getRoomView } from "@/lib/anchors/queries";
 import { nextFor, roleOf } from "@/lib/anchors/next";
 import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
-import { TimeConfirm } from "@/components/rooms/TimeConfirm";
+import { AcceptDeal } from "@/components/rooms/AcceptDeal";
 
 // Local time as "YYYY-MM-DDTHH:mm", which Bryntum reads without shifting.
 const local = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
@@ -65,8 +65,9 @@ async function MySchedule() {
                   <StatusPill next={next} />
                 </div>
               )}
-              {/* The buyer confirms by holding the payment; anyone else can confirm here. */}
-              {view && view.waitingOn.includes(userId) && (view.room.buyerId !== userId || (view.leg && view.leg.status !== "pending")) && <TimeConfirm roomId={b.roomId!} canConfirm />}
+              {next && (next.state === "needs_you" || next.state === "waiting" || next.state === "upcoming") && next.label !== "Approve the plan" && (
+                <AcceptDeal roomId={b.roomId!} canAccept={next.label.startsWith("Accept")} />
+              )}
             </li>
           );
         })}

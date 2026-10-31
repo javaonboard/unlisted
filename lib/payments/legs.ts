@@ -39,6 +39,7 @@ export async function approveDeal(dealId: string, ownerId: string) {
     })),
   );
   await db.update(schema.deals).set({ status: "approved" }).where(eq(schema.deals.id, dealId));
+  for (const room of rooms) await confirmTime(room.id, ownerId); // approving the plan accepts its times too
   await say(dealId, null, "Plan approved. Each payer can now place a PayPal hold. Nobody is charged until the handoff.");
 }
 
