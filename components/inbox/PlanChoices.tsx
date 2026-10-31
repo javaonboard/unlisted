@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { acceptPlanAction } from "@/app/actions/suggestions";
+import { acceptPlanAction, replanAction } from "@/app/actions/suggestions";
 
 type Part = { kind: "sell" | "buy" | "helper"; id: string; text: string };
 const VERB = { sell: "Sell", buy: "Buy", helper: "Book" };
@@ -12,6 +12,7 @@ export function PlanChoices({ id, parts, linked: linkedByAgent }: { id: string; 
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState(parts.map((p) => p.id));
   const [linked, setLinked] = useState(linkedByAgent);
+  const [words, setWords] = useState("");
   const [pending, start] = useTransition();
 
   if (!open) return <Button size="sm" variant="outline" onClick={() => setOpen(true)}>Change the plan</Button>;
@@ -32,6 +33,16 @@ export function PlanChoices({ id, parts, linked: linkedByAgent }: { id: string; 
           Only sell once the purchase works out
         </label>
       )}
+      <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (words.trim()) start(() => replanAction(id, words)); }}>
+        <input
+          value={words}
+          onChange={(e) => setWords(e.target.value)}
+          placeholder="Or tell your agent, e.g. “keep the sale separate and add a cleaner”"
+          className="h-8 flex-1 rounded-full border bg-background px-3"
+          disabled={pending}
+        />
+        <Button size="sm" type="submit" variant="secondary" disabled={pending || !words.trim()}>{pending ? "Re-planning…" : "Ask"}</Button>
+      </form>
       <div className="flex gap-2">
         <Button size="sm" disabled={pending || (!has("sell") && !has("buy"))} onClick={() => start(() => acceptPlanAction(id, { partIds: picked, sellOnlyIfBought: has("sell") && has("buy") && linked }))}>
           Start this plan

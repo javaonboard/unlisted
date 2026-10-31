@@ -31,7 +31,7 @@ export type ComposedPlan = z.infer<typeof Plan>;
 
 // The planning agent: looks at someone's open needs, their things and what it knows about them,
 // checks real products when specs matter, and proposes one plan. Code checks the ids it returns.
-export async function composePlan(userId: string): Promise<ComposedPlan | null> {
+export async function composePlan(userId: string, change?: string): Promise<ComposedPlan | null> {
   const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId));
   const [needs, items, facts] = await Promise.all([
     db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, userId), eq(schema.intents.status, "open"))),
@@ -72,7 +72,9 @@ Decide whether some of their needs belong in one plan: a sale, a purchase, and h
 A plan runs the talks together and books helpers around the agreed handoffs. Only plan needs that truly depend on each other.
 If specs matter (power, size, fit), look the products up first. Point out at most 2 things they'll clearly need but haven't asked for.
 ${categoryRule(await knownCategories())}
-Use only the ids below. Then call submit_plan.
+Use only the ids below. Then call submit_plan.${change ? `
+
+They asked you to change the plan: "${change}". Follow that. If it needs something they haven't asked for yet (a cleaner, a second item), put it in missing.` : ""}
 
 Their open needs:
 ${needs.map((n) => `- ${n.id} | ${n.type} | ${n.category} | "${n.text}"${n.maxPrice ? ` | up to $${n.maxPrice}` : ""}`).join("\n")}

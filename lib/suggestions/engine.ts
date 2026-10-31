@@ -57,7 +57,7 @@ export async function runWave(needId: string, wave: number): Promise<void> {
         kind: item.kind === "skill" ? "offer_skill" : "open_item",
         title: item.kind === "skill" ? `${first(asker.name)} needs ${inSentence(item.title)}` : `Someone wants your ${inSentence(item.title)}`,
         body: `${miles} mi away: “${need.text}”${typical && item.kind === "skill" ? ` · jobs like this pay ~$${typical}` : ""}. Want your agent to talk to them?`,
-        action: { itemId: item.id, needId },
+        action: { itemId: item.id, needId, label: "Talk to them" },
       });
       if (ok) sent++;
     }
@@ -73,7 +73,7 @@ export async function runWave(needId: string, wave: number): Promise<void> {
         kind: "add_skill",
         title: `Your ${inSentence(tool.title)} could earn money`,
         body: `${first(asker.name)} nearby needs ${inSentence(tool.skill)}${typical ? `, ~$${typical} a job` : ""}. Offer it?`,
-        action: { needId, category: need.category, skill: tool.skill, value: typical ?? 0 },
+        action: { needId, category: need.category, skill: tool.skill, value: typical ?? 0, label: "Offer it" },
       });
       if (ok) sent++;
     }
@@ -88,7 +88,7 @@ export async function runWave(needId: string, wave: number): Promise<void> {
       kind: "raise_offer",
       title: `No takers yet for “${need.text}”`,
       body: `Raise your budget to $${raised}, or be flexible on the day? Your agent will ask again.`,
-      action: { needId, maxPrice: raised },
+      action: { needId, maxPrice: raised, label: `Raise to $${raised}` },
     });
   }
 

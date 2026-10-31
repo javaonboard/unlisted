@@ -6,10 +6,10 @@ import { asRecord } from "@/lib/vault/card";
 
 // Asks the planning agent whether someone's needs belong together. If so, the Inbox gets
 // one plan suggestion in the agent's own words, plus a "you'll also need…" suggestion per gap.
-export async function suggestPlan(userId: string) {
+export async function suggestPlan(userId: string, change?: string) {
   const [running] = await db.select().from(schema.deals).where(and(eq(schema.deals.ownerId, userId), ne(schema.deals.status, "cancelled")));
   if (running) return;
-  const plan = await composePlan(userId);
+  const plan = await composePlan(userId, change);
   if (!plan) return;
 
   const needs = await db.select().from(schema.intents).where(inArray(schema.intents.id, [...plan.sells.map((s) => s.needId), ...plan.buyIds, ...plan.helperIds]));
@@ -32,7 +32,7 @@ export async function suggestPlan(userId: string) {
       ...plan.steps.map((s, i) => `${i + 1}. ${s}`),
       "Nothing is final until you approve the plan, and PayPal only holds the money until each handoff. You can change what's in the plan first.",
     ].join("\n"),
-    action: { title: plan.title, parts: JSON.stringify(parts), sellWaitsForBuy: plan.sellWaitsForBuy ? 1 : 0 },
+    action: { title: plan.title, parts: JSON.stringify(parts), sellWaitsForBuy: plan.sellWaitsForBuy ? 1 : 0, label: "Start the plan" },
   });
 
   for (const gap of plan.missing) {
@@ -40,8 +40,8 @@ export async function suggestPlan(userId: string) {
       userId,
       kind: "post_need",
       title: `Add “${gap.text}” to your plan?`,
-      body: `${gap.why}. I'd look for one up to $${gap.maxPrice}.`,
-      action: { type: gap.type, text: gap.text, category: gap.category, maxPrice: gap.maxPrice, constraints: JSON.stringify(asRecord(gap.requirements)) },
+      body: `${gap.why.replace(/\.+$/, "")}. I'd look for one up to $${gap.maxPrice}.`,
+      action: { type: gap.type, text: gap.text, category: gap.category, maxPrice: gap.maxPrice, constraints: JSON.stringify(asRecord(gap.requirements)), label: "Add it" },
     });
   }
 }
