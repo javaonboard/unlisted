@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { freeTimes } from "@/lib/availability";
 import { clearFreeAction, markFreeAction, moveBookingAction } from "@/app/actions/schedule";
 import { getRoomView } from "@/lib/anchors/queries";
-import { nextFor, pillClass, pillText, roleOf } from "@/lib/anchors/next";
+import { nextFor, roleOf } from "@/lib/anchors/next";
+import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
 import { TimeConfirm } from "@/components/rooms/TimeConfirm";
 
 // Local time as "YYYY-MM-DDTHH:mm", which Bryntum reads without shifting.
@@ -59,9 +60,9 @@ async function MySchedule() {
                 <span className="shrink-0 text-muted-foreground">{b.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}</span>
               </div>
               {view && next && (
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                  <span className="rounded-full border px-2 py-0.5">{roleOf(view, userId).badge}</span>
-                  <span className={`rounded-full px-2 py-0.5 ${pillClass(next)}`}>{pillText(next)}</span>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <RoleBadge role={roleOf(view, userId)} />
+                  <StatusPill next={next} />
                 </div>
               )}
               {/* The buyer confirms by holding the payment; anyone else can confirm here. */}

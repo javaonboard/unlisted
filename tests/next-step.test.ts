@@ -21,9 +21,9 @@ const view = (over: Record<string, unknown> = {}) =>
   }) as unknown as View;
 
 test("each side sees who they are in the deal", () => {
-  assert.equal(roleOf(view(), "gus").badge, "🛠️ You do the job");
+  assert.equal(roleOf(view(), "gus").badge, "You do the job");
   assert.match(roleOf(view(), "gus").title, /you get \$75/);
-  assert.equal(roleOf(view(), "sara").badge, "🙋 You hired");
+  assert.equal(roleOf(view(), "sara").badge, "You hired");
   assert.match(roleOf(view(), "sara").title, /you pay \$75/);
 });
 

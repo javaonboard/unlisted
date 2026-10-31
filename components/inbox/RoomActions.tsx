@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getRoomView } from "@/lib/anchors/queries";
-import { nextFor, pillClass, pillText, roleOf } from "@/lib/anchors/next";
+import { nextFor, roleOf } from "@/lib/anchors/next";
+import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
 import { OwnerQuestion } from "@/components/deals/OwnerQuestion";
 import { RoomNextSteps } from "@/components/rooms/RoomNextSteps";
 
@@ -16,8 +17,8 @@ export async function RoomActions({ roomId, viewerId }: { roomId: string; viewer
   return (
     <div className="mt-3 border-t pt-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="rounded-full border px-2 py-0.5">{role.badge}</span>
-        <span className={`rounded-full px-2 py-0.5 ${pillClass(next)}`}>{pillText(next)}</span>
+        <RoleBadge role={role} />
+        <StatusPill next={next} />
       </div>
       {room.status === "waiting_owner" && question && (
         <>
@@ -26,7 +27,7 @@ export async function RoomActions({ roomId, viewerId }: { roomId: string; viewer
         </>
       )}
       {room.status === "agreed" && <RoomNextSteps data={data} viewerId={viewerId} />}
-      <Link href={`/rooms/${room.id}`} className="mt-2 inline-block text-xs text-primary hover:underline">See the chat ▸</Link>
+      <Link href={`/rooms/${room.id}`} className="mt-2 inline-block text-xs text-primary hover:underline">See the chat</Link>
     </div>
   );
 }

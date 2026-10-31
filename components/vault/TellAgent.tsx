@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { saveCards, understandAction } from "@/app/actions/vault";
 import { missing, type Card } from "@/lib/vault/card";
 
-const label = { goods: "📦 Item", skill: "🛠️ Service you offer", need: "🔎 Need" };
+const label = { goods: "Item", skill: "Service you offer", need: "Need" };
 
 // Talk to your agent: things you own, services you offer, or what you need.
 // If something important is missing, the agent asks, and your answers add up until it's complete.
@@ -24,7 +24,7 @@ export function TellAgent() {
       {said.length > 0 && (
         <div className="mb-3 flex flex-col gap-2 text-sm">
           {said.map((s, i) => <p key={i} className="self-end rounded-2xl bg-primary px-3 py-1.5 text-primary-foreground">{s}</p>)}
-          {question && <p className="self-start rounded-2xl bg-accent px-3 py-1.5">🤖 {question}</p>}
+          {question && <p className="self-start rounded-2xl bg-accent px-3 py-1.5">{question}</p>}
         </div>
       )}
 
@@ -75,7 +75,7 @@ export function TellAgent() {
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={question ? "Answer your agent…" : "💬 Tell your agent: “I have a ladder and free Saturdays” or “I need my lawn mowed”"}
+          placeholder={question ? "Answer your agent…" : "Tell your agent: “I have a ladder and free Saturdays” or “I need my lawn mowed”"}
           className="h-10 flex-1 rounded-full border bg-background px-4 text-sm"
           disabled={pending}
         />

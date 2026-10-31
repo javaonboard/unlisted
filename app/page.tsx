@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Bot, Check, CircleAlert } from "lucide-react";
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
@@ -42,16 +43,15 @@ async function Inbox() {
       <ScrollToEnd />
       <h1 className="text-2xl font-semibold">Hi {user?.name.split(" ")[0]}</h1>
       <div className="mt-1 flex gap-4 text-sm">
-        <Link href="/schedule" className="text-primary hover:underline">My schedule ▸</Link>
-        <Link href="/memory" className="text-primary hover:underline">What my agent knows about me ▸</Link>
+        <Link href="/memory" className="text-primary hover:underline">What my agent knows about me</Link>
       </div>
 
       {needs.count > 0 ? (
-        <a href={firstNeed ? `#${anchor(firstNeed)}` : "#"} className="mt-4 inline-block rounded-full bg-red-100 px-3 py-1 text-sm text-red-800 hover:bg-red-200">
-          🔴 {needs.count} {needs.count === 1 ? "thing needs" : "things need"} you ▸
+        <a href={firstNeed ? `#${anchor(firstNeed)}` : "#"} className="mt-4 inline-block rounded-full bg-red-50 px-3 py-1 text-sm text-red-700 hover:bg-red-100">
+          <span className="flex items-center gap-1.5"><CircleAlert className="size-4" /> {needs.count} {needs.count === 1 ? "thing needs" : "things need"} you</span>
         </a>
       ) : (
-        <p className="mt-4 inline-block rounded-full bg-emerald-100 px-3 py-1 text-sm text-emerald-800">✅ Nothing needs you right now</p>
+        <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-800"><Check className="size-4" /> Nothing needs you right now</p>
       )}
 
       <div className="mt-6 flex flex-col gap-3">
@@ -62,7 +62,7 @@ async function Inbox() {
             return (
               <Bubble key={s.id} id={anchor(item)} at={s.createdAt} needsYou={s.status === "new"}>
                 {s.status === "new" ? <SuggestionCard s={s} /> : (
-                  <p className="text-muted-foreground">💡 {s.title} · <span className="text-foreground">{s.status === "accepted" ? "✅ You said yes" : "Not now"}</span></p>
+                  <p className="text-muted-foreground">{s.title} · <span className="text-foreground">{s.status === "accepted" ? "You said yes" : "Not now"}</span></p>
                 )}
               </Bubble>
             );
@@ -78,7 +78,7 @@ async function Inbox() {
               {n.roomId && latest.get(n.roomId) === n.id ? (
                 <RoomActions roomId={n.roomId} viewerId={userId} />
               ) : n.link ? (
-                <Link href={n.link} className="mt-1 inline-block text-xs text-primary hover:underline">Open ▸</Link>
+                <Link href={n.link} className="mt-1 inline-block text-xs text-primary hover:underline">Open</Link>
               ) : null}
             </Bubble>
           );
@@ -94,7 +94,7 @@ async function Inbox() {
 function Bubble({ id, at, needsYou, children }: { id: string; at: Date; needsYou: boolean; children: React.ReactNode }) {
   return (
     <div id={id} className="flex max-w-[90%] scroll-mt-24 gap-2 self-start">
-      <div className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm">🤖</div>
+      <div className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-primary"><Bot className="size-4" /></div>
       <div className={`min-w-0 flex-1 rounded-2xl border px-4 py-3 text-sm ${needsYou ? "border-red-300 ring-1 ring-red-200" : ""}`}>
         {children}
         <p className="mt-2 text-[11px] text-muted-foreground">{time(at)}</p>

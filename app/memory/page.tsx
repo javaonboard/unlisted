@@ -18,7 +18,7 @@ async function Facts() {
             <Button size="sm" variant="outline" type="submit">Save</Button>
           </form>
           <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
-            <span>{f.verified ? "✓ confirmed by you" : `guess · ${Math.round(f.confidence * 100)}% sure`}</span>
+            <span>{f.verified ? "confirmed by you" : `guess · ${Math.round(f.confidence * 100)}% sure`}</span>
             <span>from {f.source}</span>
             <span className="ml-auto flex gap-2">
               {!f.verified && <form action={confirmFactAction.bind(null, f.id)}><Button size="sm" variant="ghost" type="submit">That&apos;s right</Button></form>}

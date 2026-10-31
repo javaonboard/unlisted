@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Clock, DollarSign, MapPin, Receipt } from "lucide-react";
 import { OwnerQuestion } from "./OwnerQuestion";
 
 type Message = {
@@ -14,8 +15,10 @@ type Message = {
   createdAt: Date;
 };
 
+const chip = "inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5";
+
 const label: Record<string, string> = {
-  offer: "offer", counter: "counter", question: "question", accept: "accepted ✓",
+  offer: "offer", counter: "counter", question: "question", accept: "accepted",
   reject: "declined", walk_away: "walked away", ask_owner: "asks you", owner_note: "you replied",
 };
 
@@ -34,15 +37,15 @@ export function ChatMessage({ m, viewerId, name, thread, waiting }: { m: Message
         <div className="flex flex-wrap items-baseline gap-2 text-xs text-muted-foreground">
           <span className="text-sm font-semibold text-foreground">{fromOwner ? "You" : `${name}'s agent`}</span>
           <span>{time}</span>
-          {thread && <Link href={`/rooms/${m.negotiationId}`} className="rounded-full border px-2 hover:bg-muted">{thread} ▸</Link>}
+          {thread && <Link href={`/rooms/${m.negotiationId}`} className="rounded-full border px-2 hover:bg-muted">{thread}</Link>}
           <span>{label[m.kind] ?? m.kind}</span>
         </div>
-        <p className="text-sm">{asksMe ? `🔔 ${m.note}` : m.note}</p>
+        <p className="text-sm">{m.note}</p>
         <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
-          {m.price && !fromOwner && <span className="rounded-full bg-secondary px-2 py-0.5">💲 {Number(m.price).toFixed(0)}</span>}
-          {t.when && <span className="rounded-full bg-secondary px-2 py-0.5">🕒 {t.when}</span>}
-          {t.place && <span className="rounded-full bg-secondary px-2 py-0.5">📍 {t.place}</span>}
-          {t.costs && <span className="rounded-full bg-secondary px-2 py-0.5">🧾 {t.costs}</span>}
+          {m.price && !fromOwner && <span className={chip}><DollarSign className="size-3" />{Number(m.price).toFixed(0)}</span>}
+          {t.when && <span className={chip}><Clock className="size-3" />{t.when}</span>}
+          {t.place && <span className={chip}><MapPin className="size-3" />{t.place}</span>}
+          {t.costs && <span className={chip}><Receipt className="size-3" />{t.costs}</span>}
         </div>
         {asksMe && waiting && <OwnerQuestion roomId={m.negotiationId} suggestedPrice={m.price ? Number(m.price) : null} />}
         {(m.reasoning && m.fromUserId === viewerId && !asksMe) || m.a2a ? (

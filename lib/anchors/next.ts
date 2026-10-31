@@ -13,15 +13,15 @@ export function roleOf(data: RoomView, viewerId: string) {
 
   if (room.sellerId === viewerId) {
     return service
-      ? { badge: "🛠️ You do the job", title: `Your job for ${first(room.buyerId)}${price ? ` · you get ${price}` : ""}` }
-      : { badge: "💰 You're selling", title: `Selling your ${what} to ${first(room.buyerId)}${price ? ` · you get ${price}` : ""}` };
+      ? { kind: "provider" as const, badge: "You do the job", title: `Your job for ${first(room.buyerId)}${price ? ` · you get ${price}` : ""}` }
+      : { kind: "seller" as const, badge: "You're selling", title: `Selling your ${what} to ${first(room.buyerId)}${price ? ` · you get ${price}` : ""}` };
   }
   if (room.buyerId === viewerId) {
     return service
-      ? { badge: "🙋 You hired", title: `${first(room.sellerId)} does your ${what}${price ? ` · you pay ${price}` : ""}` }
-      : { badge: "🛒 You're buying", title: `Buying ${first(room.sellerId)}'s ${what}${price ? ` · you pay ${price}` : ""}` };
+      ? { kind: "hiring" as const, badge: "You hired", title: `${first(room.sellerId)} does your ${what}${price ? ` · you pay ${price}` : ""}` }
+      : { kind: "buyer" as const, badge: "You're buying", title: `Buying ${first(room.sellerId)}'s ${what}${price ? ` · you pay ${price}` : ""}` };
   }
-  return { badge: "📋 Your plan", title: room.label ?? item.title };
+  return { kind: "plan" as const, badge: "Your plan", title: room.label ?? item.title };
 }
 
 // What happens next in this deal, and whether it's on the viewer.
@@ -61,13 +61,4 @@ export function nextFor(data: RoomView, viewerId: string): Next {
   return { state: "upcoming", label: `Handoff ${when}` };
 }
 
-const PILL = {
-  needs_you: "bg-red-100 text-red-800",
-  waiting: "bg-amber-100 text-amber-800",
-  upcoming: "bg-sky-100 text-sky-800",
-  talking: "bg-secondary text-secondary-foreground",
-  done: "bg-emerald-100 text-emerald-800",
-};
-const DOT = { needs_you: "🔴 Needs you: ", waiting: "⏳ ", upcoming: "📅 ", talking: "💬 ", done: "✅ " };
-export const pillClass = (n: Next) => PILL[n.state];
-export const pillText = (n: Next) => `${DOT[n.state]}${n.label}`;
+export type Role = ReturnType<typeof roleOf>;

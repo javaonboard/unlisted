@@ -36,7 +36,7 @@ async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
             <p className="font-medium">Evidence</p>
             {evidence.length === 0 && <p className="text-muted-foreground">None yet.</p>}
             {evidence.map((e) => (
-              <p key={e.id} className="text-muted-foreground">{e.verified ? "✓" : "?"} {e.summary}</p>
+              <p key={e.id} className="text-muted-foreground">{e.summary} <span className="text-xs">({e.verified ? "verified" : "their claim"})</span></p>
             ))}
           </div>
         </CardContent>

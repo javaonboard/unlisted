@@ -7,7 +7,7 @@ type Leg = { id: string; description: string; amount: string; payerId: string; p
 type Room = { status: string };
 
 const statusText: Record<string, string> = {
-  pending: "waiting for payment", held: "💳 on hold", captured: "captured", paid_out: "💸 paid out", voided: "released", refunded: "refunded",
+  pending: "waiting for payment", held: "on hold", captured: "captured", paid_out: "paid out", voided: "released", refunded: "refunded",
 };
 
 export function PaymentsPanel(props: {

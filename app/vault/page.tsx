@@ -5,7 +5,9 @@ import { db, schema } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { currentUserId } from "@/lib/session";
 import { findDemandFor } from "@/lib/matching/matcher";
-import { iconFor, statusLine } from "@/lib/anchors/status";
+import { statusLine } from "@/lib/anchors/status";
+import { ChevronRight, ClipboardList, Compass } from "lucide-react";
+import { CategoryIcon } from "@/components/anchors/Badges";
 import { planMovingDay } from "@/app/actions/deals";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { PhotoToVault } from "@/components/vault/PhotoToVault";
@@ -40,12 +42,12 @@ async function MyStuff() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={item.photos[0]} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
             ) : (
-              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-2xl">{iconFor(item.category)}</div>
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"><CategoryIcon category={item.category} /></div>
             )}
             <div className="min-w-0">
               <p className="font-medium">{item.title}</p>
               <p className="truncate text-sm text-muted-foreground">{item.condition ?? item.category} · ~${Number(item.estimatedValue ?? 0).toFixed(0)}{item.kind === "skill" ? "/job" : ""}</p>
-              <p className="mt-1 text-sm">{statusLine(rooms.filter((r) => r.itemId === item.id), names, userId, interested[item.id])} ▸</p>
+              <p className="mt-1 text-sm">{statusLine(rooms.filter((r) => r.itemId === item.id), names, userId, interested[item.id])}</p>
             </div>
           </Link>
         ))}
@@ -64,8 +66,8 @@ async function MyStuff() {
       )}
       {activePlans.map((p) => (
         <Link key={p.id} href={`/deals/${p.id}`} className="mb-6 block rounded-2xl bg-accent p-4 text-sm hover:bg-accent/70">
-          📋 Plan: <span className="font-medium">{p.title}</span> · see every part, the total and Saturday&apos;s timeline ▸
-          {p.scoutNote && <span className="mt-2 block text-muted-foreground">🧭 {p.scoutNote}</span>}
+          <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Plan: <span className="font-medium">{p.title}</span> · see every part, the total and Saturday&apos;s timeline <ChevronRight className="size-4" /></span>
+          {p.scoutNote && <span className="mt-2 flex gap-2 text-muted-foreground"><Compass className="mt-0.5 size-4 shrink-0" /> {p.scoutNote}</span>}
         </Link>
       ))}
 
@@ -79,8 +81,8 @@ async function MyStuff() {
       <div className="flex flex-col gap-2">
         {needs.filter((n) => n.type !== "sell").map((need) => (
           <Link key={need.id} href={`/needs/${need.id}`} className="flex items-center justify-between rounded-2xl border p-3 text-sm hover:bg-muted/40">
-            <span>{iconFor(need.category)} “{need.text}”</span>
-            <span>{statusLine(rooms.filter((r) => r.intentId === need.id), names, userId)} ▸</span>
+            <span className="flex items-center gap-2"><CategoryIcon category={need.category} className="size-4 text-primary" /> “{need.text}”</span>
+            <span className="flex items-center gap-1 text-muted-foreground">{statusLine(rooms.filter((r) => r.intentId === need.id), names, userId)} <ChevronRight className="size-4" /></span>
           </Link>
         ))}
         {needs.filter((n) => n.type !== "sell").length === 0 && <p className="text-sm text-muted-foreground">No open needs.</p>}

@@ -39,7 +39,7 @@ export async function approveDeal(dealId: string, ownerId: string) {
     })),
   );
   await db.update(schema.deals).set({ status: "approved" }).where(eq(schema.deals.id, dealId));
-  await say(dealId, null, "✅ Plan approved. Each payer can now place a PayPal hold. Nobody is charged until the handoff.");
+  await say(dealId, null, "Plan approved. Each payer can now place a PayPal hold. Nobody is charged until the handoff.");
 }
 
 // A one-off negotiation (not part of a plan) becomes its own small deal.
@@ -76,10 +76,10 @@ export async function holdPayment(orderId: string, payerId: string) {
   await db.update(schema.dealLegs).set({ authorizationId, status: "held", heldAt: new Date() }).where(eq(schema.dealLegs.orderId, orderId));
   for (const leg of legs) if (leg.roomId) await confirmTime(leg.roomId, payerId); // paying is saying yes to the time
   const total = legs.reduce((sum, l) => sum + Number(l.amount), 0);
-  await say(legs[0].dealId, payerId, `💳 PayPal hold placed: $${total.toFixed(0)} for ${legs.map((l) => l.description).join(" + ")}. Not charged yet.`, { orderId, authorizationId });
+  await say(legs[0].dealId, payerId, `PayPal hold placed: $${total.toFixed(0)} for ${legs.map((l) => l.description).join(" + ")}. Not charged yet.`, { orderId, authorizationId });
   for (const leg of legs) {
-    await notify(payerId, "💳 Payment held", `$${Number(leg.amount).toFixed(0)} is held by PayPal, not charged. It goes through when you confirm the handoff.`, leg.roomId);
-    await notify(leg.payeeId, "💳 They paid into hold", `$${Number(leg.amount).toFixed(0)} is held by PayPal. Show your code at the handoff to get paid.`, leg.roomId);
+    await notify(payerId, "Payment held", `$${Number(leg.amount).toFixed(0)} is held by PayPal, not charged. It goes through when you confirm the handoff.`, leg.roomId);
+    await notify(leg.payeeId, "They paid into hold", `$${Number(leg.amount).toFixed(0)} is held by PayPal. Show your code at the handoff to get paid.`, leg.roomId);
   }
 }
 
@@ -96,16 +96,16 @@ export async function confirmHandoff(legId: string, payerId: string, code: strin
 
   const { captureId } = await captureAuthorization(leg.authorizationId!, leg.amount, final);
   await db.update(schema.dealLegs).set({ captureId, status: "captured", handoffAt: new Date() }).where(eq(schema.dealLegs.id, legId));
-  await say(leg.dealId, payerId, `🤝 Handoff confirmed for ${leg.description}. PayPal captured $${Number(leg.amount).toFixed(0)}.`, { legId, captureId });
-  await notify(payerId, "🤝 Handoff done", `PayPal charged $${Number(leg.amount).toFixed(0)}.`, leg.roomId);
+  await say(leg.dealId, payerId, `Handoff confirmed for ${leg.description}. PayPal captured $${Number(leg.amount).toFixed(0)}.`, { legId, captureId });
+  await notify(payerId, "Handoff done", `PayPal charged $${Number(leg.amount).toFixed(0)}.`, leg.roomId);
 
   const [payee] = await db.select().from(schema.users).where(eq(schema.users.id, leg.payeeId));
   const payout = Number(leg.amount) * (1 - FEE);
   if (!payee.paypalEmail) return;
   const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`);
   await db.update(schema.dealLegs).set({ payoutBatchId: batchId, status: "paid_out" }).where(eq(schema.dealLegs.id, legId));
-  await say(leg.dealId, leg.payeeId, `💸 Paid out $${payout.toFixed(2)} to ${payee.name.split(" ")[0]} (after Unlisted's ${FEE * 100}% fee).`, { legId, batchId });
-  await notify(leg.payeeId, "💸 You got paid", `$${payout.toFixed(2)} sent to your PayPal (after Unlisted's ${FEE * 100}% fee).`, leg.roomId);
+  await say(leg.dealId, leg.payeeId, `Paid out $${payout.toFixed(2)} to ${payee.name.split(" ")[0]} (after Unlisted's ${FEE * 100}% fee).`, { legId, batchId });
+  await notify(leg.payeeId, "You got paid", `$${payout.toFixed(2)} sent to your PayPal (after Unlisted's ${FEE * 100}% fee).`, leg.roomId);
 }
 
 // Before any handoff, a payer can cancel: the whole hold is released.
@@ -120,9 +120,9 @@ export async function cancelHold(dealId: string, payerId: string) {
   }
   await voidAuthorization(held[0].authorizationId!);
   await db.update(schema.dealLegs).set({ status: "voided" }).where(inArray(schema.dealLegs.id, held.map((l) => l.id)));
-  await say(dealId, payerId, "↩️ Hold released. Nothing was charged.");
+  await say(dealId, payerId, "Hold released. Nothing was charged.");
   for (const leg of held) {
-    await notify(payerId, "↩️ Hold released", "Nothing was charged.", leg.roomId);
-    await notify(leg.payeeId, "↩️ They cancelled", "The buyer released the hold before the handoff. Nothing was charged.", leg.roomId);
+    await notify(payerId, "Hold released", "Nothing was charged.", leg.roomId);
+    await notify(leg.payeeId, "They cancelled", "The buyer released the hold before the handoff. Nothing was charged.", leg.roomId);
   }
 }

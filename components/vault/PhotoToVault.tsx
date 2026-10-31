@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { addSuggestions, suggestFromPhoto, type Suggestion } from "@/app/actions/vault";
 
@@ -41,7 +42,7 @@ export function PhotoToVault() {
   return (
     <div className="mb-6 rounded-2xl border border-dashed p-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm">📷 Snap a room or your garage. Your agent finds what you own and what you could do.</p>
+        <p className="flex items-center gap-2 text-sm"><Camera className="size-4 text-primary" /> Snap a room or your garage. Your agent finds what you own and what you could do.</p>
         <label className="shrink-0 cursor-pointer rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground">
           {pending ? "Looking…" : "Add a photo"}
           <input type="file" accept="image/*" capture="environment" className="hidden" disabled={pending} onChange={(e) => onFile(e.target.files?.[0])} />
@@ -55,7 +56,7 @@ export function PhotoToVault() {
             <label key={i} className="flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm hover:bg-muted/40">
               <input type="checkbox" checked={picked.has(i)} onChange={() => toggle(i)} className="mt-1" />
               <span className="flex-1">
-                <span className="font-medium">{s.kind === "skill" ? "🛠️ " : ""}{s.title}</span>
+                <span className="font-medium">{s.title}{s.kind === "skill" ? " (service)" : ""}</span>
                 {s.value ? <span className="text-muted-foreground"> · ~${s.value}</span> : null}
                 <span className="block text-muted-foreground">{s.kind === "skill" ? `Because: ${s.note}` : s.note}</span>
                 {s.demand && s.demand.requests > 0 && (

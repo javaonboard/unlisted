@@ -73,7 +73,7 @@ async function approvalsAndPayments(now: number) {
     if (waited > RULES.payWithin) {
       await db.update(schema.dealLegs).set({ status: "voided" }).where(eq(schema.dealLegs.id, leg.id));
       await remind(leg.payeeId, "Payment never came", `${leg.description}: the buyer didn't place the hold, so it's cancelled.`, `/rooms/${leg.roomId}`);
-      await logActivity({ userId: leg.payerId, type: "payment", message: `↩️ ${leg.description} cancelled: no payment in 12 hours.`, data: { dealId: leg.dealId } });
+      await logActivity({ userId: leg.payerId, type: "payment", message: `${leg.description} cancelled: no payment in 12 hours.`, data: { dealId: leg.dealId } });
     } else if (waited > RULES.payReminder) {
       await remind(leg.payerId, "Place your PayPal hold", `${leg.description} is waiting for your payment.`, `/rooms/${leg.roomId}`);
     }
@@ -89,7 +89,7 @@ async function staleHolds(now: number) {
     if (sameHold.some((l) => l.status === "captured" || l.status === "paid_out")) continue; // partly used holds just expire
     await voidAuthorization(authorizationId);
     await db.update(schema.dealLegs).set({ status: "voided" }).where(eq(schema.dealLegs.authorizationId, authorizationId));
-    await logActivity({ userId: legs[0].payerId, type: "payment", message: "↩️ Hold released: the handoff wasn't confirmed in 3 days. Nothing was charged.", data: { dealId: legs[0].dealId } });
+    await logActivity({ userId: legs[0].payerId, type: "payment", message: "Hold released: the handoff wasn't confirmed in 3 days. Nothing was charged.", data: { dealId: legs[0].dealId } });
   }
 }
 

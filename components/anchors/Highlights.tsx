@@ -10,7 +10,7 @@ export function Highlights({ entries, buying }: { entries: Entry[]; buying: bool
   const closed = entries.filter((e) => e.room.status === "closed").length;
 
   const parts = [
-    deal ? `✓ Deal with ${deal.other} at $${Number(deal.room.agreedPrice).toFixed(0)}` : best ? `Best offer so far $${best.toFixed(0)}` : null,
+    deal ? `Deal with ${deal.other} at $${Number(deal.room.agreedPrice).toFixed(0)}` : best ? `Best offer so far $${best.toFixed(0)}` : null,
     talking ? `${talking} talking` : null,
     closed ? `${closed} closed` : null,
   ].filter(Boolean);

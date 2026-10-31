@@ -25,7 +25,7 @@ export async function recordPayPalEvent(event: PayPalEvent) {
 
   await logActivity({
     type: "paypal",
-    message: `✓ PayPal confirmed: ${event.summary ?? event.event_type}`,
+    message: `PayPal confirmed: ${event.summary ?? event.event_type}`,
     paypalEventId: event.id,
     data: { eventType: event.event_type, resourceId: ids[0], ...(leg ? { dealId: leg.dealId, legId: leg.id } : {}) },
   });

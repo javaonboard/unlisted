@@ -46,9 +46,9 @@ export function NextSteps(p: Props) {
     <div className="mt-3 rounded-2xl border p-4 text-sm">
       <p className="mb-3 font-medium">Next steps</p>
       <p className="mb-3 text-muted-foreground">
-        {p.booking ? `📅 ${p.booking.startsAt.toLocaleDateString("en-US", { weekday: "short" })} ${time(p.booking.startsAt)}–${time(p.booking.endsAt)}` : p.when ? `🕒 ${p.when}` : ""}
-        {p.place ? ` · 📍 ${p.place}` : ""}
-        {p.booking && (final ? " · ✅ Time confirmed by both" : ` · ⏳ Tentative, waiting for ${waiting}`)}
+        {p.booking ? `${p.booking.startsAt.toLocaleDateString("en-US", { weekday: "short" })} ${time(p.booking.startsAt)}–${time(p.booking.endsAt)}` : p.when ? p.when : ""}
+        {p.place ? ` · ${p.place}` : ""}
+        {p.booking && (final ? " · Time confirmed by both" : ` · Tentative, waiting for ${waiting}`)}
       </p>
       {p.booking && !handedOff && leg?.status !== "voided" && <div className="-mt-2 mb-3"><TimeConfirm roomId={p.roomId} canConfirm={canConfirm} /></div>}
 
@@ -88,13 +88,13 @@ export function NextSteps(p: Props) {
               <Button size="sm" variant="ghost">Cancel and release the hold</Button>
             </form>
           )}
-          {leg?.status === "paid_out" && <p className="mt-1 text-foreground">💸 Done. {p.first(leg.payeeId)} has been paid.</p>}
-          {leg?.status === "voided" && <p className="mt-1 text-foreground">↩️ Hold released. Nothing was charged.</p>}
+          {leg?.status === "paid_out" && <p className="mt-1 text-foreground">Done. {p.first(leg.payeeId)} has been paid.</p>}
+          {leg?.status === "voided" && <p className="mt-1 text-foreground">Hold released. Nothing was charged.</p>}
         </li>
       </ol>
 
       {p.isPlan && p.dealId && (
-        <Link href={`/deals/${p.dealId}`} className="mt-3 inline-block text-xs text-muted-foreground hover:text-foreground">See the whole plan ▸</Link>
+        <Link href={`/deals/${p.dealId}`} className="mt-3 inline-block text-xs text-muted-foreground hover:text-foreground">See the whole plan</Link>
       )}
     </div>
   );

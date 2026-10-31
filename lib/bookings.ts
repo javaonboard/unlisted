@@ -38,8 +38,8 @@ export async function bookAgreedDeal(roomId: string) {
     { userId: room.buyerId, roomId, dealId: room.dealId, startsAt: start, endsAt: end, title: service ? `${first(room.sellerId)}: ${what}` : `Pick up ${what} from ${first(room.sellerId)}` },
   ]);
   const price = `$${Number(room.agreedPrice).toFixed(0)}`;
-  await notify(room.sellerId, service ? `🛠️ New job for ${first(room.buyerId)} · you get ${price}` : `💰 Sold to ${first(room.buyerId)} · you get ${price}`, `${service ? `${item.title} for ${first(room.buyerId)}` : `Hand off ${what} to ${first(room.buyerId)}`}, ${when}. Please confirm the time.`, roomId);
-  await notify(room.buyerId, service ? `🙋 ${first(room.sellerId)} will do your ${what} · you pay ${price}` : `🛒 Bought ${first(room.sellerId)}'s ${what} · you pay ${price}`, `${service ? `${first(room.sellerId)}: ${what}` : `Pick up ${what} from ${first(room.sellerId)}`}, ${when}. Holding the payment confirms it.`, roomId);
+  await notify(room.sellerId, service ? `New job for ${first(room.buyerId)} · you get ${price}` : `Sold to ${first(room.buyerId)} · you get ${price}`, `${service ? `${item.title} for ${first(room.buyerId)}` : `Hand off ${what} to ${first(room.buyerId)}`}, ${when}. Please confirm the time.`, roomId);
+  await notify(room.buyerId, service ? `${first(room.sellerId)} will do your ${what} · you pay ${price}` : `Bought ${first(room.sellerId)}'s ${what} · you pay ${price}`, `${service ? `${first(room.sellerId)}: ${what}` : `Pick up ${what} from ${first(room.sellerId)}`}, ${when}. Holding the payment confirms it.`, roomId);
   console.log("[booking] booked both sides (tentative)", start.toISOString());
 }
 
