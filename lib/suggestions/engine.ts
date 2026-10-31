@@ -1,4 +1,4 @@
-import { and, eq, ilike, lte, or } from "drizzle-orm";
+import { and, eq, lte } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { findDemandFor, findSupplyFor } from "@/lib/matching/matcher";
@@ -6,19 +6,13 @@ import { skillDemand } from "@/lib/vault/demand";
 import { milesBetween } from "@/lib/places";
 import { suggest } from "./suggest";
 import { suggestPlan } from "./plan";
+import { toolOwnersFor } from "./tools";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
 import { inSentence } from "@/lib/text/words";
 
 const WAIT = 2 * 3_600_000; // time to answer before the next wave
 
 // Tools that hint at a service someone could offer.
-const TOOLS: Record<string, { words: string[]; skill: string }> = {
-  gutters: { words: ["ladder"], skill: "Gutter cleaning" },
-  lawn: { words: ["mower", "trimmer"], skill: "Lawn mowing" },
-  "car-care": { words: ["socket", "jack", "wrench"], skill: "Oil changes at home" },
-  moving: { words: ["truck", "dolly", "van"], skill: "Moving help" },
-  washing: { words: ["pressure washer"], skill: "Pressure washing" },
-};
 
 const first = (name: string) => name.split(" ")[0];
 
@@ -68,21 +62,17 @@ export async function runWave(needId: string, wave: number): Promise<void> {
     }
   }
 
-  if (wave === 3 && TOOLS[need.category]) {
-    const { words, skill } = TOOLS[need.category];
-    const owners = await db
-      .select()
-      .from(schema.vaultItems)
-      .where(and(eq(schema.vaultItems.kind, "goods"), or(...words.map((w) => ilike(schema.vaultItems.title, `%${w}%`)))));
-    for (const tool of owners.filter((t) => t.ownerId !== need.ownerId && !asked.includes(t.ownerId))) {
+  // Wave 3: people whose things would let them do the job, as the agent judges it.
+  if (wave === 3 && need.type === "request_service") {
+    for (const tool of (await toolOwnersFor(need)).filter((t) => !asked.includes(t.ownerId))) {
       const ok = await suggest({
         userId: tool.ownerId,
         needId,
         wave,
         kind: "add_skill",
         title: `Your ${inSentence(tool.title)} could earn money`,
-        body: `${first(asker.name)} nearby needs ${inSentence(skill)}${typical ? `, ~$${typical} a job` : ""}. Offer it?`,
-        action: { needId, category: need.category, skill, value: typical ?? 0 },
+        body: `${first(asker.name)} nearby needs ${inSentence(tool.skill)}${typical ? `, ~$${typical} a job` : ""}. Offer it?`,
+        action: { needId, category: need.category, skill: tool.skill, value: typical ?? 0 },
       });
       if (ok) sent++;
     }
@@ -110,32 +100,19 @@ export async function runWave(needId: string, wave: number): Promise<void> {
   if (sent === 0 && wave < 4) return runWave(needId, wave + 1);
 }
 
-// A new need: start the waves, and suggest what usually goes with it.
+// A new need: start the waves, and let the planning agent look at the bigger picture.
 export async function onNeedPosted(needId: string) {
   const [need] = await db.select().from(schema.intents).where(eq(schema.intents.id, needId));
   if (!need) return;
   await runWave(needId, 1);
-  await suggestPlan(need.ownerId); // a sale and a purchase that go together
-
-  // Life event: someone moving usually needs a mover too.
-  if (/\bmov(e|ing)\b/i.test(need.text) && need.category !== "moving") {
-    const [hasMover] = await db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, need.ownerId), eq(schema.intents.category, "moving"), eq(schema.intents.status, "open")));
-    if (!hasMover) {
-      await suggest({
-        userId: need.ownerId,
-        kind: "post_need",
-        title: "Need a mover too?",
-        body: "You mentioned moving. Want your agent to find someone with a truck for the day?",
-        action: { type: "request_service", category: "moving", text: "Mover for moving day" },
-      });
-    }
-  }
+  await suggestPlan(need.ownerId); // the planning agent spots needs that go together, and what's missing
 }
 
 // Something new in a vault: tell the owner if people already want it.
 export async function onVaultAdded(itemId: string) {
   const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, itemId));
   if (!item) return;
+  await suggestPlan(item.ownerId); // a new thing can complete a plan, e.g. something to sell
   const demand = await findDemandFor(itemId);
   if (!demand.length) return;
 

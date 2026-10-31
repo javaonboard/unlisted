@@ -141,6 +141,27 @@
       "when": 1793473117772,
       "tag": "0019_deal_service",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793477106589,
+      "tag": "0020_deal_helpers",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793477114936,
+      "tag": "0021_drop_deal_service",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793477158892,
+      "tag": "0022_room_stops",
+      "breakpoints": true
     }
   ]
 }

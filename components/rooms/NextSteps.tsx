@@ -28,6 +28,7 @@ type Props = {
   meet: { meetAt: MeetAt; label: string; address: string | null } | null;
   isSeller: boolean;
   places: MeetAt[];
+  stops: string[];
   buyerId: string;
   sellerId: string;
   clientId: string;
@@ -62,6 +63,9 @@ export function NextSteps(p: Props) {
             {p.meet ? ` · ${p.meet.label}` : p.place ? ` · ${p.place}` : ""}
             {p.booking && (p.waitingOn.length === 0 ? " · accepted by both" : others ? ` · waiting for ${others}` : "")}
           </p>
+          {p.stops.length > 0 && (
+            <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-muted-foreground">{p.stops.map((s) => <li key={s}>{s}</li>)}</ol>
+          )}
           {!closed && p.isPlan && p.isPlanOwner && !p.hasLegs && (
             <div className="mt-2">
               {p.planSettled ? (

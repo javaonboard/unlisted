@@ -1,0 +1,1 @@
+ALTER TABLE "deals" DROP COLUMN "service_id";

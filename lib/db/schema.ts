@@ -95,6 +95,7 @@ export const negotiations = pgTable("negotiations", {
   dependsOn: jsonb("depends_on").$type<string[]>().default([]).notNull(), // negotiations this one serves, e.g. a mover for a sale
   label: text("label"), // thread name in the deal channel, e.g. "Sectional → Ben"
   meetAt: text("meet_at", { enum: ["seller_home", "buyer_home", "public"] }), // set by hand; otherwise what the agents agreed
+  stops: jsonb("stops").$type<string[]>().default([]).notNull(), // a helper's job, stop by stop, built from the agreed handoffs
   status: text("status", { enum: ["open", "waiting_owner", "agreed", "closed"] })
     .default("open")
     .notNull(),
@@ -131,7 +132,7 @@ export const deals = pgTable("deals", {
   ownerId: text("owner_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   scoutNote: text("scout_note"), // the Scout's short "why I picked these"
-  serviceId: uuid("service_id").references(() => intents.id), // the service booked once the goods are agreed, if any
+  helperIds: jsonb("helper_ids").$type<string[]>().default([]).notNull(), // services booked once the goods are agreed
   status: text("status", {
     enum: ["proposed", "approved", "held", "settled", "cancelled"],
   })

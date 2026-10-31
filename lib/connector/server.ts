@@ -18,10 +18,10 @@ import { askForNewTime } from "@/lib/negotiation/owner";
 import { playRoom } from "@/lib/negotiation/room";
 import { changeMeetAt } from "@/lib/deals/meet";
 import { understandText } from "@/lib/vault/understand";
-import { missing } from "@/lib/vault/card";
+import { asRecord, missing } from "@/lib/vault/card";
+import { categoryRule, knownCategories } from "@/lib/vault/categories";
 import { after } from "next/server";
 
-const CATEGORIES = "sofa, lighting, vr-headset, gpu, bike, tools, moving, gutters, lawn, it-setup, car-care";
 const json = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] });
 
 // Unlisted as tools inside the user's own AI app (Claude, ChatGPT, ...).
@@ -29,7 +29,8 @@ const json = (value: unknown) => ({ content: [{ type: "text" as const, text: JSO
 // It can read, prepare and propose. Anything that commits the user or moves money
 // (accepting a deal, approving a plan, raising a limit, the PayPal hold, the handoff)
 // is done by the user in the app, so those tools return a link instead.
-export function unlistedServer(userId: string, base: string) {
+export async function unlistedServer(userId: string, base: string) {
+  const categories = categoryRule(await knownCategories());
   const inApp = (roomId: string) => `${base}/rooms/${roomId}`;
   const server = new McpServer({ name: "unlisted", version: "1.0.0" });
 
@@ -42,7 +43,7 @@ export function unlistedServer(userId: string, base: string) {
   server.registerTool(
     "add_to_my_stuff",
     {
-      description: `Remember something the user owns (goods) or can do (skill). Use a short category such as: ${CATEGORIES}.`,
+      description: `Remember something the user owns (goods) or can do (skill). ${categories}`,
       inputSchema: {
         kind: z.enum(["goods", "skill"]),
         title: z.string(),
@@ -63,7 +64,7 @@ export function unlistedServer(userId: string, base: string) {
   server.registerTool(
     "post_need",
     {
-      description: `Tell the marketplace what the user needs: something to buy or a local service. Categories: ${CATEGORIES}.`,
+      description: `Tell the marketplace what the user needs: something to buy or a local service. ${categories}`,
       inputSchema: {
         type: z.enum(["buy", "request_service"]),
         text: z.string().describe("The need in the user's words"),
@@ -235,9 +236,9 @@ export function unlistedServer(userId: string, base: string) {
       if (cards.some((c) => missing(c).length)) return json({ question, draft: cards });
       for (const c of cards) {
         if (c.kind === "need") {
-          await postNeed(userId, { type: c.needType ?? "buy", text: c.details ? `${c.title}. ${c.details}` : c.title, category: c.category, maxPrice: c.maxPrice!, dueInDays: c.dueInDays!, maxMiles: c.maxMiles ?? undefined });
+          await postNeed(userId, { type: c.needType ?? "buy", text: c.details ? `${c.title}. ${c.details}` : c.title, category: c.category, maxPrice: c.maxPrice!, dueInDays: c.dueInDays!, maxMiles: c.maxMiles ?? undefined, constraints: asRecord(c.requirements) });
         } else {
-          await addVaultItem(userId, { kind: c.kind, title: c.title, category: c.category, condition: c.condition ?? undefined, estimatedValue: c.value ?? undefined, minPrice: c.kind === "goods" ? c.minPrice! : c.value!, details: c.details ? { notes: c.details } : {}, maxMiles: c.maxMiles ?? undefined });
+          await addVaultItem(userId, { kind: c.kind, title: c.title, category: c.category, condition: c.condition ?? undefined, estimatedValue: c.value ?? undefined, minPrice: c.kind === "goods" ? c.minPrice! : c.value!, details: { ...(c.details ? { notes: c.details } : {}), ...asRecord(c.specs) }, maxMiles: c.maxMiles ?? undefined });
           for (const h of c.freeHours) await addFreeTime(userId, new Date(h.start), new Date(h.end));
         }
       }

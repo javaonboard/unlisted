@@ -4,43 +4,36 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { acceptPlanAction } from "@/app/actions/suggestions";
 
-type Parts = { sellId: string; sellText: string; buyId: string; buyText: string; serviceId: string; serviceText: string };
+type Part = { kind: "sell" | "buy" | "helper"; id: string; text: string };
+const VERB = { sell: "Sell", buy: "Buy", helper: "Book" };
 
-// "Change the plan": pick what goes in, and whether the sale waits for the purchase.
-export function PlanChoices({ id, parts }: { id: string; parts: Parts }) {
+// "Change the plan": pick what goes in, and whether the sales wait for the purchases.
+export function PlanChoices({ id, parts, linked: linkedByAgent }: { id: string; parts: Part[]; linked: boolean }) {
   const [open, setOpen] = useState(false);
-  const [sell, setSell] = useState(true);
-  const [buy, setBuy] = useState(true);
-  const [service, setService] = useState(!!parts.serviceId);
-  const [linked, setLinked] = useState(true);
+  const [picked, setPicked] = useState(parts.map((p) => p.id));
+  const [linked, setLinked] = useState(linkedByAgent);
   const [pending, start] = useTransition();
 
   if (!open) return <Button size="sm" variant="outline" onClick={() => setOpen(true)}>Change the plan</Button>;
 
-  const tick = (checked: boolean, set: (v: boolean) => void, text: string) => (
-    <label className="flex items-center gap-2"><input type="checkbox" checked={checked} onChange={(e) => set(e.target.checked)} className="size-4 accent-primary" /> {text}</label>
-  );
+  const has = (kind: Part["kind"]) => parts.some((p) => p.kind === kind && picked.includes(p.id));
+  const toggle = (partId: string) => setPicked(picked.includes(partId) ? picked.filter((x) => x !== partId) : [...picked, partId]);
   return (
     <div className="mt-2 flex w-full flex-col gap-2 rounded-xl border bg-background p-3 text-sm">
-      {tick(sell, setSell, parts.sellText)}
-      {tick(buy, setBuy, parts.buyText)}
-      {parts.serviceId && tick(service, setService, parts.serviceText)}
-      {sell && buy && tick(linked, setLinked, "Only sell if the purchase works out")}
+      {parts.map((p) => (
+        <label key={p.id} className="flex items-center gap-2">
+          <input type="checkbox" checked={picked.includes(p.id)} onChange={() => toggle(p.id)} className="size-4 accent-primary" />
+          <span><span className="font-medium">{VERB[p.kind]}:</span> {p.text}</span>
+        </label>
+      ))}
+      {has("sell") && has("buy") && (
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={linked} onChange={(e) => setLinked(e.target.checked)} className="size-4 accent-primary" />
+          Only sell once the purchase works out
+        </label>
+      )}
       <div className="flex gap-2">
-        <Button
-          size="sm"
-          disabled={pending || (!sell && !buy)}
-          onClick={() =>
-            start(() =>
-              acceptPlanAction(id, {
-                sellId: sell ? parts.sellId : undefined,
-                buyId: buy ? parts.buyId : undefined,
-                serviceId: service ? parts.serviceId : undefined,
-                sellOnlyIfBought: sell && buy && linked,
-              }),
-            )
-          }
-        >
+        <Button size="sm" disabled={pending || (!has("sell") && !has("buy"))} onClick={() => start(() => acceptPlanAction(id, { partIds: picked, sellOnlyIfBought: has("sell") && has("buy") && linked }))}>
           Start this plan
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>

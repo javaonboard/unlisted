@@ -7,7 +7,7 @@ import { decideMove } from "./agent";
 import { toA2AMessage, type Move } from "./moves";
 import { claimAgreement } from "./claim";
 
-type NewRoom = { id?: string; dealId?: string; dependsOn?: string[]; label?: string; buyerId: string; sellerId: string; itemId: string; intentId: string };
+type NewRoom = { id?: string; dealId?: string; dependsOn?: string[]; stops?: string[]; label?: string; buyerId: string; sellerId: string; itemId: string; intentId: string };
 
 export async function openRoom(input: NewRoom) {
   const [room] = await db.insert(schema.negotiations).values(input).returning();

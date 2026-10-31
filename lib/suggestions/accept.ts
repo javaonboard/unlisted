@@ -4,11 +4,13 @@ import { addVaultItem } from "@/lib/vault/mutations";
 import { postNeed } from "@/lib/intents/mutations";
 import { startNegotiation } from "@/lib/negotiation/start";
 import { onDismissed, runWave } from "./engine";
-import { startLinkedDeal, type PlanChoice } from "@/lib/deals/planner";
+import { startLinkedDeal } from "@/lib/deals/planner";
+
+export type PlanPick = { partIds?: string[]; sellOnlyIfBought?: boolean };
 
 // "Yes" on a suggestion. Returns where to go next, if anywhere.
 // A plan can come with the owner's own choices ("Change the plan").
-export async function acceptSuggestion(id: string, userId: string, plan?: Partial<PlanChoice>): Promise<string | null> {
+export async function acceptSuggestion(id: string, userId: string, plan?: PlanPick): Promise<string | null> {
   const [s] = await db.select().from(schema.suggestions).where(eq(schema.suggestions.id, id));
   if (!s || s.userId !== userId || s.status !== "new") return null;
   await db.update(schema.suggestions).set({ status: "accepted" }).where(eq(schema.suggestions.id, id));
@@ -38,17 +40,21 @@ export async function acceptSuggestion(id: string, userId: string, plan?: Partia
       await runWave(String(a.needId), 1);
       return `/needs/${a.needId}`;
     case "plan": {
+      // The agent's plan, or the owner's own pick of its parts ("Change the plan").
+      const parts = JSON.parse(String(a.parts)) as { kind: string; id: string; itemId?: string }[];
+      const chosen = plan?.partIds ? parts.filter((p) => plan.partIds!.includes(p.id)) : parts;
       const deal = await startLinkedDeal(userId, {
         title: String(a.title),
-        sellId: plan ? plan.sellId : (a.sellId as string) || undefined,
-        buyId: plan ? plan.buyId : (a.buyId as string) || undefined,
-        serviceId: plan ? plan.serviceId : (a.serviceId as string) || undefined,
-        sellOnlyIfBought: plan?.sellOnlyIfBought ?? true,
+        sells: chosen.filter((p) => p.kind === "sell").map((p) => ({ needId: p.id, itemId: p.itemId! })),
+        buyIds: chosen.filter((p) => p.kind === "buy").map((p) => p.id),
+        helperIds: chosen.filter((p) => p.kind === "helper").map((p) => p.id),
+        sellOnlyIfBought: plan?.sellOnlyIfBought ?? Boolean(a.sellWaitsForBuy),
       });
       return `/deals/${deal.id}`;
     }
     case "post_need": {
-      const need = await postNeed(userId, { type: a.type as "request_service", text: String(a.text), category: String(a.category) });
+      // The suggestion said the budget out loud, so "Yes" agrees to it.
+      const need = await postNeed(userId, { type: a.type as "buy" | "request_service", text: String(a.text), category: String(a.category), maxPrice: a.maxPrice ? Number(a.maxPrice) : undefined, dueInDays: 7, constraints: a.constraints ? JSON.parse(String(a.constraints)) : undefined });
       return `/needs/${need.id}`;
     }
   }

@@ -1,0 +1,1 @@
+ALTER TABLE "negotiations" ADD COLUMN "stops" jsonb DEFAULT '[]'::jsonb NOT NULL;

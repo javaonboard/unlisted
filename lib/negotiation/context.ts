@@ -96,6 +96,7 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
     busy,
     free,
     places,
+    stops: room.stops,
     signals,
     standingPrice: lastFromOther ? Number(lastFromOther.price) : null,
   };

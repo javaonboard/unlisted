@@ -1,7 +1,7 @@
 import { asc, eq, inArray } from "drizzle-orm";
 import { distanceText } from "@/lib/places";
 import { db, schema } from "@/lib/db";
-import { meetingPoint, placesFor, type MeetAt } from "@/lib/deals/meet";
+import { meetAtOf, meetingPoint, placesFor } from "@/lib/deals/meet";
 
 type Room = typeof schema.negotiations.$inferSelect;
 
@@ -77,8 +77,7 @@ export async function getRoomView(roomId: string, viewerId: string) {
   const myPending = legs.filter((l) => l.payerId === viewerId && l.status === "pending");
   const agreedTerms = [...moves].reverse().find((m) => (m.terms as { when?: string }).when)?.terms as { when?: string; place?: string } | undefined;
   // Where to meet: set by hand, or what the agents agreed, or the usual for the kind of deal.
-  const agreedMeetAt = [...moves].reverse().map((m) => (m.terms as { meetAt?: MeetAt }).meetAt).find(Boolean);
-  const meetAt: MeetAt = room.meetAt ?? agreedMeetAt ?? (item.kind === "skill" ? "buyer_home" : "seller_home");
+  const meetAt = meetAtOf(room, moves, item.kind === "skill");
   // The exact address is only shared once the payment is held, and only with the two people in the deal.
   const party = room.buyerId === viewerId || room.sellerId === viewerId;
   const meet = party ? await meetingPoint(room, meetAt, viewerId, leg?.status === "held") : null;
@@ -88,6 +87,7 @@ export async function getRoomView(roomId: string, viewerId: string) {
     meet,
     distance: await apart(room.buyerId, room.sellerId),
     places: party ? await placesFor(room) : [],
+    stops: room.stops,
     payTotal: myPending.reduce((sum, l) => sum + Number(l.amount), 0),
     planSettled: all.length > 0 && !all.some((r) => r.status === "open" || r.status === "waiting_owner"),
     hasLegs: legs.length > 0,

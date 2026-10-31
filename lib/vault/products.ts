@@ -31,3 +31,15 @@ export async function findProductsInPhoto(base64Image: string): Promise<ProductM
     };
   });
 }
+
+// Looks up real products by name, so an agent can check specs and prices (e.g. what power a card needs).
+export async function lookUpProduct(query: string) {
+  const page = await channel3().products.search({ query, limit: 3 });
+  console.log("[channel3] looked up", query, page.data.length);
+  return page.data.map((p) => ({
+    title: p.title,
+    price: (p.offers?.[0] as { price?: { price?: number } } | undefined)?.price?.price ?? null,
+    features: (p.key_features ?? []).slice(0, 6),
+    description: p.description?.slice(0, 300) ?? null,
+  }));
+}

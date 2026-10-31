@@ -6,6 +6,13 @@ import { distanceText, placesInReach, publicSpot, rangeOfNeed, rangeOfOffer, typ
 
 export type { MeetAt };
 
+// Who goes where for a deal: set by hand, else what the agents last agreed, else the usual
+// (a service happens at the customer's, goods are picked up from the seller).
+export function meetAtOf(room: { meetAt: MeetAt | null }, moves: { terms: unknown }[], isService: boolean): MeetAt {
+  const agreed = [...moves].reverse().map((m) => (m.terms as { meetAt?: MeetAt }).meetAt).find(Boolean);
+  return room.meetAt ?? agreed ?? (isService ? "buyer_home" : "seller_home");
+}
+
 // Where to meet. The street address is private, so it's only filled in when `reveal` is true
 // (both accepted and the payment is held).
 export async function meetingPoint(room: { buyerId: string; sellerId: string }, meetAt: MeetAt, viewerId: string, reveal: boolean) {

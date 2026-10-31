@@ -7,7 +7,7 @@ import { analyzePhoto } from "@/lib/vault/photo";
 import { addVaultItem, setPhoto } from "@/lib/vault/mutations";
 import { skillDemand } from "@/lib/vault/demand";
 import { understandText } from "@/lib/vault/understand";
-import { missing, type Card } from "@/lib/vault/card";
+import { asRecord, missing, type Card } from "@/lib/vault/card";
 import { addFreeTime } from "@/lib/availability";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
@@ -22,6 +22,7 @@ export type Suggestion = {
   note: string; // condition for goods, the reason for skills
   value: number | null;
   demand?: { requests: number; perJob: number | null };
+  specs?: Record<string, number>;
 };
 
 // Turns one photo into suggested vault cards. Nothing is saved yet.
@@ -30,7 +31,7 @@ export async function suggestFromPhoto(base64: string): Promise<{ suggestions: S
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0] ?? "local";
   try {
     const result = await analyzePhoto(base64, "image/jpeg", ip);
-    const goods: Suggestion[] = result.goods.map((g) => ({ kind: "goods", title: g.title, category: g.category, note: g.condition, value: g.usedValue }));
+    const goods: Suggestion[] = result.goods.map((g) => ({ kind: "goods", title: g.title, category: g.category, note: g.condition, value: g.usedValue, specs: asRecord(g.specs) }));
     const skills: Suggestion[] = await Promise.all(
       result.skills.map(async (s) => ({ kind: "skill" as const, title: s.title, category: s.category, note: s.because, value: null, demand: await skillDemand(s.category, userId) })),
     );
@@ -49,6 +50,7 @@ export async function addSuggestions(picked: Suggestion[], thumbnail: string) {
       category: s.category,
       condition: s.kind === "goods" ? s.note : undefined,
       estimatedValue: s.value ?? s.demand?.perJob ?? undefined,
+      details: s.specs ?? {},
     });
     if (s.kind === "goods") await setPhoto(item.id, thumbnail);
   }
@@ -72,7 +74,7 @@ export async function saveCards(cards: Card[], said: string) {
   for (const c of cards) {
     if (c.kind === "need") {
       const text = c.details ? `${c.title}. ${c.details}` : c.title;
-      await postNeed(userId, { type: c.needType ?? "buy", text, category: c.category, maxPrice: c.maxPrice ?? undefined, dueInDays: c.dueInDays ?? undefined, maxMiles: c.maxMiles ?? undefined });
+      await postNeed(userId, { type: c.needType ?? "buy", text, category: c.category, maxPrice: c.maxPrice ?? undefined, dueInDays: c.dueInDays ?? undefined, maxMiles: c.maxMiles ?? undefined, constraints: asRecord(c.requirements) });
     } else {
       await addVaultItem(userId, {
         kind: c.kind,
@@ -81,7 +83,7 @@ export async function saveCards(cards: Card[], said: string) {
         condition: c.condition ?? undefined,
         estimatedValue: c.value ?? undefined,
         minPrice: c.kind === "goods" ? (c.minPrice ?? undefined) : (c.value ?? undefined),
-        details: c.details ? { notes: c.details } : {},
+        details: { ...(c.details ? { notes: c.details } : {}), ...asRecord(c.specs) },
         maxMiles: c.maxMiles ?? undefined,
       });
       for (const h of c.freeHours) await addFreeTime(userId, new Date(h.start), new Date(h.end));

@@ -1,21 +1,23 @@
 import { z } from "zod";
 import { askForData } from "@/lib/ai/structured";
 import { findProductsInPhoto, type ProductMatch } from "./products";
+import { categoryRule, knownCategories } from "./categories";
 
 const PhotoResult = z.object({
   goods: z.array(
     z.object({
       title: z.string().describe("Short name, e.g. 'Grey 3-seat sectional'"),
-      category: z.string().describe("One lowercase word or slug, e.g. 'sofa', 'lighting', 'vr-headset', 'gpu', 'bike', 'tools'"),
+      category: z.string().describe("Lowercase slug, following the category rule"),
       condition: z.string().describe("What you can actually see: stains, wear, damage. Say 'looks good' if nothing."),
       usedValue: z.number().describe("Fair used price in USD"),
       matchIndex: z.number().nullable().describe("Index of the matching product in the list, or null"),
+      specs: z.array(z.object({ name: z.string(), value: z.number() })).describe("Numbers that matter when matching, camelCase with unit, e.g. seats 3, widthIn 104, watts 750, storageGb 128"),
     }),
   ),
   skills: z.array(
     z.object({
       title: z.string().describe("A service a person could offer, e.g. 'Gutter cleaning'"),
-      category: z.string().describe("One of: moving, gutters, lawn, car-care, it-setup, washing, assembly, or a short new word"),
+      category: z.string().describe("Lowercase slug, following the category rule"),
       because: z.string().describe("The equipment in the photo that suggests it"),
     }),
   ),
@@ -48,7 +50,8 @@ ${list}
 List the goods worth keeping track of, with condition you can see and a fair used price
 (use the new price as a ceiling). Skip fixtures like walls, floors and built-ins.
 Also list services this person could offer to neighbors based on equipment you see
-(for example a ladder suggests gutter cleaning). Leave skills empty if there are none.`,
+(for example a ladder suggests gutter cleaning). Leave skills empty if there are none.
+${categoryRule(await knownCategories())}`,
       },
     ],
   });

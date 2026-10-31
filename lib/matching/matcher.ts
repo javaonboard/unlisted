@@ -1,22 +1,21 @@
 import { and, eq, ne } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { placesInReach, rangeOfNeed, rangeOfOffer } from "@/lib/places";
+import { meetsRequirements } from "./rules";
 
 type Item = typeof schema.vaultItems.$inferSelect;
 type Intent = typeof schema.intents.$inferSelect;
 
-// Hard rules first: same category, prices overlap, size fits.
+// Hard rules first: same category, prices overlap, and the need's requirements hold.
+// Requirements are generic: "minSeats: 3" needs the item's "seats" ≥ 3, "maxWidthIn: 80" needs
+// "widthIn" ≤ 80. The AI names the specs when it reads a photo or a message; this rule just compares them.
 function fits(item: Item, intent: Intent) {
   if (item.category !== intent.category || item.ownerId === intent.ownerId) return false;
   // Within 10% is still worth talking about; owners can stretch.
   if (item.minPrice && intent.maxPrice && Number(item.minPrice) > Number(intent.maxPrice) * 1.1) return false;
-
-  const wanted = intent.constraints as { minSeats?: number; maxWidthIn?: number };
-  const details = item.details as { seats?: number; widthIn?: number };
-  if (wanted.minSeats && (details.seats ?? 0) < wanted.minSeats) return false;
-  if (wanted.maxWidthIn && (details.widthIn ?? Infinity) > wanted.maxWidthIn) return false;
-  return true;
+  return meetsRequirements(item.details as Record<string, unknown>, intent.constraints as Record<string, unknown>);
 }
+
 
 // Both people can meet somewhere without driving past how far they said they'd go.
 async function inReach() {

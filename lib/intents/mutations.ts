@@ -9,6 +9,7 @@ type NewNeed = {
   maxPrice?: number;
   dueInDays?: number;
   maxMiles?: number;
+  constraints?: Record<string, number>; // e.g. { minSeats: 3, maxWidthIn: 80 }
 };
 
 export async function postNeed(ownerId: string, need: NewNeed) {
@@ -21,6 +22,7 @@ export async function postNeed(ownerId: string, need: NewNeed) {
       category: need.category,
       maxPrice: need.maxPrice?.toFixed(2),
       maxMiles: need.maxMiles,
+      constraints: need.constraints ?? {},
       dueAt: need.dueInDays != null ? new Date(Date.now() + Math.max(1, need.dueInDays) * 86_400_000) : null,
     })
     .returning();
