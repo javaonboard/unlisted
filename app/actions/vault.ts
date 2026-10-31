@@ -51,7 +51,7 @@ export async function addSuggestions(picked: Suggestion[], thumbnail: string) {
     });
     if (s.kind === "goods") await setPhoto(item.id, thumbnail);
   }
-  revalidatePath("/vault");
+  revalidatePath("/my-stuff");
 }
 
 // What the owner typed, turned into cards to check. Nothing is saved yet.

@@ -12,7 +12,7 @@ import { playRoom } from "@/lib/negotiation/room";
 
 export async function planMovingDay() {
   await startLinkedDeal(await currentUserId(), "Moving day");
-  redirect("/vault");
+  redirect("/my-stuff");
 }
 
 // The owner answers their agent in their own words; the agent then carries on.

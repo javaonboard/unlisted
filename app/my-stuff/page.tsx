@@ -38,7 +38,7 @@ async function MyStuff() {
       {list.length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
       <div className="grid gap-3 sm:grid-cols-2">
         {list.map((item) => (
-          <Link key={item.id} href={`/vault/${item.id}`} className="flex gap-3 rounded-2xl border p-3 hover:bg-muted/40">
+          <Link key={item.id} href={`/my-stuff/${item.id}`} className="flex gap-3 rounded-2xl border p-3 hover:bg-muted/40">
             {item.photos[0] ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={item.photos[0]} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
