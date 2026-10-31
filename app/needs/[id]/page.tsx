@@ -7,6 +7,9 @@ import { BackLink } from "@/components/anchors/BackLink";
 import { Highlights } from "@/components/anchors/Highlights";
 import { NegotiationList } from "@/components/anchors/NegotiationList";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
+import { RangeForm } from "@/components/anchors/RangeForm";
+import { setNeedRangeAction } from "@/app/actions/range";
+import { rangeOfNeed } from "@/lib/places";
 
 async function NeedAnchor({ params }: { params: Promise<{ id: string }> }) {
   const data = await getNeedAnchor((await params).id, await currentUserId());
@@ -25,6 +28,7 @@ async function NeedAnchor({ params }: { params: Promise<{ id: string }> }) {
             {need.maxPrice && ` · up to $${Number(need.maxPrice).toFixed(0)} (only you see this)`}
             {need.dueAt && ` · by ${need.dueAt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`}
           </CardDescription>
+          <RangeForm action={setNeedRangeAction.bind(null, need.id)} miles={rangeOfNeed(need.maxMiles)} label="Anyone within" />
         </CardHeader>
       </Card>
       <h2 className="mt-6 mb-3 font-medium">Agents offering</h2>

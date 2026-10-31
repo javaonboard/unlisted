@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { currentUserId } from "@/lib/session";
 import { findDemandFor } from "@/lib/matching/matcher";
 import { statusLine } from "@/lib/anchors/status";
+import { rangeOfNeed, rangeOfOffer, rangeText } from "@/lib/places";
 import { ChevronRight, ClipboardList, Compass } from "lucide-react";
 import { CategoryIcon } from "@/components/anchors/Badges";
 import { planMovingDay } from "@/app/actions/deals";
@@ -46,7 +47,7 @@ async function MyStuff() {
             )}
             <div className="min-w-0">
               <p className="font-medium">{item.title}</p>
-              <p className="truncate text-sm text-muted-foreground">{item.condition ?? item.category} · ~${Number(item.estimatedValue ?? 0).toFixed(0)}{item.kind === "skill" ? "/job" : ""}</p>
+              <p className="truncate text-sm text-muted-foreground">{item.condition ?? item.category} · ~${Number(item.estimatedValue ?? 0).toFixed(0)}{item.kind === "skill" ? "/job" : ""} · {rangeText(rangeOfOffer(item.maxMiles), true)}</p>
               <p className="mt-1 text-sm">{statusLine(rooms.filter((r) => r.itemId === item.id), names, userId, interested[item.id])}</p>
             </div>
           </Link>
@@ -81,7 +82,7 @@ async function MyStuff() {
       <div className="flex flex-col gap-2">
         {needs.filter((n) => n.type !== "sell").map((need) => (
           <Link key={need.id} href={`/needs/${need.id}`} className="flex items-center justify-between rounded-2xl border p-3 text-sm hover:bg-muted/40">
-            <span className="flex items-center gap-2"><CategoryIcon category={need.category} className="size-4 text-primary" /> “{need.text}”</span>
+            <span className="flex items-center gap-2"><CategoryIcon category={need.category} className="size-4 text-primary" /> “{need.text}” <span className="text-muted-foreground">· {rangeText(rangeOfNeed(need.maxMiles), false)}</span></span>
             <span className="flex items-center gap-1 text-muted-foreground">{statusLine(rooms.filter((r) => r.intentId === need.id), names, userId)} <ChevronRight className="size-4" /></span>
           </Link>
         ))}

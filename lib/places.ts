@@ -41,3 +41,24 @@ export function publicSpot(areaA: string, areaB: string) {
   const trip = (spot: (typeof PUBLIC_SPOTS)[number]) => milesBetween(areaA, spot.area) + milesBetween(areaB, spot.area);
   return [...PUBLIC_SPOTS].sort((x, y) => trip(x) - trip(y))[0];
 }
+
+export type MeetAt = "seller_home" | "buyer_home" | "public";
+
+// How far people go when they haven't said: sellers and providers 5 mi, people with a need 10 mi.
+export const rangeOfOffer = (miles: number | null) => miles ?? 5;
+export const rangeOfNeed = (miles: number | null) => miles ?? 10;
+
+// Places to meet that keep each person within how far they'll go.
+// At the seller's place the buyer drives; at the buyer's place the seller drives; a public spot is a drive for both.
+export function placesInReach(p: { buyerArea: string; sellerArea: string; buyerMiles: number; sellerMiles: number }): MeetAt[] {
+  const apart = milesBetween(p.buyerArea, p.sellerArea);
+  const spot = publicSpot(p.buyerArea, p.sellerArea);
+  const places: MeetAt[] = [];
+  if (apart <= p.buyerMiles) places.push("seller_home");
+  if (apart <= p.sellerMiles) places.push("buyer_home");
+  if (milesBetween(p.buyerArea, spot.area) <= p.buyerMiles && milesBetween(p.sellerArea, spot.area) <= p.sellerMiles) places.push("public");
+  return places;
+}
+
+// "within 5 mi", or "pickup only" for a seller who won't travel.
+export const rangeText = (miles: number, isOffer: boolean) => (isOffer && miles === 0 ? "pickup only" : `within ${miles} mi`);

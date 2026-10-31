@@ -70,7 +70,7 @@ async function MySchedule() {
                   <AcceptDeal
                     roomId={b.roomId!}
                     canAccept={next.label.startsWith("Accept")}
-                    place={{ meetAt: view.meet.meetAt, isSeller: view.room.sellerId === userId, other: (view.names[view.room.sellerId === userId ? view.room.buyerId : view.room.sellerId] ?? "").split(" ")[0] }}
+                    place={{ meetAt: view.meet.meetAt, allowed: view.places, isSeller: view.room.sellerId === userId, other: (view.names[view.room.sellerId === userId ? view.room.buyerId : view.room.sellerId] ?? "").split(" ")[0] }}
                   />
                 )
               )}

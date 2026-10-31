@@ -8,6 +8,9 @@ import { BackLink } from "@/components/anchors/BackLink";
 import { Highlights } from "@/components/anchors/Highlights";
 import { NegotiationList } from "@/components/anchors/NegotiationList";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
+import { RangeForm } from "@/components/anchors/RangeForm";
+import { setItemRangeAction } from "@/app/actions/range";
+import { rangeOfOffer } from "@/lib/places";
 
 async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
   const data = await getItemAnchor((await params).id, await currentUserId());
@@ -30,6 +33,7 @@ async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
           <div>
             <p>Estimated value: ${Number(item.estimatedValue ?? 0).toFixed(0)}</p>
             {item.minPrice && <p>Your minimum: ${Number(item.minPrice).toFixed(0)} <span className="text-muted-foreground">(only you see this)</span></p>}
+            <RangeForm action={setItemRangeAction.bind(null, item.id)} miles={rangeOfOffer(item.maxMiles)} label={item.kind === "skill" ? "I travel up to" : "I'll deliver up to (0 = pickup only)"} />
             {Object.keys(item.details).length > 0 && <p className="text-muted-foreground">{Object.entries(item.details).map(([k, v]) => `${k}: ${v}`).join(" · ")}</p>}
           </div>
           <div>

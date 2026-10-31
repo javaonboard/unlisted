@@ -60,3 +60,8 @@ test("an agent asks its owner at most once per room", () => {
   assert.equal(checkMove(ask, rules()), null);
   assert.match(checkMove(ask, rules({ alreadyAsked: true }))!, /already asked/);
 });
+
+test("the agreed place has to keep both people within range", () => {
+  assert.match(checkMove(move({ meetAt: "buyer_home" }), rules({ places: ["seller_home"] }))!, /drive further/);
+  assert.equal(checkMove(move({ meetAt: "seller_home" }), rules({ places: ["seller_home"] })), null);
+});

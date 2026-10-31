@@ -47,6 +47,7 @@ export const vaultItems = pgTable("vault_items", {
   estimatedValue: money("estimated_value"),
   minPrice: money("min_price"), // never shown to other users
   openToOffers: boolean("open_to_offers").default(false).notNull(),
+  maxMiles: integer("max_miles"), // how far the owner will travel; 0 = pickup only. Empty = the default
   createdAt: createdAt(),
 });
 
@@ -71,6 +72,7 @@ export const intents = pgTable("intents", {
   text: text("text").notNull(), // the user's own words
   category: text("category").notNull(),
   maxPrice: money("max_price"),
+  maxMiles: integer("max_miles"), // how far away is fine. Empty = the default
   minPrice: money("min_price"),
   constraints: jsonb("constraints").$type<Record<string, unknown>>().default({}).notNull(),
   dependsOn: jsonb("depends_on").$type<string[]>().default([]).notNull(), // other intent ids

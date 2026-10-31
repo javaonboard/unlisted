@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { acceptDealAction, changeMeetAtAction, changeTimeAction } from "@/app/actions/deals";
 import type { MeetAt } from "@/lib/deals/meet";
 
-type Place = { meetAt: MeetAt; isSeller: boolean; other: string };
+type Place = { meetAt: MeetAt; isSeller: boolean; other: string; allowed: MeetAt[] };
 
 // Accept the deal with its time and place, or change either one.
 export function AcceptDeal({ roomId, canAccept, place }: { roomId: string; canAccept: boolean; place: Place }) {
@@ -27,7 +27,8 @@ export function AcceptDeal({ roomId, canAccept, place }: { roomId: string; canAc
       {moving && (
         <div className="flex flex-wrap gap-2">
           {options.map(([value, text]) => (
-            <Button key={value} size="sm" variant={value === place.meetAt ? "default" : "secondary"} disabled={pending || value === place.meetAt}
+            <Button key={value} size="sm" variant={value === place.meetAt ? "default" : "secondary"} disabled={pending || value === place.meetAt || !place.allowed.includes(value)}
+              title={place.allowed.includes(value) ? undefined : "Too far for how far one of you will travel"}
               onClick={() => start(async () => { await changeMeetAtAction(roomId, value); setMoving(false); })}>
               {text}
             </Button>

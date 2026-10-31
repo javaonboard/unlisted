@@ -71,7 +71,7 @@ export async function saveCards(cards: Card[], said: string) {
   for (const c of cards) {
     if (c.kind === "need") {
       const text = c.details ? `${c.title}. ${c.details}` : c.title;
-      await postNeed(userId, { type: c.needType ?? "buy", text, category: c.category, maxPrice: c.maxPrice ?? undefined, dueInDays: c.dueInDays ?? undefined });
+      await postNeed(userId, { type: c.needType ?? "buy", text, category: c.category, maxPrice: c.maxPrice ?? undefined, dueInDays: c.dueInDays ?? undefined, maxMiles: c.maxMiles ?? undefined });
     } else {
       await addVaultItem(userId, {
         kind: c.kind,
@@ -81,6 +81,7 @@ export async function saveCards(cards: Card[], said: string) {
         estimatedValue: c.value ?? undefined,
         minPrice: c.kind === "goods" ? (c.minPrice ?? undefined) : (c.value ?? undefined),
         details: c.details ? { notes: c.details } : {},
+        maxMiles: c.maxMiles ?? undefined,
       });
       for (const h of c.freeHours) await addFreeTime(userId, new Date(h.start), new Date(h.end));
     }

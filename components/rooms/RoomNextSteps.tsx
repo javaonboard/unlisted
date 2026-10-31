@@ -25,6 +25,7 @@ export function RoomNextSteps({ data, viewerId }: { data: RoomView; viewerId: st
       price={Number(room.agreedPrice ?? 0)}
       meet={data.meet}
       isSeller={room.sellerId === viewerId}
+      places={data.places}
       sellerId={room.sellerId}
       buyerId={room.buyerId}
       clientId={process.env.PAYPAL_CLIENT_ID ?? ""}

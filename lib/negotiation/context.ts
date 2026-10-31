@@ -3,6 +3,7 @@ import { db, schema } from "@/lib/db";
 import { counterpartySignals } from "./signals";
 import { busyTimes } from "@/lib/bookings";
 import { freeTimes } from "@/lib/availability";
+import { placesFor } from "@/lib/deals/meet";
 import type { Limits } from "./guardrails";
 
 // Everything one side's agent needs for its next move, and nothing private
@@ -64,6 +65,8 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
   const busy = [...(await busyTimes(ownerId, roomId)), ...(await busyTimes(otherId, roomId))];
   // Free hours, for whoever marked some. The time has to fall inside each such person's hours.
   const free = { you: await freeTimes(ownerId), them: await freeTimes(otherId) };
+  // Where to meet without anyone driving past how far they said they'd go.
+  const places = await placesFor(room);
 
   const lastFromOther = [...moves].reverse().find((m) => m.fromUserId === otherId && m.price);
   const signals = counterpartySignals({
@@ -92,6 +95,7 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
     plan: deal && deal.ownerId === ownerId ? plan : [],
     busy,
     free,
+    places,
     signals,
     standingPrice: lastFromOther ? Number(lastFromOther.price) : null,
   };

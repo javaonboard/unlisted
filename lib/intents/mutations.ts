@@ -1,3 +1,4 @@
+import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { publish } from "@/lib/events/bus";
 
@@ -7,6 +8,7 @@ type NewNeed = {
   category: string;
   maxPrice?: number;
   dueInDays?: number;
+  maxMiles?: number;
 };
 
 export async function postNeed(ownerId: string, need: NewNeed) {
@@ -18,9 +20,15 @@ export async function postNeed(ownerId: string, need: NewNeed) {
       text: need.text,
       category: need.category,
       maxPrice: need.maxPrice?.toFixed(2),
+      maxMiles: need.maxMiles,
       dueAt: need.dueInDays != null ? new Date(Date.now() + Math.max(1, need.dueInDays) * 86_400_000) : null,
     })
     .returning();
   await publish("need.posted", { needId: row.id });
   return row;
+}
+
+// How far away is fine for this need. Only the owner can change it.
+export async function setNeedRange(ownerId: string, needId: string, miles: number) {
+  await db.update(schema.intents).set({ maxMiles: Math.max(1, Math.round(miles)) }).where(and(eq(schema.intents.id, needId), eq(schema.intents.ownerId, ownerId)));
 }

@@ -50,6 +50,7 @@ export function unlistedServer(userId: string, base: string) {
         condition: z.string().optional(),
         estimatedValue: z.number().optional().describe("USD"),
         minPrice: z.number().optional().describe("Least the user would accept, USD. Never shown to others."),
+        maxMiles: z.number().optional().describe("How far the user will travel or deliver, miles. 0 = pickup only. Default 5"),
       },
     },
     async (item) => {
@@ -69,6 +70,7 @@ export function unlistedServer(userId: string, base: string) {
         category: z.string(),
         maxPrice: z.number().optional().describe("Most the user would pay, USD"),
         dueInDays: z.number().optional(),
+        maxMiles: z.number().optional().describe("How far away is fine, miles. Default 10"),
       },
     },
     async (need) => {
@@ -233,9 +235,9 @@ export function unlistedServer(userId: string, base: string) {
       if (cards.some((c) => missing(c).length)) return json({ question, draft: cards });
       for (const c of cards) {
         if (c.kind === "need") {
-          await postNeed(userId, { type: c.needType ?? "buy", text: c.details ? `${c.title}. ${c.details}` : c.title, category: c.category, maxPrice: c.maxPrice!, dueInDays: c.dueInDays! });
+          await postNeed(userId, { type: c.needType ?? "buy", text: c.details ? `${c.title}. ${c.details}` : c.title, category: c.category, maxPrice: c.maxPrice!, dueInDays: c.dueInDays!, maxMiles: c.maxMiles ?? undefined });
         } else {
-          await addVaultItem(userId, { kind: c.kind, title: c.title, category: c.category, condition: c.condition ?? undefined, estimatedValue: c.value ?? undefined, minPrice: c.kind === "goods" ? c.minPrice! : c.value!, details: c.details ? { notes: c.details } : {} });
+          await addVaultItem(userId, { kind: c.kind, title: c.title, category: c.category, condition: c.condition ?? undefined, estimatedValue: c.value ?? undefined, minPrice: c.kind === "goods" ? c.minPrice! : c.value!, details: c.details ? { notes: c.details } : {}, maxMiles: c.maxMiles ?? undefined });
           for (const h of c.freeHours) await addFreeTime(userId, new Date(h.start), new Date(h.end));
         }
       }

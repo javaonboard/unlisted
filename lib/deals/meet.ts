@@ -2,9 +2,9 @@ import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { confirmTime } from "@/lib/bookings";
-import { distanceText, publicSpot } from "@/lib/places";
+import { distanceText, placesInReach, publicSpot, rangeOfNeed, rangeOfOffer, type MeetAt } from "@/lib/places";
 
-export type MeetAt = "seller_home" | "buyer_home" | "public";
+export type { MeetAt };
 
 // Where to meet. The street address is private, so it's only filled in when `reveal` is true
 // (both accepted and the payment is held).
@@ -28,10 +28,22 @@ export async function meetingPoint(room: { buyerId: string; sellerId: string }, 
 
 const SAY: Record<MeetAt, string> = { seller_home: "at the seller's place", buyer_home: "at the buyer's place", public: "at a public spot" };
 
+// Where this deal can happen without anyone driving past their range.
+export async function placesFor(room: { buyerId: string; sellerId: string; itemId: string | null; intentId: string | null }) {
+  const [[item], [need], people] = await Promise.all([
+    db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!)),
+    db.select().from(schema.intents).where(eq(schema.intents.id, room.intentId!)),
+    db.select({ id: schema.users.id, area: schema.users.area }).from(schema.users).where(inArray(schema.users.id, [room.buyerId, room.sellerId])),
+  ]);
+  const area = (id: string) => people.find((p) => p.id === id)?.area ?? "";
+  return placesInReach({ buyerArea: area(room.buyerId), sellerArea: area(room.sellerId), buyerMiles: rangeOfNeed(need?.maxMiles ?? null), sellerMiles: rangeOfOffer(item?.maxMiles ?? null) });
+}
+
 // One person changes where to meet. Like a time change, the other side accepts again.
 export async function changeMeetAt(roomId: string, userId: string, meetAt: MeetAt) {
   const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
   if (room?.status !== "agreed" || (room.buyerId !== userId && room.sellerId !== userId)) return;
+  if (!(await placesFor(room)).includes(meetAt)) return; // too far for someone's range
   const other = room.buyerId === userId ? room.sellerId : room.buyerId;
 
   await db.update(schema.negotiations).set({ meetAt }).where(eq(schema.negotiations.id, roomId));

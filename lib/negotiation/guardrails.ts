@@ -1,4 +1,5 @@
 import type { Move } from "./moves";
+import type { MeetAt } from "@/lib/places";
 
 export type Limits = {
   role: "buyer" | "seller";
@@ -12,7 +13,7 @@ type Busy = { startsAt: Date; endsAt: Date };
 // Returns an error to send back to the agent, or null if the move is fine.
 export function checkMove(
   move: Move,
-  rules: { limits: Limits; evidenceIds: string[]; standingPrice: number | null; alreadyAsked: boolean; busy: Busy[]; free?: Busy[][] },
+  rules: { limits: Limits; evidenceIds: string[]; standingPrice: number | null; alreadyAsked: boolean; busy: Busy[]; free?: Busy[][]; places?: MeetAt[] },
 ) {
   const { limits } = rules;
 
@@ -48,6 +49,10 @@ export function checkMove(
     if (clash) return `That time clashes with something already booked until ${clash.endsAt.toISOString()}. Pick a free time.`;
     const outside = (rules.free ?? []).some((hours) => hours.length && !hours.some((h) => start >= h.startsAt && start < h.endsAt));
     if (outside) return "That time is outside the free hours someone marked. Pick a time inside them.";
+  }
+
+  if (move.meetAt && rules.places?.length && !rules.places.includes(move.meetAt)) {
+    return `meetAt ${move.meetAt} makes someone drive further than they said they would. Use one of: ${rules.places.join(", ")}.`;
   }
 
   const unknown = move.evidenceIds.filter((id) => !rules.evidenceIds.includes(id));

@@ -27,6 +27,7 @@ type Props = {
   price: number;
   meet: { meetAt: MeetAt; label: string; address: string | null } | null;
   isSeller: boolean;
+  places: MeetAt[];
   buyerId: string;
   sellerId: string;
   clientId: string;
@@ -74,7 +75,7 @@ export function NextSteps(p: Props) {
             <AcceptDeal
               roomId={p.roomId}
               canAccept={!accepted && !(p.isPlan && p.isPlanOwner && !p.hasLegs)}
-              place={{ meetAt: p.meet.meetAt, isSeller: p.isSeller, other: p.first(p.isSeller ? p.buyerId : p.sellerId) }}
+              place={{ meetAt: p.meet.meetAt, isSeller: p.isSeller, other: p.first(p.isSeller ? p.buyerId : p.sellerId), allowed: p.places }}
             />
           )}
           {p.isPlan && !p.isPlanOwner && accepted && !p.hasLegs && <p className="mt-1 text-muted-foreground">Waiting for the plan owner to approve</p>}

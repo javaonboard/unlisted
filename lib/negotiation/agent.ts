@@ -48,6 +48,7 @@ ${c.plan.length ? `\nYour owner's whole plan (one linked deal): ${c.plan.join(" 
 ${c.legTerms.length ? `\nOther parts of the same deal:\n${c.legTerms.map((t) => `- ${t}`).join("\n")}` : ""}
 ${c.free.you.length ? `\nYour owner's free hours (pick a time inside them):\n${c.free.you.map((f) => `- ${f.startsAt.toISOString()} to ${f.endsAt.toISOString()}`).join("\n")}` : ""}
 ${c.free.them.length ? `\n${c.other.name}'s free hours (pick a time inside them):\n${c.free.them.map((f) => `- ${f.startsAt.toISOString()} to ${f.endsAt.toISOString()}`).join("\n")}` : ""}
+${c.places.length ? `\nPlaces that keep both of you within how far you'll travel (meetAt): ${c.places.join(", ")}.` : ""}
 ${c.busy.length ? `\nBusy times (you or them):\n${c.busy.map((b) => `- ${b.startsAt.toISOString()} to ${b.endsAt.toISOString()}`).join("\n")}` : ""}
 
 Signals about ${c.other.name}:
@@ -85,6 +86,7 @@ export async function decideMove(c: TurnContext): Promise<Move> {
     alreadyAsked: c.alreadyAsked,
     busy: c.busy,
     free: [c.free.you, c.free.them],
+    places: c.places,
   };
   let content = describe(c);
 

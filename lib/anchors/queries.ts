@@ -1,7 +1,7 @@
 import { asc, eq, inArray } from "drizzle-orm";
 import { distanceText } from "@/lib/places";
 import { db, schema } from "@/lib/db";
-import { meetingPoint, type MeetAt } from "@/lib/deals/meet";
+import { meetingPoint, placesFor, type MeetAt } from "@/lib/deals/meet";
 
 type Room = typeof schema.negotiations.$inferSelect;
 
@@ -87,6 +87,7 @@ export async function getRoomView(roomId: string, viewerId: string) {
     leg,
     meet,
     distance: await apart(room.buyerId, room.sellerId),
+    places: party ? await placesFor(room) : [],
     payTotal: myPending.reduce((sum, l) => sum + Number(l.amount), 0),
     planSettled: all.length > 0 && !all.some((r) => r.status === "open" || r.status === "waiting_owner"),
     hasLegs: legs.length > 0,

@@ -10,6 +10,7 @@ export const Card = z.object({
   value: z.number().nullable().describe("Goods: rough used value. Skill: their price per job. USD"),
   minPrice: z.number().nullable().describe("Goods only: the lowest price they said they'd take. 0 if they said any offer is fine"),
   freeHours: z.array(z.object({ start: z.string(), end: z.string() })).describe("Skill only: when they said they're free, as ISO times within the next 7 days. Empty if not said"),
+  maxMiles: z.number().nullable().describe("How far they'll go, in miles: a provider's service area, how far a seller will deliver (0 = pickup only), or how far away is fine for a need. Null if not said"),
   needType: z.enum(["buy", "request_service"]).nullable().describe("Needs only"),
   maxPrice: z.number().nullable().describe("Needs only: their budget, if they said one"),
   dueInDays: z.number().nullable().describe("Needs only: days from today until it must be done, at least 1 (\"this weekend\" on a Friday is 2), if they said when"),
