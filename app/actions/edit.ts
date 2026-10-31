@@ -7,18 +7,23 @@ import { currentUserId } from "@/lib/session";
 import { updateItem } from "@/lib/vault/mutations";
 import { updateNeed } from "@/lib/intents/mutations";
 import { priceItem, priceNeed } from "@/lib/pricing/save";
+import { goPrivate, goPublic } from "@/lib/vault/visibility";
+import { playLater } from "@/lib/negotiation/start";
 
 const num = (v: FormDataEntryValue | null) => (v === null || v === "" ? undefined : Number(v));
 const refresh = () => revalidatePath("/", "layout");
 
 export async function updateItemAction(itemId: string, form: FormData) {
-  await updateItem(await currentUserId(), itemId, {
+  const userId = await currentUserId();
+  const [before] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, userId)));
+  await updateItem(userId, itemId, {
     title: String(form.get("title") ?? "").trim(),
     condition: String(form.get("condition") ?? "").trim(),
     estimatedValue: num(form.get("estimatedValue")),
     minPrice: num(form.get("minPrice")),
     openToOffers: form.get("openToOffers") === "on",
   });
+  if (before && !before.openToOffers && form.get("openToOffers") === "on") playLater(await goPublic(userId, itemId)); // same as the one-click switch
   refresh();
 }
 
@@ -53,5 +58,15 @@ export async function useNeedBudgetAction(needId: string) {
   const userId = await currentUserId();
   const [need] = await db.select().from(schema.intents).where(and(eq(schema.intents.id, needId), eq(schema.intents.ownerId, userId)));
   if (need?.priceCheck) await updateNeed(userId, needId, { maxPrice: need.priceCheck.suggested });
+  refresh();
+}
+
+// One click on My stuff: public starts talks with the best matches, private stops new ones.
+export async function toggleVisibilityAction(itemId: string) {
+  const userId = await currentUserId();
+  const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, userId)));
+  if (!item) return;
+  if (item.openToOffers) await goPrivate(userId, itemId);
+  else playLater(await goPublic(userId, itemId));
   refresh();
 }

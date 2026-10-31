@@ -32,4 +32,6 @@ test("titles read naturally mid-sentence but keep names and acronyms", async () 
   assert.equal(inSentence("Grey 3-seat sectional"), "grey 3-seat sectional");
   assert.equal(inSentence("RTX 4070 graphics card"), "RTX 4070 graphics card");
   assert.equal(inSentence("Wi-Fi, TV mounting and PC setup"), "Wi-Fi, TV mounting and PC setup");
+  assert.equal(inSentence("Meta Quest 3 (128GB)"), "Meta Quest 3 (128GB)");
+  assert.equal(inSentence("Gutter cleaning"), "gutter cleaning");
 });

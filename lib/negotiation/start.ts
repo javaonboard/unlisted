@@ -7,3 +7,8 @@ export async function startNegotiation(input: { buyerId: string; sellerId: strin
   after(() => playRoom(room.id).catch((error) => console.error("[room] failed", room.id, error?.message)));
   return room;
 }
+
+// Lets rooms that were just opened play after the response is sent.
+export function playLater(rooms: { id: string }[]) {
+  after(() => Promise.all(rooms.map((r) => playRoom(r.id))).catch((e) => console.error("[room] failed", e?.message)));
+}

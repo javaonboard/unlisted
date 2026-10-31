@@ -11,7 +11,7 @@ export function SuggestionCard({ s }: { s: { id: string; kind: string; title: st
       <p className="flex items-center gap-2 font-medium"><IconCircle icon={Lightbulb} size="size-7" /> {s.title}</p>
       <FormattedText text={s.body} className="mt-1 text-sm text-muted-foreground" />
       <div className="mt-3 flex flex-wrap gap-2">
-        <form action={acceptSuggestionAction.bind(null, s.id)}><Button size="sm" type="submit">Yes</Button></form>
+        <form action={acceptSuggestionAction.bind(null, s.id)}><Button size="sm" type="submit">{String(s.action.label ?? "Yes")}</Button></form>
         {s.kind === "plan" && <PlanChoices id={s.id} parts={JSON.parse(String(s.action.parts))} linked={Boolean(s.action.sellWaitsForBuy)} />}
         <form action={dismissSuggestionAction.bind(null, s.id)}><Button size="sm" variant="ghost" type="submit">Not now</Button></form>
       </div>

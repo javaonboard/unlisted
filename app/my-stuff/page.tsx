@@ -6,6 +6,7 @@ import { db, schema } from "@/lib/db";
 import { currentUserId } from "@/lib/session";
 import { findDemandFor } from "@/lib/matching/matcher";
 import { statusLine } from "@/lib/anchors/status";
+import { toggleVisibilityAction } from "@/app/actions/edit";
 import { rangeOfNeed, rangeOfOffer, rangeText } from "@/lib/places";
 import { ChevronRight, ClipboardList, Compass } from "lucide-react";
 import { CategoryIcon } from "@/components/anchors/Badges";
@@ -36,7 +37,8 @@ async function MyStuff() {
       {list.length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
       <div className="grid gap-3 sm:grid-cols-2">
         {list.map((item) => (
-          <Link key={item.id} href={`/my-stuff/${item.id}`} className="flex gap-3 rounded-2xl border p-3 hover:bg-muted/40">
+          <div key={item.id} className="relative">
+          <Link href={`/my-stuff/${item.id}`} className="flex gap-3 rounded-2xl border p-3 pr-28 hover:bg-muted/40">
             {item.photos[0] ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={item.photos[0]} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
@@ -49,6 +51,13 @@ async function MyStuff() {
               <p className="mt-1 text-sm">{statusLine(rooms.filter((r) => r.itemId === item.id), names, userId, interested[item.id])}</p>
             </div>
           </Link>
+          {/* One click: public starts talks with the best matches; private stops new ones. */}
+          <form action={toggleVisibilityAction.bind(null, item.id)} className="absolute top-3 right-3">
+            <button type="submit" title={item.openToOffers ? "Make private" : "Make public"} className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${item.openToOffers ? "bg-primary text-primary-foreground" : "border border-primary text-primary hover:bg-accent"}`}>
+              {item.openToOffers ? "Public" : "Private · make public"}
+            </button>
+          </form>
+          </div>
         ))}
       </div>
     </>

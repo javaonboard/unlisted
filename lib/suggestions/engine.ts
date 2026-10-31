@@ -116,16 +116,16 @@ export async function onVaultAdded(itemId: string) {
   await priceItem(itemId).catch((e) => console.error("[price] failed", e?.message)); // web, Channel3 and our own sales
   await suggestPlan(item.ownerId); // a new thing can complete a plan, e.g. something to sell
   const demand = await findDemandFor(itemId);
-  if (!demand.length) return;
+  if (!demand.length || item.openToOffers) return;
 
+  // Private, but people want it: offer to go public, with the button right on the message.
   const typical = (await skillDemand(item.category, item.ownerId)).perJob;
   await suggest({
     userId: item.ownerId,
-    needId: demand[0].id,
-    kind: item.kind === "skill" ? "offer_skill" : "open_item",
-    title: item.kind === "skill" ? `${demand.length} neighbors need ${inSentence(item.title)}` : `${demand.length} ${demand.length === 1 ? "person wants" : "people want"} something like your ${inSentence(item.title)}`,
-    body: item.kind === "skill" && typical ? `Jobs like this pay ~$${typical}. Let your agent take the closest one?` : "Want your agent to talk to the best one?",
-    action: { itemId, needId: demand[0].id },
+    kind: "go_public",
+    title: item.kind === "skill" ? `${demand.length} ${demand.length === 1 ? "neighbor needs" : "neighbors need"} ${inSentence(item.title)}` : `${demand.length} ${demand.length === 1 ? "person wants" : "people want"} something like your ${inSentence(item.title)}`,
+    body: `${item.kind === "skill" && typical ? `Jobs like this pay ~$${typical}. ` : ""}It's private now. Make it public and I'll talk to the best ${Math.min(3, demand.length)} nearby right away.`,
+    action: { itemId, label: "Make it public" },
   });
 }
 

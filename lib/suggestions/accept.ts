@@ -5,6 +5,8 @@ import { postNeed } from "@/lib/intents/mutations";
 import { startNegotiation } from "@/lib/negotiation/start";
 import { onDismissed, runWave } from "./engine";
 import { startLinkedDeal } from "@/lib/deals/planner";
+import { goPublic } from "@/lib/vault/visibility";
+import { playLater } from "@/lib/negotiation/start";
 
 export type PlanPick = { partIds?: string[]; sellOnlyIfBought?: boolean };
 
@@ -39,6 +41,10 @@ export async function acceptSuggestion(id: string, userId: string, plan?: PlanPi
       await db.update(schema.intents).set({ maxPrice: Number(a.maxPrice).toFixed(2), wave: 0 }).where(eq(schema.intents.id, String(a.needId)));
       await runWave(String(a.needId), 1);
       return `/needs/${a.needId}`;
+    case "go_public": {
+      playLater(await goPublic(userId, String(a.itemId)));
+      return `/my-stuff/${a.itemId}`;
+    }
     case "plan": {
       // The agent's plan, or the owner's own pick of its parts ("Change the plan").
       const parts = JSON.parse(String(a.parts)) as { kind: string; id: string; itemId?: string }[];
