@@ -7,6 +7,7 @@ import { currentUserId } from "@/lib/session";
 import { findDemandFor } from "@/lib/matching/matcher";
 import { statusLine } from "@/lib/anchors/status";
 import { toggleVisibilityAction } from "@/app/actions/edit";
+import { VisibilitySwitch } from "@/components/anchors/VisibilitySwitch";
 import { rangeOfNeed, rangeOfOffer, rangeText } from "@/lib/places";
 import { ChevronRight, ClipboardList, Compass } from "lucide-react";
 import { CategoryIcon } from "@/components/anchors/Badges";
@@ -28,7 +29,7 @@ async function MyStuff() {
     ? await db.select().from(schema.negotiations).where(or(inArray(schema.negotiations.itemId, ids), inArray(schema.negotiations.intentId, ids)))
     : [];
   const interested = Object.fromEntries(await Promise.all(items.map(async (i) => [i.id, (await findDemandFor(i.id)).length] as const)));
-  const activePlans = plans.filter((p) => p.status !== "cancelled");
+  const activePlans = plans.filter((p) => p.isPlan && p.status !== "cancelled");
 
   // One card per item, with where its negotiations stand.
   const itemGrid = (title: string, empty: string, list: typeof items) => (
@@ -37,8 +38,8 @@ async function MyStuff() {
       {list.length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
       <div className="grid gap-3 sm:grid-cols-2">
         {list.map((item) => (
-          <div key={item.id} className="relative">
-          <Link href={`/my-stuff/${item.id}`} className="flex gap-3 rounded-2xl border p-3 pr-28 hover:bg-muted/40">
+          <div key={item.id} className="rounded-2xl border hover:bg-muted/40">
+          <Link href={`/my-stuff/${item.id}`} className="flex gap-3 p-3 pb-2">
             {item.photos[0] ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={item.photos[0]} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
@@ -51,12 +52,9 @@ async function MyStuff() {
               <p className="mt-1 text-sm">{statusLine(rooms.filter((r) => r.itemId === item.id), names, userId, interested[item.id])}</p>
             </div>
           </Link>
-          {/* One click: public starts talks with the best matches; private stops new ones. */}
-          <form action={toggleVisibilityAction.bind(null, item.id)} className="absolute top-3 right-3">
-            <button type="submit" title={item.openToOffers ? "Make private" : "Make public"} className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${item.openToOffers ? "bg-primary text-primary-foreground" : "border border-primary text-primary hover:bg-accent"}`}>
-              {item.openToOffers ? "Public" : "Private · make public"}
-            </button>
-          </form>
+          <div className="px-3 pb-3 pl-20">
+            <VisibilitySwitch action={toggleVisibilityAction.bind(null, item.id)} open={item.openToOffers} />
+          </div>
           </div>
         ))}
       </div>

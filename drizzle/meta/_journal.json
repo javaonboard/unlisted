@@ -176,6 +176,13 @@
       "when": 1793482613159,
       "tag": "0024_rentals",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793483945463,
+      "tag": "0025_deal_is_plan",
+      "breakpoints": true
     }
   ]
 }

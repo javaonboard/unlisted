@@ -1,0 +1,1 @@
+ALTER TABLE "deals" ADD COLUMN "is_plan" boolean DEFAULT false NOT NULL;

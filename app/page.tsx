@@ -44,6 +44,7 @@ async function Inbox() {
       <ScrollToEnd />
       <h1 className="text-2xl font-semibold">Hi {user?.name.split(" ")[0]}</h1>
       <div className="mt-1 flex gap-4 text-sm">
+        <Link href="/money" className="text-primary hover:underline">My money</Link>
         <Link href="/memory" className="text-primary hover:underline">What my agent knows about me</Link>
       </div>
 

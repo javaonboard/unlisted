@@ -62,7 +62,7 @@ test("paid out or cancelled deals are done", () => {
 });
 
 test("in a plan, only the plan owner approves, after every part is settled", () => {
-  const plan = { id: "d2", title: "Moving day", ownerId: "maya" };
+  const plan = { id: "d2", title: "Moving day", ownerId: "maya", isPlan: true };
   const room = { id: "r2", status: "agreed", buyerId: "ben", sellerId: "maya", agreedPrice: "210.00", label: "Sectional → Ben", closedReason: null };
   const item = { kind: "goods", title: "Grey 3-seat sectional" };
   const names = { ben: "Ben Carter", maya: "Maya Lee" };

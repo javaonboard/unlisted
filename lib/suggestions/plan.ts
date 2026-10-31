@@ -7,7 +7,7 @@ import { asRecord } from "@/lib/vault/card";
 // Asks the planning agent whether someone's needs belong together. If so, the Inbox gets
 // one plan suggestion in the agent's own words, plus a "you'll also need…" suggestion per gap.
 export async function suggestPlan(userId: string, change?: string) {
-  const [running] = await db.select().from(schema.deals).where(and(eq(schema.deals.ownerId, userId), ne(schema.deals.status, "cancelled")));
+  const [running] = await db.select().from(schema.deals).where(and(eq(schema.deals.ownerId, userId), eq(schema.deals.isPlan, true), ne(schema.deals.status, "cancelled")));
   if (running) return;
   const plan = await composePlan(userId, change);
   if (!plan) return;

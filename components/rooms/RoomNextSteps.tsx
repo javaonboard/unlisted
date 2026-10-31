@@ -10,7 +10,7 @@ export function RoomNextSteps({ data, viewerId }: { data: RoomView; viewerId: st
     <NextSteps
       roomId={room.id}
       dealId={room.dealId}
-      isPlan={!!deal && deal.title !== room.label}
+      isPlan={!!deal?.isPlan}
       isPlanOwner={deal?.ownerId === viewerId}
       planSettled={data.planSettled}
       hasLegs={data.hasLegs}

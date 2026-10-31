@@ -52,7 +52,7 @@ export function nextFor(data: RoomView, viewerId: string): Next {
   }
   if (leg?.status === "voided") return { state: "done", label: "Cancelled, nothing charged" };
 
-  const isPlan = !!deal && deal.title !== room.label;
+  const isPlan = !!deal?.isPlan;
   const accepted = !data.waitingOn.includes(viewerId);
   if (isPlan && deal.ownerId === viewerId) {
     if (!data.hasLegs) return data.planSettled ? { state: "needs_you", label: "Approve the plan" } : { state: "waiting", label: "Waiting for the rest of the plan" };

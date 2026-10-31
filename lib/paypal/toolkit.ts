@@ -12,11 +12,11 @@ const ALLOWED = {
 };
 
 // Starts PayPal's toolkit in-process and connects an MCP client to it.
-// Created per request so the access token is always fresh.
-export async function connectPayPalTools() {
+// Created per request so the access token is always fresh. Callers can narrow the actions further.
+export async function connectPayPalTools(actions: Record<string, Record<string, boolean>> = ALLOWED) {
   const server = new PayPalAgentToolkit({
     accessToken: await paypalAccessToken(),
-    configuration: { actions: ALLOWED, context: { sandbox: true } },
+    configuration: { actions, context: { sandbox: true } },
   });
 
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();

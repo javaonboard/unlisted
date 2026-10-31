@@ -44,7 +44,7 @@ export async function startLinkedDeal(ownerId: string, choice: PlanChoice) {
     ...buys.map((b, i) => ({ label: `Buying: ${b.text}`, picks: sellers[i], chosen: BUY_AT_ONCE })),
     ...helpers.map((h, i) => ({ label: `${h.text} (once the rest is agreed)`, picks: providers[i], chosen: 2 })),
   ]);
-  const [deal] = await db.insert(schema.deals).values({ ownerId, title: choice.title, scoutNote: note, helperIds: helpers.map((h) => h.id) }).returning();
+  const [deal] = await db.insert(schema.deals).values({ ownerId, title: choice.title, scoutNote: note, helperIds: helpers.map((h) => h.id), isPlan: true }).returning();
 
   const first = (name: string) => name.split(" ")[0];
   const inPlan = choice.sellOnlyIfBought ? deal.id : undefined; // a sale outside the plan is a normal deal
