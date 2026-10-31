@@ -22,7 +22,7 @@ const view = (over: Record<string, unknown> = {}) =>
 
 test("each side sees who they are in the deal", () => {
   assert.equal(roleOf(view(), "gus").badge, "You do the job");
-  assert.match(roleOf(view(), "gus").title, /you get \$75/);
+  assert.match(roleOf(view(), "gus").title, /you get \$69 after fees/);
   assert.equal(roleOf(view(), "sara").badge, "You hired");
   assert.match(roleOf(view(), "sara").title, /you pay \$75/);
 });

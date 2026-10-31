@@ -1,4 +1,5 @@
 import type { getRoomView } from "./queries";
+import { money, payoutOf } from "@/lib/payments/fees";
 
 type RoomView = NonNullable<Awaited<ReturnType<typeof getRoomView>>>;
 export type Next = { state: "needs_you" | "waiting" | "upcoming" | "talking" | "done"; label: string };
@@ -8,13 +9,14 @@ export function roleOf(data: RoomView, viewerId: string) {
   const { room, item, names } = data;
   const first = (id: string) => names[id]?.split(" ")[0] ?? id;
   const service = item.kind === "skill";
-  const price = room.agreedPrice ? `$${Number(room.agreedPrice).toFixed(0)}` : null;
+  const price = room.agreedPrice ? money(Number(room.agreedPrice)) : null;
+  const payout = room.agreedPrice ? `${money(payoutOf(Number(room.agreedPrice)))} after fees` : null; // what the seller really receives
   const what = item.title.toLowerCase();
 
   if (room.sellerId === viewerId) {
     return service
-      ? { kind: "provider" as const, badge: "You do the job", title: `Your job for ${first(room.buyerId)}${price ? ` · you get ${price}` : ""}` }
-      : { kind: "seller" as const, badge: "You're selling", title: `Selling your ${what} to ${first(room.buyerId)}${price ? ` · you get ${price}` : ""}` };
+      ? { kind: "provider" as const, badge: "You do the job", title: `Your job for ${first(room.buyerId)}${payout ? ` · you get ${payout}` : ""}` }
+      : { kind: "seller" as const, badge: "You're selling", title: `Selling your ${what} to ${first(room.buyerId)}${payout ? ` · you get ${payout}` : ""}` };
   }
   if (room.buyerId === viewerId) {
     return service

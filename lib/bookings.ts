@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
+import { money, payoutOf } from "@/lib/payments/fees";
 
 // When a deal is agreed with a time, put it on both people's calendars as tentative.
 // It is final once both confirm: the payer by placing the PayPal hold, the other side with "Confirm time".
@@ -37,8 +38,9 @@ export async function bookAgreedDeal(roomId: string) {
     { userId: room.sellerId, roomId, dealId: room.dealId, startsAt: start, endsAt: end, title: service ? `${item.title} for ${first(room.buyerId)}` : `Hand off ${what} to ${first(room.buyerId)}` },
     { userId: room.buyerId, roomId, dealId: room.dealId, startsAt: start, endsAt: end, title: service ? `${first(room.sellerId)}: ${what}` : `Pick up ${what} from ${first(room.sellerId)}` },
   ]);
-  const price = `$${Number(room.agreedPrice).toFixed(0)}`;
-  await notify(room.sellerId, service ? `New job for ${first(room.buyerId)} · you get ${price}` : `Sold to ${first(room.buyerId)} · you get ${price}`, `${service ? `${item.title} for ${first(room.buyerId)}` : `Hand off ${what} to ${first(room.buyerId)}`}, ${when}. Please confirm the time.`, roomId);
+  const price = money(Number(room.agreedPrice));
+  const payout = `${money(payoutOf(Number(room.agreedPrice)))} after fees`;
+  await notify(room.sellerId, service ? `New job for ${first(room.buyerId)} · you get ${payout}` : `Sold to ${first(room.buyerId)} · you get ${payout}`, `${service ? `${item.title} for ${first(room.buyerId)}` : `Hand off ${what} to ${first(room.buyerId)}`}, ${when}. Please confirm the time.`, roomId);
   await notify(room.buyerId, service ? `${first(room.sellerId)} will do your ${what} · you pay ${price}` : `Bought ${first(room.sellerId)}'s ${what} · you pay ${price}`, `${service ? `${first(room.sellerId)}: ${what}` : `Pick up ${what} from ${first(room.sellerId)}`}, ${when}. Holding the payment confirms it.`, roomId);
   console.log("[booking] booked both sides (tentative)", start.toISOString());
 }

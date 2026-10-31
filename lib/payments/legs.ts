@@ -7,8 +7,8 @@ import { captureAuthorization, voidAuthorization } from "@/lib/paypal/payments";
 import { sendPayout } from "@/lib/paypal/payouts";
 import { confirmTime, waitingOn } from "@/lib/bookings";
 import { notify } from "@/lib/notifications/notify";
+import { FEE, payoutOf } from "./fees";
 
-const FEE = 0.05; // Unlisted keeps 5% of each payout
 const money = (n: number) => n.toFixed(2);
 
 async function say(dealId: string, userId: string | null, message: string, data: Record<string, unknown> = {}) {
@@ -101,7 +101,7 @@ export async function confirmHandoff(legId: string, payerId: string, code: strin
   await notify(payerId, "Handoff done", `PayPal charged $${Number(leg.amount).toFixed(0)}.`, leg.roomId);
 
   const [payee] = await db.select().from(schema.users).where(eq(schema.users.id, leg.payeeId));
-  const payout = Number(leg.amount) * (1 - FEE);
+  const payout = payoutOf(Number(leg.amount));
   if (!payee.paypalEmail) return;
   const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`);
   await db.update(schema.dealLegs).set({ payoutBatchId: batchId, status: "paid_out" }).where(eq(schema.dealLegs.id, legId));

@@ -4,6 +4,7 @@ import { approveDealAction, cancelHoldAction } from "@/app/actions/payments";
 import { PayButton } from "@/components/payments/PayButton";
 import { ConfirmHandoff } from "@/components/payments/LegActions";
 import { AcceptDeal } from "@/components/rooms/AcceptDeal";
+import { FEE, feeOf, money, payoutOf } from "@/lib/payments/fees";
 
 type Props = {
   roomId: string;
@@ -20,6 +21,7 @@ type Props = {
   place: string | null;
   booking: { startsAt: Date; endsAt: Date } | null;
   waitingOn: string[];
+  price: number;
   buyerId: string;
   clientId: string;
 };
@@ -68,6 +70,12 @@ export function NextSteps(p: Props) {
 
         <li className={held ? done : ""}>
           2. Hold the payment with PayPal
+          {/* Who pays what, so nobody is surprised by the fee. */}
+          <p className="mt-1 text-muted-foreground">
+            {p.buyerId === p.viewerId
+              ? `You pay ${money(p.price)}. Nothing is charged until the handoff.`
+              : `${p.first(p.buyerId)} pays ${money(p.price)} · Unlisted fee ${FEE * 100}% (${money(feeOf(p.price))}) · you get ${money(payoutOf(p.price))}`}
+          </p>
           {stepOneDone && leg?.status === "pending" && (
             <div className="mt-2">
               {iPay ? <PayButton dealId={p.dealId!} clientId={p.clientId} total={p.payTotal} /> : <span className="text-muted-foreground"> · waiting for {p.first(leg.payerId)}</span>}
