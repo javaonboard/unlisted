@@ -49,8 +49,10 @@ async function main() {
   );
   await db.insert(schema.memoryFacts).values(data.memoryFacts);
   await db.insert(schema.notifications).values(data.notifications);
-  await suggestPlan("maya"); // moving day: sell, buy, mover
-  await suggestPlan("priya"); // upgrade day: sell, buy, installer
+  // The planning agent looks at Maya's and Priya's needs. Skipped with --quiet.
+  if (!process.argv.includes("--quiet")) {
+    for (const userId of ["maya", "priya"]) await suggestPlan(userId).catch((e) => console.error("[plan] skipped:", e.message));
+  }
 
   console.log(`seeded ${data.users.length} users, ${items.length} vault items, ${rows.length} intents`);
 
