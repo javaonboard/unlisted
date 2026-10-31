@@ -19,7 +19,7 @@ export type PlanChoice = {
 
 // Starts a plan from the owner's chosen needs: any number of sales and purchases, then helpers
 // (a mover, an installer…) booked around the agreed handoffs. Nothing binds until the owner approves.
-// With sellOnlyIfBought off, the sales run on their own and the plan covers the rest.
+// With sellOnlyIfBought on, the sales can't be accepted until the purchases are agreed.
 export async function startLinkedDeal(ownerId: string, choice: PlanChoice) {
   const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, ownerId));
   const mine = await db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, ownerId), eq(schema.intents.status, "open")));
@@ -44,15 +44,14 @@ export async function startLinkedDeal(ownerId: string, choice: PlanChoice) {
     ...buys.map((b, i) => ({ label: `Buying: ${b.text}`, picks: sellers[i], chosen: BUY_AT_ONCE })),
     ...helpers.map((h, i) => ({ label: `${h.text} (once the rest is agreed)`, picks: providers[i], chosen: 2 })),
   ]);
-  const [deal] = await db.insert(schema.deals).values({ ownerId, title: choice.title, scoutNote: note, helperIds: helpers.map((h) => h.id), isPlan: true }).returning();
+  const [deal] = await db.insert(schema.deals).values({ ownerId, title: choice.title, scoutNote: note, helperIds: helpers.map((h) => h.id), isPlan: true, saleWaitsForPurchase: choice.sellOnlyIfBought && buys.length > 0 }).returning();
 
   const first = (name: string) => name.split(" ")[0];
-  const inPlan = choice.sellOnlyIfBought ? deal.id : undefined; // a sale outside the plan is a normal deal
   const itemTitles = Object.fromEntries((await db.select({ id: schema.vaultItems.id, title: schema.vaultItems.title }).from(schema.vaultItems)).map((i) => [i.id, i.title]));
   const rooms = await Promise.all([
     ...sells.flatMap((s, i) =>
       buyers[i].slice(0, SELL_AT_ONCE).map((b) =>
-        openRoom({ dealId: inPlan, label: `${s.item.title} → ${first(b.name)}`, buyerId: b.userId, sellerId: ownerId, itemId: s.item.id, intentId: b.intentId! }),
+        openRoom({ dealId: deal.id, label: `${s.item.title} → ${first(b.name)}`, buyerId: b.userId, sellerId: ownerId, itemId: s.item.id, intentId: b.intentId! }),
       ),
     ),
     ...buys.flatMap((need, i) =>

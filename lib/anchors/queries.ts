@@ -1,5 +1,6 @@
 import { asc, eq, inArray } from "drizzle-orm";
 import { distanceText } from "@/lib/places";
+import { blockedBy } from "@/lib/deals/dependency";
 import { db, schema } from "@/lib/db";
 import { meetAtOf, meetingPoint, placesFor } from "@/lib/deals/meet";
 
@@ -74,7 +75,6 @@ export async function getRoomView(roomId: string, viewerId: string) {
     db.select().from(schema.bookings).where(eq(schema.bookings.roomId, room.id)),
   ]);
   const leg = legs.find((l) => l.roomId === room.id) ?? null;
-  const myPending = legs.filter((l) => l.payerId === viewerId && l.status === "pending");
   const agreedTerms = [...moves].reverse().find((m) => (m.terms as { when?: string }).when)?.terms as { when?: string; place?: string } | undefined;
   // Where to meet: set by hand, or what the agents agreed, or the usual for the kind of deal.
   const meetAt = meetAtOf(room, moves, item.kind === "skill");
@@ -88,9 +88,7 @@ export async function getRoomView(roomId: string, viewerId: string) {
     distance: await apart(room.buyerId, room.sellerId),
     places: party ? await placesFor(room) : [],
     stops: room.stops,
-    payTotal: myPending.reduce((sum, l) => sum + Number(l.amount), 0),
-    planSettled: all.length > 0 && !all.some((r) => r.status === "open" || r.status === "waiting_owner"),
-    hasLegs: legs.length > 0,
+    blockedBy: blockedBy(room, deal, all), // in a plan: what this deal is still waiting for
     booking: bookings.find((b) => b.userId === viewerId) ?? null,
     waitingOn: bookings.filter((b) => !b.confirmedAt).map((b) => b.userId), // who still has to confirm the time
     when: agreedTerms?.when ?? null,

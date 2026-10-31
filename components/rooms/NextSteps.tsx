@@ -1,11 +1,11 @@
 import Link from "next/link";
+import { Check, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { approveDealAction, cancelHoldAction } from "@/app/actions/payments";
+import { cancelHoldAction } from "@/app/actions/payments";
 import { PayButton } from "@/components/payments/PayButton";
 import { ConfirmHandoff, ConfirmReturn } from "@/components/payments/LegActions";
 import { AcceptDeal } from "@/components/rooms/AcceptDeal";
 import { FEE, feeOf, money, payoutOf } from "@/lib/payments/fees";
-import { MapPin } from "lucide-react";
 import { mapsLink } from "@/lib/places";
 import type { MeetAt } from "@/lib/deals/meet";
 
@@ -13,123 +13,119 @@ type Props = {
   roomId: string;
   dealId: string | null;
   isPlan: boolean;
-  isPlanOwner: boolean;
-  planSettled: boolean;
-  hasLegs: boolean;
   viewerId: string;
-  first: (id: string) => string;
-  leg: { id: string; kind: string; payerId: string; payeeId: string; amount: string; deposit: string | null; status: string; handoffCode: string | null } | null;
-  rentalDays: number | null;
-  payTotal: number;
-  when: string | null;
-  place: string | null;
-  booking: { startsAt: Date; endsAt: Date } | null;
-  waitingOn: string[];
-  price: number;
-  meet: { meetAt: MeetAt; label: string; address: string | null } | null;
-  isSeller: boolean;
-  places: MeetAt[];
-  stops: string[];
   buyerId: string;
   sellerId: string;
+  first: (id: string) => string;
+  leg: { id: string; kind: string; payerId: string; payeeId: string; amount: string; deposit: string | null; status: string; handoffCode: string | null } | null;
+  price: number;
+  deposit: number;
+  booking: { startsAt: Date; endsAt: Date } | null;
+  waitingOn: string[];
+  meet: { meetAt: MeetAt; label: string; address: string | null } | null;
+  places: MeetAt[];
+  stops: string[];
+  rentalDays: number | null;
+  blockedBy: string | null;
   clientId: string;
 };
 
-const done = "text-muted-foreground line-through";
+type State = "done" | "now" | "later";
 
-// What happens after the agents agree: accept the deal and time, pay, hand off.
+// One step of the deal: a check when done, a filled dot when it's the current one.
+function Step({ n, title, state, children }: { n: number; title: string; state: State; children?: React.ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <span className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${state === "done" ? "bg-primary text-primary-foreground" : state === "now" ? "border-2 border-primary text-primary" : "border text-muted-foreground"}`}>
+        {state === "done" ? <Check className="size-3" /> : n}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className={state === "later" ? "text-muted-foreground" : "font-medium"}>{title}</p>
+        {children}
+      </div>
+    </li>
+  );
+}
+
+// After the agents agree: accept, pay with PayPal (held until the handoff), hand off, paid out.
 export function NextSteps(p: Props) {
   const leg = p.leg;
-  const iPay = leg?.payerId === p.viewerId;
-  const iGetPaid = leg?.payeeId === p.viewerId;
-  const time = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-
-  const held = leg && leg.status !== "pending";
+  const iPay = p.buyerId === p.viewerId;
   const rental = !!p.rentalDays;
-  const deposit = Number(leg?.deposit ?? 0);
-  const handedOff = leg && (leg.status === "captured" || leg.status === "paid_out");
-  const closed = handedOff || leg?.status === "voided" || leg?.status === "in_use";
+  const time = (d: Date) => d.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" });
+  const status = leg?.status ?? "pending";
 
-  // Step 1 is one "Accept" for the deal and its time. In a plan, the owner approves the whole plan instead.
-  const accepted = !p.waitingOn.includes(p.viewerId);
-  const stepOneDone = p.isPlan ? (p.isPlanOwner ? p.hasLegs : accepted) : p.hasLegs && accepted;
+  const accepted = p.waitingOn.length === 0 && !!leg;
+  const paid = ["held", "in_use", "captured", "paid_out"].includes(status);
+  const handedOff = ["captured", "paid_out"].includes(status) || (rental && status === "in_use");
+  const paidOut = status === "paid_out";
+  const cancelled = status === "voided";
   const others = p.waitingOn.filter((id) => id !== p.viewerId).map(p.first).join(" and ");
+  const stateOf = (done: boolean, ready: boolean): State => (done ? "done" : ready ? "now" : "later");
 
   return (
     <div className="mt-3 rounded-2xl border p-4 text-sm">
-      <p className="mb-3 font-medium">Next steps</p>
       <ol className="flex flex-col gap-3">
-        <li>
-          <span className={stepOneDone ? done : ""}>1. {p.isPlan && p.isPlanOwner ? "Approve the plan" : p.isPlan || p.hasLegs ? "Accept the time and place" : "Accept the deal"}</span>
-          <p className="mt-1 text-muted-foreground">
-            {p.booking ? `${p.booking.startsAt.toLocaleDateString("en-US", { weekday: "short" })} ${time(p.booking.startsAt)}–${time(p.booking.endsAt)}` : (p.when ?? "")}
-            {p.meet ? ` · ${p.meet.label}` : p.place ? ` · ${p.place}` : ""}
-            {p.booking && (p.waitingOn.length === 0 ? " · accepted by both" : others ? ` · waiting for ${others}` : "")}
+        <Step n={1} title={`Deal agreed at ${money(p.price)}`} state="done">
+          <p className="text-muted-foreground">
+            {p.booking ? `${time(p.booking.startsAt)}${rental ? ` to ${time(p.booking.endsAt)}` : ""}` : ""}
+            {p.meet ? ` · ${p.meet.label}` : ""}
           </p>
-          {p.stops.length > 0 && (
-            <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-muted-foreground">{p.stops.map((s) => <li key={s}>{s}</li>)}</ol>
-          )}
-          {!closed && p.isPlan && p.isPlanOwner && !p.hasLegs && (
-            <div className="mt-2">
-              {p.planSettled ? (
-                <form action={approveDealAction.bind(null, p.dealId!)}><Button size="sm">Approve plan</Button></form>
-              ) : (
-                <span className="text-muted-foreground">Waiting for the other parts of the plan</span>
-              )}
-            </div>
-          )}
-          {!closed && p.booking && p.meet && (
+          {p.stops.length > 0 && <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-muted-foreground">{p.stops.map((s) => <li key={s}>{s}</li>)}</ol>}
+          {p.blockedBy && <p className="mt-1 text-amber-700">Part of a plan: waiting for {p.blockedBy}.</p>}
+        </Step>
+
+        <Step n={2} title={accepted ? "Accepted by both" : "Accept the deal, time and place"} state={stateOf(accepted, !p.blockedBy)}>
+          {!accepted && others && !p.waitingOn.includes(p.viewerId) && <p className="text-muted-foreground">You accepted. Waiting for {others}.</p>}
+          {!handedOff && !cancelled && p.booking && p.meet && !p.blockedBy && (
             <AcceptDeal
               roomId={p.roomId}
-              canAccept={!accepted && !(p.isPlan && p.isPlanOwner && !p.hasLegs)}
-              place={{ meetAt: p.meet.meetAt, isSeller: p.isSeller, other: p.first(p.isSeller ? p.buyerId : p.sellerId), allowed: p.places }}
+              canAccept={p.waitingOn.includes(p.viewerId)}
+              place={{ meetAt: p.meet.meetAt, isSeller: p.sellerId === p.viewerId, other: p.first(iPay ? p.sellerId : p.buyerId), allowed: p.places }}
             />
           )}
-          {p.isPlan && !p.isPlanOwner && accepted && !p.hasLegs && <p className="mt-1 text-muted-foreground">Waiting for the plan owner to approve</p>}
-        </li>
+        </Step>
 
-        <li className={held ? done : ""}>
-          2. Hold the payment with PayPal
-          {/* Who pays what, so nobody is surprised by the fee. */}
-          <p className="mt-1 text-muted-foreground">
-            {p.buyerId === p.viewerId
-              ? `You pay ${money(p.price)}${deposit ? ` plus a ${money(deposit)} deposit you get back when it's returned` : ""}. Nothing is charged until ${deposit ? "the return" : "the handoff"}.`
-              : `${p.first(p.buyerId)} pays ${money(p.price)} · Unlisted fee ${FEE * 100}% (${money(feeOf(p.price))}) · you get ${money(payoutOf(p.price))}${deposit ? `. A ${money(deposit)} deposit is held while it's out` : ""}`}
+        <Step n={3} title={paid ? "Paid, PayPal is holding it" : rental ? "Pay the fee and deposit with PayPal" : "Pay with PayPal"} state={stateOf(paid, accepted && !cancelled)}>
+          <p className="text-muted-foreground">
+            {iPay
+              ? `You pay ${money(p.price)}${p.deposit ? ` plus a ${money(p.deposit)} deposit you get back` : ""}. PayPal only charges after the ${rental ? "return" : "handoff"}.`
+              : `${p.first(p.buyerId)} pays ${money(p.price)} · Unlisted fee ${FEE * 100}% (${money(feeOf(p.price))}) · you get ${money(payoutOf(p.price))}`}
           </p>
-          {stepOneDone && leg?.status === "pending" && (
-            <div className="mt-2">
-              {iPay ? <PayButton dealId={p.dealId!} clientId={p.clientId} total={p.payTotal} /> : <span className="text-muted-foreground"> · waiting for {p.first(leg.payerId)}</span>}
-            </div>
+          {accepted && leg && status === "pending" && iPay && (
+            <div className="mt-2"><PayButton legId={leg.id} clientId={p.clientId} total={Number(leg.amount)} deposit={Number(leg.deposit ?? 0)} /></div>
           )}
-        </li>
+          {cancelled && <p className="mt-1">Hold released. Nothing was charged.</p>}
+        </Step>
 
-        <li className={handedOff ? done : ""}>
-          3. {rental ? `Pickup, ${p.rentalDays} day${p.rentalDays === 1 ? "" : "s"} of use, then the return` : "Hand off, then PayPal pays out"}
-          {p.meet?.address ? (
-            <p className="mt-1 flex flex-wrap items-center gap-1">
+        <Step n={4} title={rental ? (status === "in_use" ? "Picked up, out on rent" : handedOff ? "Returned" : "Pickup") : handedOff ? "Handed off" : "Hand off"} state={stateOf(handedOff && status !== "in_use", paid && !cancelled)}>
+          {paid && p.meet?.address && !paidOut && (
+            <p className="flex flex-wrap items-center gap-1">
               <MapPin className="size-4 text-primary" /> {p.meet.label} · {p.meet.address} ·{" "}
               <a href={mapsLink(p.meet.address)} target="_blank" rel="noreferrer" className="text-primary hover:underline">Open in Maps</a>
             </p>
-          ) : (
-            !handedOff && leg?.status !== "voided" && <p className="mt-1 text-muted-foreground">The exact address shows here once the payment is held.</p>
           )}
-          {leg?.status === "held" && iGetPaid && <p className="mt-1">Show this code at the handoff: <span className="font-mono text-base font-semibold">{leg.handoffCode}</span></p>}
-          {leg?.status === "held" && iPay && <ConfirmHandoff legId={leg.id} />}
-          {leg?.status === "held" && iPay && (
-            <form action={cancelHoldAction.bind(null, p.dealId!)} className="mt-1">
+          {!paid && !cancelled && <p className="text-muted-foreground">The exact address shows here once it&apos;s paid.</p>}
+          {status === "held" && !iPay && <p className="mt-1">Show this code at the {rental ? "pickup" : "handoff"}: <span className="font-mono text-base font-semibold">{leg?.handoffCode}</span></p>}
+          {status === "held" && iPay && leg && <ConfirmHandoff legId={leg.id} />}
+          {status === "held" && iPay && leg && (
+            <form action={cancelHoldAction.bind(null, leg.id)} className="mt-1">
               <Button size="sm" variant="ghost">Cancel and release the hold</Button>
             </form>
           )}
-          {leg?.status === "in_use" && iGetPaid && <ConfirmReturn legId={leg.id} deposit={deposit} />}
-          {leg?.status === "in_use" && iPay && <p className="mt-1">It&apos;s with you. Bring it back by {p.booking?.endsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}; then the deposit is released.</p>}
-          {leg?.status === "paid_out" && <p className="mt-1 text-foreground">Done. {p.first(leg.payeeId)} has been paid.</p>}
-          {leg?.status === "voided" && <p className="mt-1 text-foreground">Hold released. Nothing was charged.</p>}
-        </li>
+          {status === "in_use" && !iPay && leg && <ConfirmReturn legId={leg.id} deposit={Number(leg.deposit ?? 0)} />}
+          {status === "in_use" && iPay && <p className="mt-1">Bring it back by {p.booking ? time(p.booking.endsAt) : "the end date"}; then the deposit is released.</p>}
+        </Step>
+
+        <Step n={5} title={paidOut ? `Paid out to ${p.first(p.sellerId)}` : "PayPal pays out"} state={stateOf(paidOut, status === "captured")}>
+          {paidOut && <p className="text-muted-foreground">{p.sellerId === p.viewerId ? `${money(payoutOf(p.price))} sent to your PayPal.` : "All done."}</p>}
+        </Step>
       </ol>
 
-      {p.isPlan && p.dealId && (
-        <Link href={`/deals/${p.dealId}`} className="mt-3 inline-block text-xs text-muted-foreground hover:text-foreground">See the whole plan</Link>
-      )}
+      <div className="mt-3 flex gap-4 text-xs">
+        {leg && <Link href={`/money/${leg.id}`} className="text-primary hover:underline">Receipt</Link>}
+        {p.isPlan && p.dealId && <Link href={`/deals/${p.dealId}`} className="text-muted-foreground hover:text-foreground">See the whole plan</Link>}
+      </div>
     </div>
   );
 }

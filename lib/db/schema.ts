@@ -140,6 +140,7 @@ export const deals = pgTable("deals", {
   title: text("title").notNull(),
   scoutNote: text("scout_note"), // the Scout's short "why I picked these"
   isPlan: boolean("is_plan").default(false).notNull(), // a plan of several deals; a one-off deal is false
+  saleWaitsForPurchase: boolean("sale_waits_for_purchase").default(false).notNull(), // the owner sells only once their purchase is agreed
   helperIds: jsonb("helper_ids").$type<string[]>().default([]).notNull(), // services booked once the goods are agreed
   status: text("status", {
     enum: ["proposed", "approved", "held", "settled", "cancelled"],
@@ -159,6 +160,9 @@ export const dealLegs = pgTable("deal_legs", {
   payeeId: text("payee_id").notNull().references(() => users.id),
   amount: money("amount").notNull(),
   deposit: money("deposit"), // rentals: held with the fee, released when the item comes back
+  capturedAt: timestamp("captured_at"),
+  charged: money("charged"), // what PayPal actually captured (a rental adds the deposit only if it was kept)
+  paidOutAt: timestamp("paid_out_at"),
   feePercent: integer("fee_percent").default(5).notNull(),
   orderId: text("order_id"),
   authorizationId: text("authorization_id"),

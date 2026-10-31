@@ -13,9 +13,8 @@ const view = (over: Record<string, unknown> = {}) =>
     names: { sara: "Sara Kim", gus: "Gus Patel" },
     messages: [],
     leg: { id: "l1", payerId: "sara", payeeId: "gus", status: "pending" },
-    hasLegs: true,
-    planSettled: true,
     waitingOn: [],
+    blockedBy: null,
     booking: { startsAt: new Date("2026-10-31T14:00:00Z"), endsAt: new Date("2026-10-31T16:00:00Z") },
     ...over,
   }) as unknown as View;
@@ -35,13 +34,13 @@ test("first step for both sides: accept the deal and its time", () => {
 
 test("after the seller accepts, the buyer still accepts before paying", () => {
   const v = view({ waitingOn: ["sara"] });
-  assert.deepEqual(nextFor(v, "sara"), { state: "needs_you", label: "Accept the time and place" });
-  assert.deepEqual(nextFor(v, "gus"), { state: "waiting", label: "Waiting for Sara to pay" });
+  assert.deepEqual(nextFor(v, "sara"), { state: "needs_you", label: "Accept the deal" });
+  assert.deepEqual(nextFor(v, "gus"), { state: "waiting", label: "Waiting for Sara to accept" });
 });
 
-test("both accepted: the buyer holds the payment", () => {
-  assert.deepEqual(nextFor(view(), "sara"), { state: "needs_you", label: "Hold the payment" });
-  assert.equal(nextFor(view(), "gus").state, "waiting");
+test("both accepted: the buyer pays with PayPal", () => {
+  assert.deepEqual(nextFor(view(), "sara"), { state: "needs_you", label: "Pay with PayPal" });
+  assert.deepEqual(nextFor(view(), "gus"), { state: "waiting", label: "Waiting for Sara to pay" });
 });
 
 test("held and accepted by both: the handoff is next, nothing needs anyone", () => {
@@ -52,8 +51,8 @@ test("held and accepted by both: the handoff is next, nothing needs anyone", () 
 
 test("a new time after paying is accepted again by whoever didn't ask for it", () => {
   const v = view({ waitingOn: ["sara"], leg: { id: "l1", payerId: "sara", payeeId: "gus", status: "held" } });
-  assert.equal(nextFor(v, "sara").label, "Accept the time and place");
-  assert.equal(nextFor(v, "gus").label, "Waiting for Sara to accept the time and place");
+  assert.equal(nextFor(v, "sara").label, "Accept the deal");
+  assert.equal(nextFor(v, "gus").label, "Waiting for Sara to accept");
 });
 
 test("paid out or cancelled deals are done", () => {
@@ -61,16 +60,10 @@ test("paid out or cancelled deals are done", () => {
   assert.equal(nextFor(view({ leg: { status: "voided", payerId: "sara", payeeId: "gus" } }), "sara").label, "Cancelled, nothing charged");
 });
 
-test("in a plan, only the plan owner approves, after every part is settled", () => {
-  const plan = { id: "d2", title: "Moving day", ownerId: "maya", isPlan: true };
-  const room = { id: "r2", status: "agreed", buyerId: "ben", sellerId: "maya", agreedPrice: "210.00", label: "Sectional → Ben", closedReason: null };
-  const item = { kind: "goods", title: "Grey 3-seat sectional" };
-  const names = { ben: "Ben Carter", maya: "Maya Lee" };
-  const base = { room, deal: plan, item, names, hasLegs: false, leg: null };
-  assert.equal(nextFor(view({ ...base, planSettled: false }), "maya").label, "Waiting for the rest of the plan");
-  assert.equal(nextFor(view({ ...base, planSettled: true }), "maya").label, "Approve the plan");
-  assert.equal(nextFor(view({ ...base, planSettled: true, waitingOn: ["ben"] }), "ben").label, "Accept the time and place");
-  assert.equal(nextFor(view({ ...base, planSettled: true }), "ben").label, "Waiting for Maya to approve");
+test("in a plan, a sale that waits for the purchase can't move yet, for either side", () => {
+  const v = view({ blockedBy: "the purchase to be agreed first", waitingOn: ["gus", "sara"] });
+  assert.deepEqual(nextFor(v, "gus"), { state: "waiting", label: "Waiting for the purchase to be agreed first" });
+  assert.equal(nextFor(v, "sara").state, "waiting");
 });
 
 test("an agent's question is only for its own owner", () => {

@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { logActivity } from "@/lib/db/activity";
 import { createAuthorizeOrder, authorizeOrder } from "@/lib/paypal/orders";
@@ -15,60 +15,46 @@ async function say(dealId: string, userId: string | null, message: string, data:
   await logActivity({ userId, type: "payment", message, data: { dealId, ...data } });
 }
 
-// The owner approves the plan: every agreed negotiation becomes a leg to pay.
-export async function approveDeal(dealId: string, ownerId: string) {
-  const [deal] = await db.select().from(schema.deals).where(eq(schema.deals.id, dealId));
-  if (deal?.ownerId !== ownerId) throw new Error("Only the plan owner can approve it.");
+// Once a deal is accepted it gets its payment step: who pays whom, how much, and a handoff code.
+// A one-off deal gets its own small deal record; a deal in a plan uses the plan's.
+export async function openLeg(roomId: string) {
+  const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
+  if (room?.status !== "agreed") return null;
+  const [existing] = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.roomId, roomId));
+  if (existing) return existing;
 
-  const existing = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.dealId, dealId));
-  if (existing.length) return;
-
-  const rooms = await db.select().from(schema.negotiations).where(and(eq(schema.negotiations.dealId, dealId), eq(schema.negotiations.status, "agreed")));
-  const items = await db.select().from(schema.vaultItems).where(inArray(schema.vaultItems.id, rooms.map((r) => r.itemId!)));
-  const needs = await db.select().from(schema.intents).where(inArray(schema.intents.id, rooms.map((r) => r.intentId!)));
-  const kindOf = (room: (typeof rooms)[number]) =>
-    needs.find((n) => n.id === room.intentId)?.type === "rent" ? ("rental" as const) : items.find((i) => i.id === room.itemId)?.kind === "skill" ? ("service" as const) : ("goods" as const);
-
-  await db.insert(schema.dealLegs).values(
-    rooms.map((room) => ({
+  let dealId = room.dealId;
+  if (!dealId) {
+    [{ id: dealId }] = await db.insert(schema.deals).values({ ownerId: room.buyerId, title: room.label ?? "Deal" }).returning({ id: schema.deals.id });
+    await db.update(schema.negotiations).set({ dealId }).where(eq(schema.negotiations.id, roomId));
+  }
+  const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!));
+  const [need] = await db.select().from(schema.intents).where(eq(schema.intents.id, room.intentId!));
+  const kind = need?.type === "rent" ? ("rental" as const) : item?.kind === "skill" ? ("service" as const) : ("goods" as const);
+  const [leg] = await db
+    .insert(schema.dealLegs)
+    .values({
       dealId,
-      roomId: room.id,
-      kind: kindOf(room),
-      deposit: kindOf(room) === "rental" ? items.find((i) => i.id === room.itemId)?.deposit : null, // held with the fee, given back at return
+      roomId,
+      kind,
+      deposit: kind === "rental" ? item?.deposit : null, // held with the fee, given back at return
       description: room.label ?? "Deal",
       payerId: room.buyerId,
       payeeId: room.sellerId,
       amount: room.agreedPrice!,
       handoffCode: String(randomInt(100000, 1000000)),
-    })),
-  );
-  await db.update(schema.deals).set({ status: "approved" }).where(eq(schema.deals.id, dealId));
-  for (const room of rooms) await confirmTime(room.id, ownerId); // approving the plan accepts its times too
-  await say(dealId, null, "Plan approved. Each payer can now place a PayPal hold. Nobody is charged until the handoff.");
+    })
+    .returning();
+  return leg;
 }
 
-// A one-off negotiation (not part of a plan) becomes its own small deal.
-export async function confirmSoloDeal(roomId: string, viewerId: string) {
-  const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
-  if (!room || room.status !== "agreed" || room.dealId) return room?.dealId ?? null;
-  if (room.buyerId !== viewerId && room.sellerId !== viewerId) throw new Error("Not your deal.");
-  const [deal] = await db.insert(schema.deals).values({ ownerId: viewerId, title: room.label ?? "Deal" }).returning();
-  await db.update(schema.negotiations).set({ dealId: deal.id }).where(eq(schema.negotiations.id, roomId));
-  await approveDeal(deal.id, viewerId);
-  return deal.id;
-}
-
-// One PayPal order per payer, covering all their legs in this deal.
-export async function createPayerOrder(dealId: string, payerId: string) {
-  const legs = await db
-    .select()
-    .from(schema.dealLegs)
-    .where(and(eq(schema.dealLegs.dealId, dealId), eq(schema.dealLegs.payerId, payerId), eq(schema.dealLegs.status, "pending")));
-  if (!legs.length) throw new Error("Nothing to pay.");
-
-  const total = legs.reduce((sum, l) => sum + Number(l.amount) + Number(l.deposit ?? 0), 0); // a rental's deposit is held too
-  const order = await createAuthorizeOrder({ amount: money(total), description: legs.map((l) => l.description).join(" + ") });
-  await db.update(schema.dealLegs).set({ orderId: order.orderId }).where(inArray(schema.dealLegs.id, legs.map((l) => l.id)));
+// One PayPal order per deal: its price, plus a rental's deposit.
+export async function createPayerOrder(legId: string, payerId: string) {
+  const [leg] = await db.select().from(schema.dealLegs).where(and(eq(schema.dealLegs.id, legId), eq(schema.dealLegs.payerId, payerId), eq(schema.dealLegs.status, "pending")));
+  if (!leg) throw new Error("Nothing to pay.");
+  const total = Number(leg.amount) + Number(leg.deposit ?? 0);
+  const order = await createAuthorizeOrder({ amount: money(total), description: leg.description });
+  await db.update(schema.dealLegs).set({ orderId: order.orderId }).where(eq(schema.dealLegs.id, legId));
   return { orderId: order.orderId };
 }
 
@@ -108,7 +94,7 @@ export async function confirmHandoff(legId: string, payerId: string, code: strin
   const final = sameHold.every((l) => l.id === leg.id || l.status !== "held");
 
   const { captureId } = await captureAuthorization(leg.authorizationId!, leg.amount, final, `capture-${leg.id}`);
-  await db.update(schema.dealLegs).set({ captureId, status: "captured", handoffAt: new Date() }).where(eq(schema.dealLegs.id, legId));
+  await db.update(schema.dealLegs).set({ captureId, status: "captured", handoffAt: new Date(), capturedAt: new Date(), charged: leg.amount }).where(eq(schema.dealLegs.id, legId));
   await say(leg.dealId, payerId, `Handoff confirmed for ${leg.description}. PayPal captured $${Number(leg.amount).toFixed(0)}.`, { legId, captureId });
   await notify(payerId, "Handoff done", `PayPal charged $${Number(leg.amount).toFixed(0)}.`, leg.roomId);
 
@@ -116,7 +102,7 @@ export async function confirmHandoff(legId: string, payerId: string, code: strin
   const payout = payoutOf(Number(leg.amount));
   if (!payee.paypalEmail) return;
   const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`, leg.id);
-  await db.update(schema.dealLegs).set({ payoutBatchId: batchId, status: "paid_out" }).where(eq(schema.dealLegs.id, legId));
+  await db.update(schema.dealLegs).set({ payoutBatchId: batchId, status: "paid_out", paidOutAt: new Date() }).where(eq(schema.dealLegs.id, legId));
   await say(leg.dealId, leg.payeeId, `Paid out $${payout.toFixed(2)} to ${payee.name.split(" ")[0]} (after Unlisted's ${FEE * 100}% fee).`, { legId, batchId });
   await notify(leg.payeeId, "You got paid", `$${payout.toFixed(2)} sent to your PayPal (after Unlisted's ${FEE * 100}% fee).`, leg.roomId);
 }
@@ -131,32 +117,24 @@ export async function confirmReturn(legId: string, payeeId: string, goodShape: b
   const sameHold = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.authorizationId, leg.authorizationId!));
   const final = sameHold.every((l) => l.id === leg.id || !["held", "in_use"].includes(l.status));
   const { captureId } = await captureAuthorization(leg.authorizationId!, money(take), final, `capture-${leg.id}`);
-  await db.update(schema.dealLegs).set({ captureId, status: "captured" }).where(eq(schema.dealLegs.id, legId));
+  await db.update(schema.dealLegs).set({ captureId, status: "captured", capturedAt: new Date(), charged: money(take) }).where(eq(schema.dealLegs.id, legId));
   await notify(leg.payerId, goodShape ? "Returned, deposit released" : "Returned with a problem", goodShape ? `PayPal charged the $${take.toFixed(0)} fee and released your deposit.` : `The owner kept the deposit. PayPal charged $${take.toFixed(0)}.`, leg.roomId);
 
   const [payee] = await db.select().from(schema.users).where(eq(schema.users.id, leg.payeeId));
   const payout = payoutOf(take);
   if (!payee.paypalEmail) return;
   const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`, leg.id);
-  await db.update(schema.dealLegs).set({ payoutBatchId: batchId, status: "paid_out" }).where(eq(schema.dealLegs.id, legId));
+  await db.update(schema.dealLegs).set({ payoutBatchId: batchId, status: "paid_out", paidOutAt: new Date() }).where(eq(schema.dealLegs.id, legId));
   await notify(leg.payeeId, "You got paid", `$${payout.toFixed(2)} sent to your PayPal (after Unlisted's ${FEE * 100}% fee).`, leg.roomId);
 }
 
-// Before any handoff, a payer can cancel: the whole hold is released.
-export async function cancelHold(dealId: string, payerId: string) {
-  const legs = await db
-    .select()
-    .from(schema.dealLegs)
-    .where(and(eq(schema.dealLegs.dealId, dealId), eq(schema.dealLegs.payerId, payerId)));
-  const held = legs.filter((l) => l.status === "held");
-  if (!held.length || legs.some((l) => l.status === "captured" || l.status === "paid_out")) {
-    throw new Error("Only an untouched hold can be released.");
-  }
-  await voidAuthorization(held[0].authorizationId!);
-  await db.update(schema.dealLegs).set({ status: "voided" }).where(inArray(schema.dealLegs.id, held.map((l) => l.id)));
-  await say(dealId, payerId, "Hold released. Nothing was charged.");
-  for (const leg of held) {
-    await notify(payerId, "Hold released", "Nothing was charged.", leg.roomId);
-    await notify(leg.payeeId, "They cancelled", "The buyer released the hold before the handoff. Nothing was charged.", leg.roomId);
-  }
+// Before the handoff, the payer can cancel: the hold is released and nothing is charged.
+export async function cancelHold(legId: string, payerId: string) {
+  const [leg] = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.id, legId));
+  if (!leg || leg.payerId !== payerId || leg.status !== "held") throw new Error("Only an untouched hold can be released.");
+  await voidAuthorization(leg.authorizationId!);
+  await db.update(schema.dealLegs).set({ status: "voided" }).where(eq(schema.dealLegs.id, legId));
+  await say(leg.dealId, payerId, "Hold released. Nothing was charged.");
+  await notify(payerId, "Hold released", "Nothing was charged.", leg.roomId);
+  await notify(leg.payeeId, "They cancelled", "The buyer released the hold before the handoff. Nothing was charged.", leg.roomId);
 }

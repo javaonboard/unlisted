@@ -2,17 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { currentUserId } from "@/lib/session";
-import { approveDeal, cancelHold, confirmHandoff, confirmReturn, createPayerOrder, holdPayment } from "@/lib/payments/legs";
+import { cancelHold, confirmHandoff, confirmReturn, createPayerOrder, holdPayment } from "@/lib/payments/legs";
 
 const refresh = () => revalidatePath("/", "layout");
 
-export async function approveDealAction(dealId: string) {
-  await approveDeal(dealId, await currentUserId());
-  refresh();
-}
-
-export async function createOrderAction(dealId: string) {
-  return createPayerOrder(dealId, await currentUserId());
+// Called by PayPal's button when the payer clicks it: one order for this deal.
+export async function createOrderAction(legId: string) {
+  return createPayerOrder(legId, await currentUserId());
 }
 
 export async function holdPaymentAction(orderId: string) {
@@ -30,8 +26,8 @@ export async function confirmHandoffAction(legId: string, code: string) {
   return { error: null };
 }
 
-export async function cancelHoldAction(dealId: string) {
-  await cancelHold(dealId, await currentUserId());
+export async function cancelHoldAction(legId: string) {
+  await cancelHold(legId, await currentUserId());
   refresh();
 }
 

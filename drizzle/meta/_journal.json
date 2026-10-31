@@ -183,6 +183,20 @@
       "when": 1793483945463,
       "tag": "0025_deal_is_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793490918930,
+      "tag": "0026_plan_dependency",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793491150903,
+      "tag": "0027_leg_charged",
+      "breakpoints": true
     }
   ]
 }

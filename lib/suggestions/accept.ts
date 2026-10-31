@@ -56,7 +56,8 @@ export async function acceptSuggestion(id: string, userId: string, plan?: PlanPi
         helperIds: chosen.filter((p) => p.kind === "helper").map((p) => p.id),
         sellOnlyIfBought: plan?.sellOnlyIfBought ?? Boolean(a.sellWaitsForBuy),
       });
-      return `/deals/${deal.id}`;
+      await db.insert(schema.notifications).values({ userId, title: `${deal.title}: started`, body: "My agents are talking to the best matches. Each part shows up here as its own deal when it needs you.", link: `/deals/${deal.id}` });
+      return "/";
     }
     case "post_need": {
       // The suggestion said the budget out loud, so "Yes" agrees to it.

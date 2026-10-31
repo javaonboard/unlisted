@@ -4,17 +4,19 @@ import { useState } from "react";
 import { PayPalProvider, PayPalOneTimePaymentButton } from "@paypal/react-paypal-js/sdk-v6";
 import { createOrderAction, holdPaymentAction } from "@/app/actions/payments";
 
-// PayPal's v6 button. Approving places a hold; nothing is charged until handoff.
-export function PayButton({ dealId, clientId, total }: { dealId: string; clientId: string; total: number }) {
+// PayPal's own v6 button: one click opens PayPal, approving places a hold. Nothing is charged until the handoff.
+export function PayButton({ legId, clientId, total, deposit }: { legId: string; clientId: string; total: number; deposit: number }) {
   const [status, setStatus] = useState<"idle" | "holding" | "error">("idle");
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm">Hold <span className="font-semibold">${total.toFixed(0)}</span> with PayPal. You&apos;re charged only after each handoff.</p>
+      <p className="text-sm">
+        Pay <span className="font-semibold">${(total + deposit).toFixed(0)}</span> with PayPal{deposit ? ` ($${total.toFixed(0)} + $${deposit.toFixed(0)} deposit)` : ""}. PayPal holds it and only charges after the handoff.
+      </p>
       <PayPalProvider environment="sandbox" clientId={clientId} components={["paypal-payments"]} pageType="checkout">
         <PayPalOneTimePaymentButton
           presentationMode="auto"
-          createOrder={() => createOrderAction(dealId)}
+          createOrder={() => createOrderAction(legId)}
           onApprove={async ({ orderId }) => {
             setStatus("holding");
             try {

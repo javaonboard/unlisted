@@ -1,127 +1,74 @@
 import { Suspense } from "react";
-import { FormattedText } from "@/components/FormattedText";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ChevronRight, Compass } from "lucide-react";
 import { currentUserId } from "@/lib/session";
-import { getDealChannel, listDealsFor } from "@/lib/deals/queries";
-import { ChatMessage } from "@/components/deals/ChatMessage";
+import { getPlan } from "@/lib/deals/queries";
+import { BackLink } from "@/components/anchors/BackLink";
+import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
+import { FormattedText } from "@/components/FormattedText";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
-import { PaymentsPanel } from "@/components/payments/PaymentsPanel";
 
-const dot = (status: string) =>
-  status === "agreed" ? "bg-emerald-500" : status === "waiting_owner" ? "bg-amber-500" : status === "open" ? "bg-sky-500 animate-pulse" : "bg-zinc-400";
+const GROUPS = [
+  { key: "sell", title: "Selling" },
+  { key: "buy", title: "Buying" },
+  { key: "helper", title: "Help to get it done" },
+] as const;
 
-async function Channel({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const viewerId = await currentUserId();
-  const [data, deals] = await Promise.all([getDealChannel(id, viewerId), listDealsFor(viewerId)]);
+// A plan at a glance. Each part is a normal deal with its own chat and steps.
+async function Plan({ params }: { params: Promise<{ id: string }> }) {
+  const data = await getPlan((await params).id, await currentUserId());
   if (!data) notFound();
-
-  const { deal, rooms, messages, bookings, names, legs, events } = data;
-  const thread = Object.fromEntries(rooms.map((r) => [r.id, r.label ?? "deal"]));
-  // Keep refreshing while agents talk, and in the gap before the mover leg starts.
-  const active = rooms.some((r) => r.status === "open" || r.status === "waiting_owner") || (deal.status === "proposed" && !rooms.some((r) => r.label?.startsWith("Mover")));
-  const net = rooms.reduce((sum, r) => {
-    if (r.status !== "agreed" || !r.agreedPrice) return sum;
-    return r.sellerId === viewerId ? sum + Number(r.agreedPrice) : r.buyerId === viewerId ? sum - Number(r.agreedPrice) : sum;
-  }, 0);
+  const { deal, parts, isOwner } = data;
+  const talking = parts.some((p) => p.next.state === "talking");
 
   return (
-    <div className="grid h-[calc(100vh-57px)] grid-cols-[220px_1fr_280px]">
-      <LiveRefresh active={active} />
+    <>
+      <LiveRefresh active={talking} every={4000} />
+      <BackLink href="/" label="Inbox" />
+      <h1 className="mb-1 text-2xl font-semibold">{deal.title}</h1>
+      {isOwner && (
+        <ul className="mb-4 list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
+          {deal.saleWaitsForPurchase && <li>Your sale waits until your purchase is agreed.</li>}
+          {deal.helperIds.length > 0 && <li>Help (a mover, an installer) is booked once the goods are agreed, around those handoffs.</li>}
+          <li>Each part is its own deal: accept it, pay with PayPal, hand off.</li>
+        </ul>
+      )}
+      {isOwner && deal.scoutNote && (
+        <div className="mb-4 flex gap-2 rounded-xl bg-accent px-3 py-2 text-sm"><Compass className="mt-0.5 size-4 shrink-0 text-primary" /><FormattedText text={deal.scoutNote} /></div>
+      )}
 
-      <aside className="overflow-y-auto border-r bg-muted/30 p-3 text-sm">
-        <p className="mb-2 px-2 text-xs font-semibold uppercase text-muted-foreground">Deals</p>
-        {deals.map((d) => (
-          <div key={d.id}>
-            <Link href={`/deals/${d.id}`} className={`block rounded-lg px-2 py-1 ${d.id === deal.id ? "bg-accent font-semibold" : "hover:bg-muted"}`}>
-              # {d.title.toLowerCase().replace(/\s+/g, "-")}
-            </Link>
-            {d.id === deal.id &&
-              rooms.map((r) => (
-                <Link key={r.id} href={`/rooms/${r.id}`} className="flex items-center gap-2 py-1 pl-5 text-muted-foreground hover:text-foreground">
-                  <span className={`size-2 rounded-full ${dot(r.status)}`} />
-                  {r.label}
+      {GROUPS.map(({ key, title }) => {
+        const rows = parts.filter((p) => p.group === key);
+        if (!rows.length) return null;
+        return (
+          <section key={key} className="mb-5">
+            <h2 className="mb-2 font-medium">{title}</h2>
+            <div className="flex flex-col gap-2">
+              {rows.map((p) => (
+                <Link key={p.room.id} href={`/rooms/${p.room.id}`} className="flex items-center justify-between gap-3 rounded-xl border p-3 text-sm hover:bg-muted/40">
+                  <span className="min-w-0">
+                    <span className="font-medium">{p.room.label}</span>
+                    <span className="text-muted-foreground">{p.room.agreedPrice ? ` · $${Number(p.room.agreedPrice).toFixed(0)}` : ""} · {p.distance}</span>
+                    <span className="mt-1 flex flex-wrap gap-2"><RoleBadge role={p.role} /><StatusPill next={p.next} /></span>
+                  </span>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                 </Link>
               ))}
-          </div>
-        ))}
-      </aside>
-
-      <section className="flex flex-col overflow-y-auto p-4">
-        <h1 className="mb-3 text-lg font-semibold"># {deal.title.toLowerCase().replace(/\s+/g, "-")}</h1>
-        {deal.scoutNote && deal.ownerId === viewerId && (
-          <div className="mb-3 rounded-xl bg-accent px-3 py-2 text-sm"><span className="font-medium">Your scout:</span> <FormattedText text={deal.scoutNote} className="mt-1" /></div>
-        )}
-        {messages.length === 0 && <p className="text-sm text-muted-foreground">Agents are joining…</p>}
-        <div className="flex flex-col gap-1">
-          {messages.map((m) => (
-            <ChatMessage
-              key={m.id}
-              m={m}
-              viewerId={viewerId}
-              name={names[m.fromUserId]?.split(" ")[0] ?? m.fromUserId}
-              thread={thread[m.negotiationId]}
-              waiting={rooms.find((r) => r.id === m.negotiationId)?.status === "waiting_owner"}
-            />
-          ))}
-          {events.map((e) => (
-            <p key={e.id} className="mx-2 my-1 rounded-xl bg-secondary px-3 py-2 text-sm">
-              {e.message} <span className="text-xs text-muted-foreground">{e.createdAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
-            </p>
-          ))}
-          {bookings.map((b) => (
-            <p key={b.id} className="mx-2 my-1 rounded-xl bg-secondary px-3 py-2 text-sm">
-              {b.title} · {b.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}–
-              {b.endsAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-            </p>
-          ))}
-        </div>
-      </section>
-
-      <aside className="overflow-y-auto border-l p-4 text-sm">
-        <p className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Deal</p>
-        <div className="flex flex-col gap-2">
-          {rooms.map((r) => (
-            <div key={r.id} className="flex items-center justify-between rounded-xl border p-2">
-              <span className="flex items-center gap-2"><span className={`size-2 rounded-full ${dot(r.status)}`} />{r.label}</span>
-              <span className="font-medium">
-                {r.agreedPrice ? `${r.sellerId === viewerId ? "+" : "−"}$${Number(r.agreedPrice).toFixed(0)}` : r.status === "waiting_owner" ? "needs you" : r.status === "open" ? "…" : "—"}
-              </span>
             </div>
-          ))}
-        </div>
-        <div className="mt-4 flex items-center justify-between border-t pt-3 text-base font-semibold">
-          <span>Net</span>
-          <span>{net >= 0 ? "+" : "−"}${Math.abs(net).toFixed(0)}</span>
-        </div>
-        <p className="mt-6 mb-2 text-xs font-semibold uppercase text-muted-foreground">Payments</p>
-        <PaymentsPanel
-          dealId={deal.id}
-          isOwner={deal.ownerId === viewerId}
-          viewerId={viewerId}
-          rooms={rooms}
-          legs={legs}
-          names={names}
-          clientId={process.env.PAYPAL_CLIENT_ID ?? ""}
-        />
-        <p className="mt-6 mb-2 text-xs font-semibold uppercase text-muted-foreground">Saturday</p>
-        <ul className="flex flex-col gap-1 text-muted-foreground">
-          {rooms.map((r) => {
-            const last = [...messages].reverse().find((m) => m.negotiationId === r.id && (m.terms as { when?: string }).when);
-            const when = (last?.terms as { when?: string } | undefined)?.when;
-            return when ? <li key={r.id}>{when}: {r.label}</li> : null;
-          })}
-        </ul>
-      </aside>
-    </div>
+          </section>
+        );
+      })}
+    </>
   );
 }
 
-export default function DealPage({ params }: { params: Promise<{ id: string }> }) {
+export default function PlanPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <Suspense fallback={<p className="p-8 text-muted-foreground">Loading deal…</p>}>
-      <Channel params={params} />
-    </Suspense>
+    <main className="mx-auto w-full max-w-2xl p-8">
+      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+        <Plan params={params} />
+      </Suspense>
+    </main>
   );
 }

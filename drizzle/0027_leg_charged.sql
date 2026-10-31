@@ -1,0 +1,1 @@
+ALTER TABLE "deal_legs" ADD COLUMN "charged" numeric(10, 2);

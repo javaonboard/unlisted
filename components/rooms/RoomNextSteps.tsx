@@ -3,7 +3,7 @@ import type { getRoomView } from "@/lib/anchors/queries";
 
 type RoomView = NonNullable<Awaited<ReturnType<typeof getRoomView>>>;
 
-// The next steps of an agreed deal, for the room page and the inbox.
+// The steps of an agreed deal, for the room page and the inbox.
 export function RoomNextSteps({ data, viewerId }: { data: RoomView; viewerId: string }) {
   const { room, deal, names } = data;
   return (
@@ -11,25 +11,20 @@ export function RoomNextSteps({ data, viewerId }: { data: RoomView; viewerId: st
       roomId={room.id}
       dealId={room.dealId}
       isPlan={!!deal?.isPlan}
-      isPlanOwner={deal?.ownerId === viewerId}
-      planSettled={data.planSettled}
-      hasLegs={data.hasLegs}
       viewerId={viewerId}
+      buyerId={room.buyerId}
+      sellerId={room.sellerId}
       first={(id) => names[id]?.split(" ")[0] ?? id}
       leg={data.leg}
-      payTotal={data.payTotal}
-      when={data.when}
-      place={data.place}
+      price={Number(room.agreedPrice ?? 0)}
+      deposit={data.need?.type === "rent" ? Number(data.leg?.deposit ?? data.item.deposit ?? 0) : 0}
       booking={data.booking}
       waitingOn={data.waitingOn}
-      price={Number(room.agreedPrice ?? 0)}
       meet={data.meet}
-      isSeller={room.sellerId === viewerId}
       places={data.places}
       stops={data.stops}
       rentalDays={data.need?.type === "rent" ? (data.need.days ?? 1) : null}
-      sellerId={room.sellerId}
-      buyerId={room.buyerId}
+      blockedBy={data.blockedBy}
       clientId={process.env.PAYPAL_CLIENT_ID ?? ""}
     />
   );

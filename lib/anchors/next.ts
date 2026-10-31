@@ -32,7 +32,7 @@ export function roleOf(data: RoomView, viewerId: string) {
 
 // What happens next in this deal, and whether it's on the viewer.
 export function nextFor(data: RoomView, viewerId: string): Next {
-  const { room, deal, leg, names } = data;
+  const { room, leg, names } = data;
   const first = (id: string) => names[id]?.split(" ")[0] ?? id;
   const isBuyer = room.buyerId === viewerId;
   const other = first(isBuyer ? room.sellerId : room.buyerId);
@@ -44,7 +44,7 @@ export function nextFor(data: RoomView, viewerId: string): Next {
   if (room.status === "open") return { state: "talking", label: "Agents are talking" };
   if (room.status === "closed") return { state: "done", label: `Closed: ${room.closedReason}` };
 
-  // Agreed. Steps in order: accept the deal and time (or approve the plan), hold the payment, hand off.
+  // Agreed. Steps in order: accept, pay (PayPal holds it), hand off, paid out.
   if (leg?.status === "paid_out" || leg?.status === "captured") return { state: "done", label: "Done and paid" };
   // A rental that's out: the owner confirms when it comes back.
   if (leg?.status === "in_use") {
@@ -52,22 +52,14 @@ export function nextFor(data: RoomView, viewerId: string): Next {
   }
   if (leg?.status === "voided") return { state: "done", label: "Cancelled, nothing charged" };
 
-  const isPlan = !!deal?.isPlan;
-  const accepted = !data.waitingOn.includes(viewerId);
-  if (isPlan && deal.ownerId === viewerId) {
-    if (!data.hasLegs) return data.planSettled ? { state: "needs_you", label: "Approve the plan" } : { state: "waiting", label: "Waiting for the rest of the plan" };
-    if (!accepted) return { state: "needs_you", label: "Accept the time and place" };
-  } else if (!accepted) {
-    return { state: "needs_you", label: isPlan || data.hasLegs ? "Accept the time and place" : "Accept the deal" };
-  } else if (!data.hasLegs) {
-    return { state: "waiting", label: isPlan ? `Waiting for ${first(deal.ownerId)} to approve` : `Waiting for ${other} to accept` };
-  }
-
-  if (leg?.status === "pending") {
-    return leg.payerId === viewerId ? { state: "needs_you", label: "Hold the payment" } : { state: "waiting", label: `Waiting for ${first(leg.payerId)} to pay` };
-  }
+  // In a plan, a sale can wait for the purchase. Then: both accept, the buyer pays, the handoff.
+  if (data.blockedBy) return { state: "waiting", label: `Waiting for ${data.blockedBy}` };
+  if (data.waitingOn.includes(viewerId)) return { state: "needs_you", label: "Accept the deal" };
   const notMe = data.waitingOn.filter((id) => id !== viewerId);
-  if (notMe.length) return { state: "waiting", label: `Waiting for ${notMe.map(first).join(" and ")} to accept the time and place` };
+  if (notMe.length) return { state: "waiting", label: `Waiting for ${notMe.map(first).join(" and ")} to accept` };
+  if (!leg || leg.status === "pending") {
+    return room.buyerId === viewerId ? { state: "needs_you", label: "Pay with PayPal" } : { state: "waiting", label: `Waiting for ${other} to pay` };
+  }
 
   const when = data.booking ? data.booking.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" }) : "soon";
   return { state: "upcoming", label: `${data.need?.type === "rent" ? "Pickup" : "Handoff"} ${when}` };
