@@ -22,7 +22,7 @@ export async function Header() {
         {links.map((link) => (
           <Link key={link.href} href={link.href} className="text-sm text-muted-foreground hover:text-foreground">
             {link.label}
-            {link.href === "/" && count > 0 && <span className="ml-1.5 rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">{count}</span>}
+            {link.href === "/" && count > 0 && <span className="ml-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-white">{count}</span>}
           </Link>
         ))}
       </nav>

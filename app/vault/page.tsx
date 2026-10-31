@@ -42,7 +42,7 @@ async function MyStuff() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={item.photos[0]} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
             ) : (
-              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"><CategoryIcon category={item.category} /></div>
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-accent text-primary"><CategoryIcon category={item.category} /></div>
             )}
             <div className="min-w-0">
               <p className="font-medium">{item.title}</p>

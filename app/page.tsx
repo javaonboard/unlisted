@@ -47,7 +47,7 @@ async function Inbox() {
       </div>
 
       {needs.count > 0 ? (
-        <a href={firstNeed ? `#${anchor(firstNeed)}` : "#"} className="mt-4 inline-block rounded-full bg-red-50 px-3 py-1 text-sm text-red-700 hover:bg-red-100">
+        <a href={firstNeed ? `#${anchor(firstNeed)}` : "#"} className="mt-4 inline-block rounded-full bg-primary px-3 py-1 text-sm text-primary-foreground hover:bg-primary/90">
           <span className="flex items-center gap-1.5"><CircleAlert className="size-4" /> {needs.count} {needs.count === 1 ? "thing needs" : "things need"} you</span>
         </a>
       ) : (
@@ -95,7 +95,7 @@ function Bubble({ id, at, needsYou, children }: { id: string; at: Date; needsYou
   return (
     <div id={id} className="flex max-w-[90%] scroll-mt-24 gap-2 self-start">
       <div className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-primary"><Bot className="size-4" /></div>
-      <div className={`min-w-0 flex-1 rounded-2xl border px-4 py-3 text-sm ${needsYou ? "border-red-300 ring-1 ring-red-200" : ""}`}>
+      <div className={`min-w-0 flex-1 rounded-2xl border px-4 py-3 text-sm ${needsYou ? "border-primary/50 ring-1 ring-primary/20" : ""}`}>
         {children}
         <p className="mt-2 text-[11px] text-muted-foreground">{time(at)}</p>
       </div>

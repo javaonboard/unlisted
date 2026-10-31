@@ -128,3 +128,7 @@
     @apply font-sans;
   }
 }
+/* Line icons: one color, soft rounded strokes. */
+.lucide {
+  stroke-width: 1.75;
+}

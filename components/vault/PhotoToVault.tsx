@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Camera } from "lucide-react";
+import { IconCircle } from "@/components/anchors/Badges";
 import { Button } from "@/components/ui/button";
 import { addSuggestions, suggestFromPhoto, type Suggestion } from "@/app/actions/vault";
 
@@ -42,7 +43,7 @@ export function PhotoToVault() {
   return (
     <div className="mb-6 rounded-2xl border border-dashed p-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="flex items-center gap-2 text-sm"><Camera className="size-4 text-primary" /> Snap a room or your garage. Your agent finds what you own and what you could do.</p>
+        <p className="flex items-center gap-2 text-sm"><IconCircle icon={Camera} /> Snap a room or your garage. Your agent finds what you own and what you could do.</p>
         <label className="shrink-0 cursor-pointer rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground">
           {pending ? "Looking…" : "Add a photo"}
           <input type="file" accept="image/*" capture="environment" className="hidden" disabled={pending} onChange={(e) => onFile(e.target.files?.[0])} />
