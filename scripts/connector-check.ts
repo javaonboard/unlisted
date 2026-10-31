@@ -24,6 +24,13 @@ async function main() {
   const list = JSON.parse((rooms.content as { text: string }[])[0].text);
   console.log(`\nroom_status: ${list.length} negotiations`, list.map((r: { status: string; agreedPrice: string }) => `${r.status}${r.agreedPrice ? ` $${r.agreedPrice}` : ""}`).join(", "));
 
+  const call = async (name: string, args: Record<string, unknown> = {}) =>
+    (((await client.callTool({ name, arguments: args })).content as { text: string }[])[0].text);
+  console.log("\nwhat_needs_me:", (await call("what_needs_me")).slice(0, 500));
+  console.log("\nmy_schedule:", (await call("my_schedule")).slice(0, 500));
+  console.log("\npost_need without a budget:", await call("post_need", { type: "request_service", text: "Mow my lawn", category: "lawn" }));
+  console.log("\ntell_agent (missing info):", await call("tell_agent", { text: "I need my car washed" }));
+
   await client.close();
   process.exit(0);
 }

@@ -29,7 +29,7 @@ export async function a2aHandlerFor(userId: string, base: string) {
   if (existing) return existing;
   const card = await cardFor(userId, base);
   if (!card) return null;
-  const handler = new JsonRpcTransportHandler(new DefaultRequestHandler(card, new InMemoryTaskStore(), new UnlistedAgent(userId)));
+  const handler = new JsonRpcTransportHandler(new DefaultRequestHandler(card, new InMemoryTaskStore(), new UnlistedAgent(userId, base)));
   handlers.set(userId, handler);
   return handler;
 }

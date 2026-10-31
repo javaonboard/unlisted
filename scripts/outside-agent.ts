@@ -8,6 +8,11 @@ import { Role, TaskState, type Message, type Part, type Task } from "@a2a-js/sdk
 const base = process.argv[2] ?? "http://localhost:3000";
 const MY_LIMIT = 270;
 
+// Next Saturday, 10am Austin time (15:00 UTC), for the pickup.
+const sat = new Date();
+sat.setUTCDate(sat.getUTCDate() + ((6 - sat.getUTCDay() + 7) % 7 || 7));
+const saturday10 = `${sat.toISOString().slice(0, 10)}T15:00:00.000Z`;
+
 const text = (value: string): Part => ({ content: { $case: "text", value }, metadata: undefined, filename: "", mediaType: "" });
 const data = (value: unknown): Part => ({ content: { $case: "data", value }, metadata: undefined, filename: "", mediaType: "application/json" });
 
@@ -36,7 +41,7 @@ async function main() {
       contextId,
       taskId,
       role: Role.ROLE_USER,
-      parts: [text(say), data({ "unlisted.move": { action, price: myPrice, when: "Sat 9am", itemId } })],
+      parts: [text(say), data({ "unlisted.move": { action, price: myPrice, when: "Sat 10am", slotStart: saturday10, meetAt: "public", itemId } })],
       metadata: { from: "Pat's shopping bot" },
       extensions: [],
       referenceTaskIds: [],

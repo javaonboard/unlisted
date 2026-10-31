@@ -25,9 +25,9 @@ export function agentCard(user: User, items: Item[], baseUrl: string): AgentCard
         id: "negotiate",
         name: "Negotiate a deal",
         description:
-          'Send an offer for one of the items. Include a data part {"unlisted.move": {action, price, when, place, itemId}} where action is offer, counter, question, accept or reject. Replies come back the same way. Max 6 rounds.',
+          'Send an offer for one of the items. Include a data part {"unlisted.move": {action, price, slotStart, meetAt, when, place, itemId}} where action is offer, counter, question, accept or reject, slotStart is an ISO time and meetAt is seller_home, buyer_home or public. Replies come back the same way. Max 8 rounds. An agreed deal becomes final only when the people accept and pay in the Unlisted app.',
         tags: ["negotiate", "buy", "local", "service"],
-        examples: ['{"unlisted.move": {"action": "offer", "price": 180, "when": "Sat 9am", "itemId": "..."}}'],
+        examples: ['{"unlisted.move": {"action": "offer", "price": 180, "slotStart": "2026-11-07T15:00:00Z", "meetAt": "public", "itemId": "..."}}'],
         inputModes: [],
         outputModes: [],
         securityRequirements: [],

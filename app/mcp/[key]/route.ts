@@ -11,7 +11,7 @@ async function handle(request: Request, { params }: { params: Promise<{ key: str
 
   // Stateless: a fresh server and transport per request.
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-  await unlistedServer(user.id).connect(transport);
+  await unlistedServer(user.id, new URL(request.url).origin).connect(transport);
   console.log("[mcp] request for", user.id);
   return transport.handleRequest(request);
 }
