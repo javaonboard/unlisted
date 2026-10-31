@@ -5,6 +5,7 @@ import { findDemandFor, findSupplyFor } from "@/lib/matching/matcher";
 import { skillDemand } from "@/lib/vault/demand";
 import { milesBetween } from "@/lib/places";
 import { suggest } from "./suggest";
+import { suggestPlan } from "./plan";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
 
 const WAIT = 2 * 3_600_000; // time to answer before the next wave
@@ -113,6 +114,7 @@ export async function onNeedPosted(needId: string) {
   const [need] = await db.select().from(schema.intents).where(eq(schema.intents.id, needId));
   if (!need) return;
   await runWave(needId, 1);
+  await suggestPlan(need.ownerId); // a sale and a purchase that go together
 
   // Life event: someone moving usually needs a mover too.
   if (/\bmov(e|ing)\b/i.test(need.text) && need.category !== "moving") {

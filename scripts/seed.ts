@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { nextSaturday } from "@/lib/dates";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
+import { suggestPlan } from "@/lib/suggestions/plan";
 import * as data from "./seed-data";
 
 async function main() {
@@ -48,6 +49,7 @@ async function main() {
   );
   await db.insert(schema.memoryFacts).values(data.memoryFacts);
   await db.insert(schema.notifications).values(data.notifications);
+  await suggestPlan("maya"); // her sale, purchase and mover fit together
 
   console.log(`seeded ${data.users.length} users, ${items.length} vault items, ${rows.length} intents`);
 

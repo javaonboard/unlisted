@@ -242,7 +242,7 @@ export const suggestions = pgTable("suggestions", {
   id: id(),
   userId: text("user_id").notNull().references(() => users.id),
   kind: text("kind", {
-    enum: ["open_item", "offer_skill", "add_skill", "raise_offer", "post_need"],
+    enum: ["open_item", "offer_skill", "add_skill", "raise_offer", "post_need", "plan"],
   }).notNull(),
   title: text("title").notNull(),
   body: text("body").notNull(),

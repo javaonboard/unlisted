@@ -2,14 +2,12 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { and, asc, eq, inArray, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
-import { Button } from "@/components/ui/button";
 import { currentUserId } from "@/lib/session";
 import { findDemandFor } from "@/lib/matching/matcher";
 import { statusLine } from "@/lib/anchors/status";
 import { rangeOfNeed, rangeOfOffer, rangeText } from "@/lib/places";
 import { ChevronRight, ClipboardList, Compass } from "lucide-react";
 import { CategoryIcon } from "@/components/anchors/Badges";
-import { planMovingDay } from "@/app/actions/deals";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { PhotoToVault } from "@/components/vault/PhotoToVault";
 import { TellAgent } from "@/components/vault/TellAgent";
@@ -29,7 +27,6 @@ async function MyStuff() {
     : [];
   const interested = Object.fromEntries(await Promise.all(items.map(async (i) => [i.id, (await findDemandFor(i.id)).length] as const)));
   const activePlans = plans.filter((p) => p.status !== "cancelled");
-  const canPlan = needs.some((n) => n.type === "sell") && needs.some((n) => n.type === "buy") && activePlans.length === 0;
 
   // One card per item, with where its negotiations stand.
   const itemGrid = (title: string, empty: string, list: typeof items) => (
@@ -59,12 +56,6 @@ async function MyStuff() {
   return (
     <>
       <LiveRefresh active={rooms.some((r) => r.status === "open") || (plans.length > 0 && !rooms.some((r) => r.dependsOn.length > 0))} />
-      {canPlan && (
-        <form action={planMovingDay} className="mb-6 flex items-center justify-between rounded-2xl bg-accent p-4">
-          <p className="text-sm">Your needs fit together: sell, buy and a mover, all for Saturday.</p>
-          <Button type="submit">Plan my moving day</Button>
-        </form>
-      )}
       {activePlans.map((p) => (
         <Link key={p.id} href={`/deals/${p.id}`} className="mb-6 block rounded-2xl bg-accent p-4 text-sm hover:bg-accent/70">
           <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Plan: <span className="font-medium">{p.title}</span> · see every part, the total and Saturday&apos;s timeline <ChevronRight className="size-4" /></span>

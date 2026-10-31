@@ -4,6 +4,7 @@ import { addVaultItem } from "@/lib/vault/mutations";
 import { postNeed } from "@/lib/intents/mutations";
 import { startNegotiation } from "@/lib/negotiation/start";
 import { onDismissed, runWave } from "./engine";
+import { startLinkedDeal } from "@/lib/deals/planner";
 
 // "Yes" on a suggestion. Returns where to go next, if anywhere.
 export async function acceptSuggestion(id: string, userId: string): Promise<string | null> {
@@ -35,6 +36,10 @@ export async function acceptSuggestion(id: string, userId: string): Promise<stri
       await db.update(schema.intents).set({ maxPrice: Number(a.maxPrice).toFixed(2), wave: 0 }).where(eq(schema.intents.id, String(a.needId)));
       await runWave(String(a.needId), 1);
       return `/needs/${a.needId}`;
+    case "plan": {
+      const deal = await startLinkedDeal(userId, String(a.title));
+      return `/deals/${deal.id}`;
+    }
     case "post_need": {
       const need = await postNeed(userId, { type: a.type as "request_service", text: String(a.text), category: String(a.category) });
       return `/needs/${need.id}`;
