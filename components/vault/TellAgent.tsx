@@ -36,7 +36,7 @@ export function TellAgent() {
               <span className="text-xs text-muted-foreground">{label[c.kind]}</span>
               <p className="font-medium">{c.title}</p>
               <p className="text-muted-foreground">
-                {[c.details, c.condition, c.value !== null ? `~$${c.value}${c.kind === "skill" ? "/job" : ""}` : null, c.minPrice !== null ? `lowest $${c.minPrice}` : null, c.maxPrice !== null ? `up to $${c.maxPrice}` : null, c.dueInDays !== null ? `within ${c.dueInDays} days` : null, c.freeHours.length ? `${c.freeHours.length} free slots` : null].filter(Boolean).join(" · ") || c.category}
+                {[c.details, c.condition, c.ways?.includes("rent") && c.rentPerDay ? `for rent $${c.rentPerDay}/day` : null, c.needType === "rent" && c.days ? `rent for ${c.days} day${c.days === 1 ? "" : "s"}` : null, c.value !== null ? `~$${c.value}${c.kind === "skill" ? "/job" : ""}` : null, c.minPrice !== null ? `lowest $${c.minPrice}` : null, c.maxPrice !== null ? `up to $${c.maxPrice}` : null, c.dueInDays !== null ? `within ${c.dueInDays} days` : null, c.freeHours.length ? `${c.freeHours.length} free slots` : null].filter(Boolean).join(" · ") || c.category}
               </p>
               {missing(c).length > 0 && <p className="mt-1 text-xs text-amber-700">Still need: {missing(c).join(", ")}</p>}
             </div>

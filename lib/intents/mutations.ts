@@ -3,7 +3,8 @@ import { db, schema } from "@/lib/db";
 import { publish } from "@/lib/events/bus";
 
 type NewNeed = {
-  type: "buy" | "request_service";
+  type: "buy" | "rent" | "request_service";
+  days?: number; // rentals
   text: string;
   category: string;
   maxPrice?: number;
@@ -23,6 +24,7 @@ export async function postNeed(ownerId: string, need: NewNeed) {
       maxPrice: need.maxPrice?.toFixed(2),
       maxMiles: need.maxMiles,
       constraints: need.constraints ?? {},
+      days: need.days,
       dueAt: need.dueInDays != null ? new Date(Date.now() + Math.max(1, need.dueInDays) * 86_400_000) : null,
     })
     .returning();

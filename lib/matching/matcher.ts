@@ -1,4 +1,4 @@
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { placesInReach, rangeOfNeed, rangeOfOffer } from "@/lib/places";
 import { meetsRequirements } from "./rules";
@@ -11,8 +11,11 @@ type Intent = typeof schema.intents.$inferSelect;
 // "widthIn" ≤ 80. The AI names the specs when it reads a photo or a message; this rule just compares them.
 function fits(item: Item, intent: Intent) {
   if (item.category !== intent.category || item.ownerId === intent.ownerId) return false;
-  // Within 10% is still worth talking about; owners can stretch.
-  if (item.minPrice && intent.maxPrice && Number(item.minPrice) > Number(intent.maxPrice) * 1.1) return false;
+  if (intent.type === "buy" && item.kind === "goods" && !item.forSale) return false;
+  if (intent.type === "rent" && !item.rentPerDay) return false;
+  // Within 10% is still worth talking about; owners can stretch. A rental costs its daily price times the days.
+  const ask = intent.type === "rent" ? Number(item.rentPerDay) * (intent.days ?? 1) : Number(item.minPrice ?? 0);
+  if (ask && intent.maxPrice && ask > Number(intent.maxPrice) * 1.1) return false;
   return meetsRequirements(item.details as Record<string, unknown>, intent.constraints as Record<string, unknown>);
 }
 
@@ -28,11 +31,12 @@ async function inReach() {
 // Open buy or service requests that this item or skill could fill.
 export async function findDemandFor(itemId: string) {
   const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, itemId));
-  const type = item.kind === "skill" ? "request_service" : "buy";
+  // A service answers service requests; goods answer people buying or renting.
+  const types = item.kind === "skill" ? ["request_service" as const] : ["buy" as const, "rent" as const];
   const intents = await db
     .select()
     .from(schema.intents)
-    .where(and(eq(schema.intents.type, type), eq(schema.intents.status, "open"), ne(schema.intents.ownerId, item.ownerId)));
+    .where(and(inArray(schema.intents.type, types), eq(schema.intents.status, "open"), ne(schema.intents.ownerId, item.ownerId)));
   const reach = await inReach();
   return intents.filter((intent) => fits(item, intent) && reach(item, intent));
 }

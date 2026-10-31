@@ -59,6 +59,7 @@ export function PhotoToVault() {
               <span className="flex-1">
                 <span className="font-medium">{s.title}{s.kind === "skill" ? " (service)" : ""}</span>
                 {s.value ? <span className="text-muted-foreground"> · ~${s.value}</span> : null}
+                {s.kind === "goods" && <span className="text-muted-foreground"> · {s.ways?.includes("rent") ? (s.ways.includes("sell") ? `sell or rent ($${s.rentPerDay}/day)` : `rent out ($${s.rentPerDay}/day)`) : "sell"}</span>}
                 <span className="block text-muted-foreground">{s.kind === "skill" ? `Because: ${s.note}` : s.note}</span>
                 {s.demand && s.demand.requests > 0 && (
                   <span className="block text-primary">
@@ -77,7 +78,7 @@ export function PhotoToVault() {
                 setSuggestions([]);
               })}
             >
-              Add {picked.size} to my vault
+              Add {picked.size} to my stuff
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">Everything stays private until you say yes to a real buyer.</p>

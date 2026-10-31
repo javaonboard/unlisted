@@ -7,3 +7,6 @@ export const payoutOf = (price: number) => Math.round((price - feeOf(price)) * 1
 
 // "$75" for whole dollars, "$69.50" otherwise.
 export const money = (n: number) => `$${Number.isInteger(n) ? n : n.toFixed(2)}`;
+
+// What PayPal captures when a rental comes back: the fee, plus the deposit only if something's wrong.
+export const rentalCapture = (fee: number, deposit: number, goodShape: boolean) => Math.round((fee + (goodShape ? 0 : deposit)) * 100) / 100;

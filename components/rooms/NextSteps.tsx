@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { approveDealAction, cancelHoldAction } from "@/app/actions/payments";
 import { PayButton } from "@/components/payments/PayButton";
-import { ConfirmHandoff } from "@/components/payments/LegActions";
+import { ConfirmHandoff, ConfirmReturn } from "@/components/payments/LegActions";
 import { AcceptDeal } from "@/components/rooms/AcceptDeal";
 import { FEE, feeOf, money, payoutOf } from "@/lib/payments/fees";
 import { MapPin } from "lucide-react";
@@ -18,7 +18,8 @@ type Props = {
   hasLegs: boolean;
   viewerId: string;
   first: (id: string) => string;
-  leg: { id: string; payerId: string; payeeId: string; amount: string; status: string; handoffCode: string | null } | null;
+  leg: { id: string; kind: string; payerId: string; payeeId: string; amount: string; deposit: string | null; status: string; handoffCode: string | null } | null;
+  rentalDays: number | null;
   payTotal: number;
   when: string | null;
   place: string | null;
@@ -44,8 +45,10 @@ export function NextSteps(p: Props) {
   const time = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
   const held = leg && leg.status !== "pending";
+  const rental = !!p.rentalDays;
+  const deposit = Number(leg?.deposit ?? 0);
   const handedOff = leg && (leg.status === "captured" || leg.status === "paid_out");
-  const closed = handedOff || leg?.status === "voided";
+  const closed = handedOff || leg?.status === "voided" || leg?.status === "in_use";
 
   // Step 1 is one "Accept" for the deal and its time. In a plan, the owner approves the whole plan instead.
   const accepted = !p.waitingOn.includes(p.viewerId);
@@ -90,8 +93,8 @@ export function NextSteps(p: Props) {
           {/* Who pays what, so nobody is surprised by the fee. */}
           <p className="mt-1 text-muted-foreground">
             {p.buyerId === p.viewerId
-              ? `You pay ${money(p.price)}. Nothing is charged until the handoff.`
-              : `${p.first(p.buyerId)} pays ${money(p.price)} · Unlisted fee ${FEE * 100}% (${money(feeOf(p.price))}) · you get ${money(payoutOf(p.price))}`}
+              ? `You pay ${money(p.price)}${deposit ? ` plus a ${money(deposit)} deposit you get back when it's returned` : ""}. Nothing is charged until ${deposit ? "the return" : "the handoff"}.`
+              : `${p.first(p.buyerId)} pays ${money(p.price)} · Unlisted fee ${FEE * 100}% (${money(feeOf(p.price))}) · you get ${money(payoutOf(p.price))}${deposit ? `. A ${money(deposit)} deposit is held while it's out` : ""}`}
           </p>
           {stepOneDone && leg?.status === "pending" && (
             <div className="mt-2">
@@ -101,7 +104,7 @@ export function NextSteps(p: Props) {
         </li>
 
         <li className={handedOff ? done : ""}>
-          3. Hand off, then PayPal pays out
+          3. {rental ? `Pickup, ${p.rentalDays} day${p.rentalDays === 1 ? "" : "s"} of use, then the return` : "Hand off, then PayPal pays out"}
           {p.meet?.address ? (
             <p className="mt-1 flex flex-wrap items-center gap-1">
               <MapPin className="size-4 text-primary" /> {p.meet.label} · {p.meet.address} ·{" "}
@@ -117,6 +120,8 @@ export function NextSteps(p: Props) {
               <Button size="sm" variant="ghost">Cancel and release the hold</Button>
             </form>
           )}
+          {leg?.status === "in_use" && iGetPaid && <ConfirmReturn legId={leg.id} deposit={deposit} />}
+          {leg?.status === "in_use" && iPay && <p className="mt-1">It&apos;s with you. Bring it back by {p.booking?.endsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}; then the deposit is released.</p>}
           {leg?.status === "paid_out" && <p className="mt-1 text-foreground">Done. {p.first(leg.payeeId)} has been paid.</p>}
           {leg?.status === "voided" && <p className="mt-1 text-foreground">Hold released. Nothing was charged.</p>}
         </li>

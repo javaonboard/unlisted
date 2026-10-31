@@ -12,6 +12,9 @@ type NewItem = {
   openToOffers?: boolean;
   details?: Record<string, unknown>;
   maxMiles?: number;
+  forSale?: boolean;
+  rentPerDay?: number;
+  deposit?: number;
 };
 
 // New things start private. Nobody sees them until the owner says yes to a buyer.
@@ -29,6 +32,9 @@ export async function addVaultItem(ownerId: string, item: NewItem) {
       openToOffers: item.openToOffers ?? false,
       details: item.details ?? {},
       maxMiles: item.maxMiles,
+      forSale: item.forSale ?? true,
+      rentPerDay: item.rentPerDay?.toFixed(2),
+      deposit: item.deposit?.toFixed(2),
     })
     .returning();
   await publish("vault.added", { itemId: row.id });
@@ -46,7 +52,7 @@ export async function setItemRange(ownerId: string, itemId: string, miles: numbe
 }
 
 // The owner edits anything about their item or service. Prices stay theirs to set.
-export async function updateItem(ownerId: string, itemId: string, f: { title?: string; condition?: string; estimatedValue?: number; minPrice?: number; openToOffers?: boolean }) {
+export async function updateItem(ownerId: string, itemId: string, f: { title?: string; condition?: string; estimatedValue?: number; minPrice?: number; openToOffers?: boolean; forSale?: boolean; rentPerDay?: number | null; deposit?: number | null }) {
   await db
     .update(schema.vaultItems)
     .set({
@@ -55,6 +61,9 @@ export async function updateItem(ownerId: string, itemId: string, f: { title?: s
       ...(f.estimatedValue !== undefined ? { estimatedValue: f.estimatedValue.toFixed(2) } : {}),
       ...(f.minPrice !== undefined ? { minPrice: f.minPrice.toFixed(2) } : {}),
       ...(f.openToOffers !== undefined ? { openToOffers: f.openToOffers } : {}),
+      ...(f.forSale !== undefined ? { forSale: f.forSale } : {}),
+      ...(f.rentPerDay !== undefined ? { rentPerDay: f.rentPerDay === null ? null : f.rentPerDay.toFixed(2) } : {}),
+      ...(f.deposit !== undefined ? { deposit: f.deposit === null ? null : f.deposit.toFixed(2) } : {}),
     })
     .where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, ownerId)));
 }

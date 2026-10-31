@@ -47,7 +47,7 @@ async function MyStuff() {
             )}
             <div className="min-w-0">
               <p className="font-medium">{item.title}</p>
-              <p className="truncate text-sm text-muted-foreground">{item.condition ?? item.category} · ~${Number(item.estimatedValue ?? 0).toFixed(0)}{item.kind === "skill" ? "/job" : ""} · {rangeText(rangeOfOffer(item.maxMiles), true)}</p>
+              <p className="truncate text-sm text-muted-foreground">{item.condition ?? item.category} · ~${Number(item.estimatedValue ?? 0).toFixed(0)}{item.kind === "skill" ? "/job" : ""}{item.rentPerDay ? ` · rent $${Number(item.rentPerDay).toFixed(0)}/day` : ""}{item.kind === "goods" && !item.forSale ? " · not for sale" : ""} · {rangeText(rangeOfOffer(item.maxMiles), true)}</p>
               <p className="mt-1 text-sm">{statusLine(rooms.filter((r) => r.itemId === item.id), names, userId, interested[item.id])}</p>
             </div>
           </Link>

@@ -11,6 +11,8 @@ const PhotoResult = z.object({
       condition: z.string().describe("What you can actually see: stains, wear, damage. Say 'looks good' if nothing."),
       usedValue: z.number().describe("Fair used price in USD"),
       matchIndex: z.number().nullable().describe("Index of the matching product in the list, or null"),
+      ways: z.array(z.enum(["sell", "rent"])).describe("Sell, rent out, or both. Rent suits tools and gear people borrow for a day or two; keep 'sell' for things they'd let go"),
+      rentPerDay: z.number().nullable().describe("If rentable: a fair price per day, USD"),
       specs: z.array(z.object({ name: z.string(), value: z.number() })).describe("Numbers that matter when matching, camelCase with unit, e.g. seats 3, widthIn 104, watts 750, storageGb 128"),
     }),
   ),

@@ -7,13 +7,16 @@ export type Next = { state: "needs_you" | "waiting" | "upcoming" | "talking" | "
 
 // Who the viewer is in this deal, in plain words.
 export function roleOf(data: RoomView, viewerId: string) {
-  const { room, item, names } = data;
+  const { room, item, names, need } = data;
   const first = (id: string) => names[id]?.split(" ")[0] ?? id;
   const service = item.kind === "skill";
+  const rental = need?.type === "rent";
   const price = room.agreedPrice ? money(Number(room.agreedPrice)) : null;
   const payout = room.agreedPrice ? `${money(payoutOf(Number(room.agreedPrice)))} after fees` : null; // what the seller really receives
   const what = inSentence(item.title);
 
+  if (rental && room.sellerId === viewerId) return { kind: "lender" as const, badge: "You're renting it out", title: `Renting your ${what} to ${first(room.buyerId)}${payout ? ` · you get ${payout}` : ""}` };
+  if (rental && room.buyerId === viewerId) return { kind: "renter" as const, badge: "You're renting", title: `Renting ${first(room.sellerId)}'s ${what}${price ? ` · you pay ${price}` : ""}` };
   if (room.sellerId === viewerId) {
     return service
       ? { kind: "provider" as const, badge: "You do the job", title: `Your job for ${first(room.buyerId)}${payout ? ` · you get ${payout}` : ""}` }
@@ -43,6 +46,10 @@ export function nextFor(data: RoomView, viewerId: string): Next {
 
   // Agreed. Steps in order: accept the deal and time (or approve the plan), hold the payment, hand off.
   if (leg?.status === "paid_out" || leg?.status === "captured") return { state: "done", label: "Done and paid" };
+  // A rental that's out: the owner confirms when it comes back.
+  if (leg?.status === "in_use") {
+    return leg.payeeId === viewerId ? { state: "needs_you", label: "Confirm when it's back" } : { state: "upcoming", label: `Return it by ${data.booking?.endsAt.toLocaleString("en-US", { weekday: "short" }) ?? "the end date"}` };
+  }
   if (leg?.status === "voided") return { state: "done", label: "Cancelled, nothing charged" };
 
   const isPlan = !!deal && deal.title !== room.label;
@@ -63,7 +70,7 @@ export function nextFor(data: RoomView, viewerId: string): Next {
   if (notMe.length) return { state: "waiting", label: `Waiting for ${notMe.map(first).join(" and ")} to accept the time and place` };
 
   const when = data.booking ? data.booking.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" }) : "soon";
-  return { state: "upcoming", label: `Handoff ${when}` };
+  return { state: "upcoming", label: `${data.need?.type === "rent" ? "Pickup" : "Handoff"} ${when}` };
 }
 
 export type Role = ReturnType<typeof roleOf>;

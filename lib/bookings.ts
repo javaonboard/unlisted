@@ -21,7 +21,10 @@ export async function bookAgreedDeal(roomId: string) {
   const users = await db.select().from(schema.users);
   const first = (id: string) => users.find((u) => u.id === id)?.name.split(" ")[0] ?? id;
   const service = item.kind === "skill";
-  const end = new Date(start.getTime() + (service ? 2 * 3_600_000 : 30 * 60_000));
+  const [need] = await db.select().from(schema.intents).where(eq(schema.intents.id, room.intentId!));
+  const days = need?.type === "rent" ? (need.days ?? 1) : 0; // a rental runs from pickup to return
+  const end = new Date(start.getTime() + (days ? days * 86_400_000 : service ? 2 * 3_600_000 : 30 * 60_000));
+  const back = end.toLocaleString("en-US", { weekday: "short" });
   const what = inSentence(item.title);
   const when = start.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" });
 
@@ -35,14 +38,18 @@ export async function bookAgreedDeal(roomId: string) {
     return;
   }
 
+  // What each side sees on their calendar.
+  const sellerTitle = days ? `Lend ${what} to ${first(room.buyerId)} (back ${back})` : service ? `${item.title} for ${first(room.buyerId)}` : `Hand off ${what} to ${first(room.buyerId)}`;
+  const buyerTitle = days ? `Borrow ${first(room.sellerId)}'s ${what} (return ${back})` : service ? `${first(room.sellerId)}: ${what}` : `Pick up ${what} from ${first(room.sellerId)}`;
   await db.insert(schema.bookings).values([
-    { userId: room.sellerId, roomId, dealId: room.dealId, startsAt: start, endsAt: end, title: service ? `${item.title} for ${first(room.buyerId)}` : `Hand off ${what} to ${first(room.buyerId)}` },
-    { userId: room.buyerId, roomId, dealId: room.dealId, startsAt: start, endsAt: end, title: service ? `${first(room.sellerId)}: ${what}` : `Pick up ${what} from ${first(room.sellerId)}` },
+    { userId: room.sellerId, roomId, dealId: room.dealId, startsAt: start, endsAt: end, title: sellerTitle },
+    { userId: room.buyerId, roomId, dealId: room.dealId, startsAt: start, endsAt: end, title: buyerTitle },
   ]);
   const price = money(Number(room.agreedPrice));
   const payout = `${money(payoutOf(Number(room.agreedPrice)))} after fees`;
-  await notify(room.sellerId, service ? `New job for ${first(room.buyerId)} · you get ${payout}` : `Sold to ${first(room.buyerId)} · you get ${payout}`, `${service ? `${item.title} for ${first(room.buyerId)}` : `Hand off ${what} to ${first(room.buyerId)}`}, ${when}. Please confirm the time.`, roomId);
-  await notify(room.buyerId, service ? `${first(room.sellerId)} will do your ${what} · you pay ${price}` : `Bought ${first(room.sellerId)}'s ${what} · you pay ${price}`, `${service ? `${first(room.sellerId)}: ${what}` : `Pick up ${what} from ${first(room.sellerId)}`}, ${when}. Holding the payment confirms it.`, roomId);
+  const deposit = days && item.deposit ? ` plus a ${money(Number(item.deposit))} deposit you get back` : "";
+  await notify(room.sellerId, days ? `Renting to ${first(room.buyerId)} · you get ${payout}` : service ? `New job for ${first(room.buyerId)} · you get ${payout}` : `Sold to ${first(room.buyerId)} · you get ${payout}`, `${sellerTitle}, ${when}. Please confirm the time.`, roomId);
+  await notify(room.buyerId, days ? `Renting ${first(room.sellerId)}'s ${what} · you pay ${price}${deposit}` : service ? `${first(room.sellerId)} will do your ${what} · you pay ${price}` : `Bought ${first(room.sellerId)}'s ${what} · you pay ${price}`, `${buyerTitle}, ${when}. Holding the payment confirms it.`, roomId);
   console.log("[booking] booked both sides (tentative)", start.toISOString());
 }
 

@@ -236,9 +236,9 @@ export async function unlistedServer(userId: string, base: string) {
       if (cards.some((c) => missing(c).length)) return json({ question, draft: cards });
       for (const c of cards) {
         if (c.kind === "need") {
-          await postNeed(userId, { type: c.needType ?? "buy", text: c.details ? `${c.title}. ${c.details}` : c.title, category: c.category, maxPrice: c.maxPrice!, dueInDays: c.dueInDays!, maxMiles: c.maxMiles ?? undefined, constraints: asRecord(c.requirements) });
+          await postNeed(userId, { type: c.needType ?? "buy", text: c.details ? `${c.title}. ${c.details}` : c.title, category: c.category, maxPrice: c.maxPrice!, dueInDays: c.dueInDays!, maxMiles: c.maxMiles ?? undefined, constraints: asRecord(c.requirements), days: c.days ?? undefined });
         } else {
-          await addVaultItem(userId, { kind: c.kind, title: c.title, category: c.category, condition: c.condition ?? undefined, estimatedValue: c.value ?? undefined, minPrice: c.kind === "goods" ? c.minPrice! : c.value!, details: { ...(c.details ? { notes: c.details } : {}), ...asRecord(c.specs) }, maxMiles: c.maxMiles ?? undefined });
+          await addVaultItem(userId, { kind: c.kind, title: c.title, category: c.category, condition: c.condition ?? undefined, estimatedValue: c.value ?? undefined, minPrice: c.kind === "goods" ? (c.minPrice ?? undefined) : c.value!, details: { ...(c.details ? { notes: c.details } : {}), ...asRecord(c.specs) }, maxMiles: c.maxMiles ?? undefined, forSale: c.kind === "goods" ? !c.ways?.length || c.ways.includes("sell") : undefined, rentPerDay: c.ways?.includes("rent") ? (c.rentPerDay ?? undefined) : undefined, deposit: c.ways?.includes("rent") ? (c.deposit ?? undefined) : undefined });
           for (const h of c.freeHours) await addFreeTime(userId, new Date(h.start), new Date(h.end));
         }
       }

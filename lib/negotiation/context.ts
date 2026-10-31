@@ -37,11 +37,14 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
     .where(and(eq(schema.intents.category, item.category), eq(schema.intents.type, "buy"), eq(schema.intents.status, "open"), ne(schema.intents.id, intent.id)));
 
   const buyerLimit = Number(room.buyerLimit ?? Math.min(Number(intent.maxPrice ?? Infinity), Number(mandate?.maxSpend ?? Infinity)));
-  const sellerLimit = Number(room.sellerLimit ?? item.minPrice ?? 0);
+  // A rental is priced as the whole fee: the daily price times the days, with a little room to bargain.
+  const rental = intent.type === "rent" ? { days: intent.days ?? 1, perDay: Number(item.rentPerDay ?? 0), deposit: Number(item.deposit ?? 0) } : null;
+  const asking = rental ? rental.perDay * rental.days : Number(item.estimatedValue ?? item.minPrice ?? 0);
+  const sellerLimit = Number(room.sellerLimit ?? (rental ? Math.round(asking * 0.8) : (item.minPrice ?? 0)));
   const limits: Limits =
     side === "buyer"
       ? { role: "buyer", limit: buyerLimit, target: Math.round(buyerLimit * 0.85) }
-      : { role: "seller", limit: sellerLimit, target: Number(item.estimatedValue ?? sellerLimit) };
+      : { role: "seller", limit: sellerLimit, target: asking || sellerLimit };
 
   // Other legs of the same deal, so this leg can fit around them.
   const legs = room.dealId
@@ -97,6 +100,7 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
     free,
     places,
     stops: room.stops,
+    rental,
     signals,
     standingPrice: lastFromOther ? Number(lastFromOther.price) : null,
   };

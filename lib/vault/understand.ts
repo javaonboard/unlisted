@@ -19,7 +19,8 @@ export async function understandText(text: string, ip?: string) {
 A person told their marketplace agent: "${text}"
 Turn it into cards. Don't invent details they didn't say.
 ${categoryRule(await knownCategories())}
-Must-haves: needs → budget and when; goods to sell → condition and lowest price; services they offer → price per job and when they're free.
+Must-haves: needs → budget and when (and for how many days if they only need it for a while: that's a rent need); goods to sell → condition and lowest price; goods to rent out → price per day (and a deposit); services they offer → price per job and when they're free.
+Goods can be for sale, for rent, or both: suggest renting for tools and gear people borrow for a day or two.
 For a service they need, also ask about the job size if it isn't clear (e.g. how big the yard, one or two stories).
 Also ask how far they'll travel (or deliver, or how far away is fine) if they didn't say, in the same question.
 If anything is missing, ask for all of it in one short question. Otherwise question is null.`,

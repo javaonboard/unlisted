@@ -22,6 +22,9 @@ export async function updateItemAction(itemId: string, form: FormData) {
     estimatedValue: num(form.get("estimatedValue")),
     minPrice: num(form.get("minPrice")),
     openToOffers: form.get("openToOffers") === "on",
+    ...(before?.kind === "goods"
+      ? { forSale: form.get("forSale") === "on", rentPerDay: num(form.get("rentPerDay")) ?? null, deposit: num(form.get("deposit")) ?? null }
+      : {}),
   });
   if (before && !before.openToOffers && form.get("openToOffers") === "on") playLater(await goPublic(userId, itemId)); // same as the one-click switch
   refresh();

@@ -23,6 +23,8 @@ export type Suggestion = {
   value: number | null;
   demand?: { requests: number; perJob: number | null };
   specs?: Record<string, number>;
+  ways?: ("sell" | "rent")[];
+  rentPerDay?: number | null;
 };
 
 // Turns one photo into suggested vault cards. Nothing is saved yet.
@@ -31,7 +33,7 @@ export async function suggestFromPhoto(base64: string): Promise<{ suggestions: S
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0] ?? "local";
   try {
     const result = await analyzePhoto(base64, "image/jpeg", ip);
-    const goods: Suggestion[] = result.goods.map((g) => ({ kind: "goods", title: g.title, category: g.category, note: g.condition, value: g.usedValue, specs: asRecord(g.specs) }));
+    const goods: Suggestion[] = result.goods.map((g) => ({ kind: "goods", title: g.title, category: g.category, note: g.condition, value: g.usedValue, specs: asRecord(g.specs), ways: g.ways, rentPerDay: g.rentPerDay }));
     const skills: Suggestion[] = await Promise.all(
       result.skills.map(async (s) => ({ kind: "skill" as const, title: s.title, category: s.category, note: s.because, value: null, demand: await skillDemand(s.category, userId) })),
     );
@@ -51,6 +53,9 @@ export async function addSuggestions(picked: Suggestion[], thumbnail: string) {
       condition: s.kind === "goods" ? s.note : undefined,
       estimatedValue: s.value ?? s.demand?.perJob ?? undefined,
       details: s.specs ?? {},
+      forSale: s.kind === "goods" ? !s.ways?.length || s.ways.includes("sell") : undefined,
+      rentPerDay: s.ways?.includes("rent") ? (s.rentPerDay ?? undefined) : undefined,
+      deposit: s.ways?.includes("rent") && s.value ? Math.round(s.value * 0.5) : undefined, // half its value, editable
     });
     if (s.kind === "goods") await setPhoto(item.id, thumbnail);
   }
@@ -74,7 +79,7 @@ export async function saveCards(cards: Card[], said: string) {
   for (const c of cards) {
     if (c.kind === "need") {
       const text = c.details ? `${c.title}. ${c.details}` : c.title;
-      await postNeed(userId, { type: c.needType ?? "buy", text, category: c.category, maxPrice: c.maxPrice ?? undefined, dueInDays: c.dueInDays ?? undefined, maxMiles: c.maxMiles ?? undefined, constraints: asRecord(c.requirements) });
+      await postNeed(userId, { type: c.needType ?? "buy", text, category: c.category, maxPrice: c.maxPrice ?? undefined, dueInDays: c.dueInDays ?? undefined, maxMiles: c.maxMiles ?? undefined, constraints: asRecord(c.requirements), days: c.days ?? undefined });
     } else {
       await addVaultItem(userId, {
         kind: c.kind,
@@ -85,12 +90,15 @@ export async function saveCards(cards: Card[], said: string) {
         minPrice: c.kind === "goods" ? (c.minPrice ?? undefined) : (c.value ?? undefined),
         details: { ...(c.details ? { notes: c.details } : {}), ...asRecord(c.specs) },
         maxMiles: c.maxMiles ?? undefined,
+        forSale: c.kind === "goods" ? (c.ways?.length ? c.ways.includes("sell") : true) : undefined,
+        rentPerDay: c.ways?.includes("rent") ? (c.rentPerDay ?? undefined) : undefined,
+        deposit: c.ways?.includes("rent") ? (c.deposit ?? undefined) : undefined,
       });
       for (const h of c.freeHours) await addFreeTime(userId, new Date(h.start), new Date(h.end));
     }
   }
   const lines = cards.map((c) =>
-    c.kind === "need" ? `I'm looking for “${c.title}” for up to $${c.maxPrice}.`
+    c.kind === "need" ? `I'm looking for “${c.title}”${c.needType === "rent" ? ` to rent for ${c.days} day${c.days === 1 ? "" : "s"}` : ""} for up to $${c.maxPrice}.`
     : c.kind === "goods" ? `Added your ${inSentence(c.title)}. It stays private until someone wants it.`
     : `Added ${inSentence(c.title)} at $${c.value} a job. I'll tell you when neighbors need it.`,
   );

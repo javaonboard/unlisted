@@ -13,7 +13,11 @@ export const Card = z.object({
   specs: z.array(z.object({ name: z.string(), value: z.number() })).describe("Goods only: numbers that matter when matching, camelCase with unit, e.g. seats 3, widthIn 74, watts 750"),
   requirements: z.array(z.object({ name: z.string(), value: z.number() })).describe("Needs only: limits on those numbers, as minX / maxX with the same names, e.g. minSeats 3, maxWidthIn 80, minWatts 650"),
   maxMiles: z.number().nullable().describe("How far they'll go, in miles: a provider's service area, how far a seller will deliver (0 = pickup only), or how far away is fine for a need. Null if not said"),
-  needType: z.enum(["buy", "request_service"]).nullable().describe("Needs only"),
+  ways: z.array(z.enum(["sell", "rent"])).describe("Goods only: sell it, rent it out, or both. Renting suits tools and gear people need for a day or two"),
+  rentPerDay: z.number().nullable().describe("Goods for rent: price per day, USD"),
+  deposit: z.number().nullable().describe("Goods for rent: refundable deposit, USD"),
+  days: z.number().nullable().describe("Rent needs only: for how many days"),
+  needType: z.enum(["buy", "rent", "request_service"]).nullable().describe("Needs only. rent = they only need it for a while"),
   maxPrice: z.number().nullable().describe("Needs only: their budget, if they said one"),
   dueInDays: z.number().nullable().describe("Needs only: days from today until it must be done, at least 1 (\"this weekend\" on a Friday is 2), if they said when"),
 });
@@ -22,8 +26,11 @@ export type Card = z.infer<typeof Card>;
 // What a card can't go without. Needs get a budget so the agent always has a spending limit;
 // sales get a lowest price so the agent never sells too cheap.
 export function missing(c: Card) {
-  if (c.kind === "need") return [c.maxPrice === null && "budget", c.dueInDays === null && "when"].filter(Boolean) as string[];
-  if (c.kind === "goods") return [!c.condition && "condition", c.minPrice === null && "lowest price"].filter(Boolean) as string[];
+  if (c.kind === "need") return [c.maxPrice === null && "budget", c.dueInDays === null && "when", c.needType === "rent" && !c.days && "for how many days"].filter(Boolean) as string[];
+  if (c.kind === "goods") {
+    const ways = c.ways?.length ? c.ways : ["sell"];
+    return [!c.condition && "condition", ways.includes("sell") && c.minPrice === null && "lowest price", ways.includes("rent") && c.rentPerDay === null && "price per day"].filter(Boolean) as string[];
+  }
   return [c.value === null && "price per job", !c.freeHours.length && "when you're free"].filter(Boolean) as string[];
 }
 

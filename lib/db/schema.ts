@@ -50,6 +50,9 @@ export const vaultItems = pgTable("vault_items", {
   openToOffers: boolean("open_to_offers").default(false).notNull(),
   maxMiles: integer("max_miles"), // how far the owner will travel; 0 = pickup only. Empty = the default
   priceCheck: jsonb("price_check").$type<PriceCheck>(), // the agent's price advice, with sources
+  forSale: boolean("for_sale").default(true).notNull(), // goods: can be bought
+  rentPerDay: money("rent_per_day"), // goods: can be rented, at this price a day. Empty = not for rent
+  deposit: money("deposit"), // held by PayPal during a rental, released when it comes back
   createdAt: createdAt(),
 });
 
@@ -69,13 +72,14 @@ export const intents = pgTable("intents", {
   id: id(),
   ownerId: text("owner_id").notNull().references(() => users.id),
   type: text("type", {
-    enum: ["buy", "sell", "request_service", "offer_service"],
+    enum: ["buy", "sell", "request_service", "offer_service", "rent"],
   }).notNull(),
   text: text("text").notNull(), // the user's own words
   category: text("category").notNull(),
   maxPrice: money("max_price"),
   maxMiles: integer("max_miles"), // how far away is fine. Empty = the default
   priceCheck: jsonb("price_check").$type<PriceCheck>(), // the agent's budget advice, with sources
+  days: integer("days"), // rentals: how many days they need it
   minPrice: money("min_price"),
   constraints: jsonb("constraints").$type<Record<string, unknown>>().default({}).notNull(),
   dependsOn: jsonb("depends_on").$type<string[]>().default([]).notNull(), // other intent ids
@@ -148,18 +152,19 @@ export const dealLegs = pgTable("deal_legs", {
   id: id(),
   dealId: uuid("deal_id").notNull().references(() => deals.id),
   roomId: uuid("room_id").references(() => negotiations.id), // the negotiation this leg pays for
-  kind: text("kind", { enum: ["goods", "service"] }).notNull(),
+  kind: text("kind", { enum: ["goods", "service", "rental"] }).notNull(),
   description: text("description").notNull(),
   payerId: text("payer_id").notNull().references(() => users.id),
   payeeId: text("payee_id").notNull().references(() => users.id),
   amount: money("amount").notNull(),
+  deposit: money("deposit"), // rentals: held with the fee, released when the item comes back
   feePercent: integer("fee_percent").default(5).notNull(),
   orderId: text("order_id"),
   authorizationId: text("authorization_id"),
   captureId: text("capture_id"),
   payoutBatchId: text("payout_batch_id"),
   status: text("status", {
-    enum: ["pending", "held", "captured", "voided", "paid_out", "refunded"],
+    enum: ["pending", "held", "in_use", "captured", "voided", "paid_out", "refunded"],
   })
     .default("pending")
     .notNull(),
