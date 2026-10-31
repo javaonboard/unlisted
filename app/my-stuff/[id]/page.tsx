@@ -11,6 +11,9 @@ import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { RangeForm } from "@/components/anchors/RangeForm";
 import { setItemRangeAction } from "@/app/actions/range";
 import { rangeOfOffer } from "@/lib/places";
+import { PriceAdvice } from "@/components/anchors/PriceAdvice";
+import { EditItem } from "@/components/anchors/EditForms";
+import { checkItemPriceAction, updateItemAction, useItemPriceAction } from "@/app/actions/edit";
 
 async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
   const data = await getItemAnchor((await params).id, await currentUserId());
@@ -31,7 +34,7 @@ async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
         </CardHeader>
         <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
-            <p>Estimated value: ${Number(item.estimatedValue ?? 0).toFixed(0)}</p>
+            <p>{item.kind === "skill" ? "Price per job" : "Asking price"}: ${Number(item.estimatedValue ?? 0).toFixed(0)}</p>
             {item.minPrice && <p>Your minimum: ${Number(item.minPrice).toFixed(0)} <span className="text-muted-foreground">(only you see this)</span></p>}
             <RangeForm action={setItemRangeAction.bind(null, item.id)} miles={rangeOfOffer(item.maxMiles)} label={item.kind === "skill" ? "I travel up to" : "I'll deliver up to (0 = pickup only)"} />
             {Object.keys(item.details).length > 0 && <p className="text-muted-foreground">{Object.entries(item.details).map(([k, v]) => `${k}: ${v}`).join(" · ")}</p>}
@@ -44,6 +47,10 @@ async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
             ))}
           </div>
         </CardContent>
+        <div className="px-4">
+          <PriceAdvice check={item.priceCheck ?? null} onCheck={checkItemPriceAction.bind(null, item.id)} onUse={useItemPriceAction.bind(null, item.id)} useLabel="Ask" />
+          <EditItem action={updateItemAction.bind(null, item.id)} item={item} />
+        </div>
       </Card>
 
       <h2 className="mt-6 mb-3 font-medium">Agents interested</h2>

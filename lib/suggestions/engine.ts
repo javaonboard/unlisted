@@ -7,6 +7,7 @@ import { milesBetween } from "@/lib/places";
 import { suggest } from "./suggest";
 import { suggestPlan } from "./plan";
 import { toolOwnersFor } from "./tools";
+import { priceItem } from "@/lib/pricing/save";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
 import { inSentence } from "@/lib/text/words";
 
@@ -112,6 +113,7 @@ export async function onNeedPosted(needId: string) {
 export async function onVaultAdded(itemId: string) {
   const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, itemId));
   if (!item) return;
+  await priceItem(itemId).catch((e) => console.error("[price] failed", e?.message)); // web, Channel3 and our own sales
   await suggestPlan(item.ownerId); // a new thing can complete a plan, e.g. something to sell
   const demand = await findDemandFor(itemId);
   if (!demand.length) return;

@@ -44,3 +44,17 @@ export async function setPhoto(itemId: string, dataUrl: string) {
 export async function setItemRange(ownerId: string, itemId: string, miles: number) {
   await db.update(schema.vaultItems).set({ maxMiles: Math.max(0, Math.round(miles)) }).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, ownerId)));
 }
+
+// The owner edits anything about their item or service. Prices stay theirs to set.
+export async function updateItem(ownerId: string, itemId: string, f: { title?: string; condition?: string; estimatedValue?: number; minPrice?: number; openToOffers?: boolean }) {
+  await db
+    .update(schema.vaultItems)
+    .set({
+      ...(f.title ? { title: f.title } : {}),
+      condition: f.condition || null,
+      ...(f.estimatedValue !== undefined ? { estimatedValue: f.estimatedValue.toFixed(2) } : {}),
+      ...(f.minPrice !== undefined ? { minPrice: f.minPrice.toFixed(2) } : {}),
+      ...(f.openToOffers !== undefined ? { openToOffers: f.openToOffers } : {}),
+    })
+    .where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, ownerId)));
+}

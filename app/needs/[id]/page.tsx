@@ -10,6 +10,9 @@ import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { RangeForm } from "@/components/anchors/RangeForm";
 import { setNeedRangeAction } from "@/app/actions/range";
 import { rangeOfNeed } from "@/lib/places";
+import { PriceAdvice } from "@/components/anchors/PriceAdvice";
+import { EditNeed } from "@/components/anchors/EditForms";
+import { checkNeedPriceAction, updateNeedAction, useNeedBudgetAction } from "@/app/actions/edit";
 
 async function NeedAnchor({ params }: { params: Promise<{ id: string }> }) {
   const data = await getNeedAnchor((await params).id, await currentUserId());
@@ -29,6 +32,8 @@ async function NeedAnchor({ params }: { params: Promise<{ id: string }> }) {
             {need.dueAt && ` · by ${need.dueAt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`}
           </CardDescription>
           <RangeForm action={setNeedRangeAction.bind(null, need.id)} miles={rangeOfNeed(need.maxMiles)} label="Anyone within" />
+          <PriceAdvice check={need.priceCheck ?? null} onCheck={checkNeedPriceAction.bind(null, need.id)} onUse={useNeedBudgetAction.bind(null, need.id)} useLabel="Budget" />
+          <EditNeed action={updateNeedAction.bind(null, need.id)} need={need} />
         </CardHeader>
       </Card>
       <h2 className="mt-6 mb-3 font-medium">Agents offering</h2>

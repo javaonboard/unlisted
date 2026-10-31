@@ -5,6 +5,7 @@ import { db, schema } from "@/lib/db";
 import { nextSaturday } from "@/lib/dates";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
 import { suggestPlan } from "@/lib/suggestions/plan";
+import { priceItem } from "@/lib/pricing/save";
 import * as data from "./seed-data";
 
 async function main() {
@@ -49,9 +50,11 @@ async function main() {
   );
   await db.insert(schema.memoryFacts).values(data.memoryFacts);
   await db.insert(schema.notifications).values(data.notifications);
-  // The planning agent looks at Maya's and Priya's needs. Skipped with --quiet.
+  // The planning agent looks at Maya's and Priya's needs. Skipped with --quiet, like all AI here.
   if (!process.argv.includes("--quiet")) {
     for (const userId of ["maya", "priya"]) await suggestPlan(userId).catch((e) => console.error("[plan] skipped:", e.message));
+    // Price advice (web search, Channel3, our sales) on the two things the demo sells.
+    for (const key of ["sectional", "rtx3070"]) await priceItem(itemId[key]).catch((e) => console.error("[price] skipped:", e.message));
   }
 
   console.log(`seeded ${data.users.length} users, ${items.length} vault items, ${rows.length} intents`);

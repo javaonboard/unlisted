@@ -1,0 +1,57 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { and, eq } from "drizzle-orm";
+import { db, schema } from "@/lib/db";
+import { currentUserId } from "@/lib/session";
+import { updateItem } from "@/lib/vault/mutations";
+import { updateNeed } from "@/lib/intents/mutations";
+import { priceItem, priceNeed } from "@/lib/pricing/save";
+
+const num = (v: FormDataEntryValue | null) => (v === null || v === "" ? undefined : Number(v));
+const refresh = () => revalidatePath("/", "layout");
+
+export async function updateItemAction(itemId: string, form: FormData) {
+  await updateItem(await currentUserId(), itemId, {
+    title: String(form.get("title") ?? "").trim(),
+    condition: String(form.get("condition") ?? "").trim(),
+    estimatedValue: num(form.get("estimatedValue")),
+    minPrice: num(form.get("minPrice")),
+    openToOffers: form.get("openToOffers") === "on",
+  });
+  refresh();
+}
+
+export async function updateNeedAction(needId: string, form: FormData) {
+  const due = String(form.get("dueAt") ?? "");
+  await updateNeed(await currentUserId(), needId, { text: String(form.get("text") ?? "").trim(), maxPrice: num(form.get("maxPrice")), dueAt: due ? new Date(`${due}T18:00:00`) : undefined });
+  refresh();
+}
+
+// Only the owner can ask for a price check on their own things.
+export async function checkItemPriceAction(itemId: string) {
+  const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, await currentUserId())));
+  if (item) await priceItem(itemId);
+  refresh();
+}
+
+export async function checkNeedPriceAction(needId: string) {
+  const [need] = await db.select().from(schema.intents).where(and(eq(schema.intents.id, needId), eq(schema.intents.ownerId, await currentUserId())));
+  if (need) await priceNeed(needId);
+  refresh();
+}
+
+// "Use it": the advice becomes the owner's price or budget.
+export async function useItemPriceAction(itemId: string) {
+  const userId = await currentUserId();
+  const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, userId)));
+  if (item?.priceCheck) await updateItem(userId, itemId, { condition: item.condition ?? "", estimatedValue: item.priceCheck.suggested });
+  refresh();
+}
+
+export async function useNeedBudgetAction(needId: string) {
+  const userId = await currentUserId();
+  const [need] = await db.select().from(schema.intents).where(and(eq(schema.intents.id, needId), eq(schema.intents.ownerId, userId)));
+  if (need?.priceCheck) await updateNeed(userId, needId, { maxPrice: need.priceCheck.suggested });
+  refresh();
+}

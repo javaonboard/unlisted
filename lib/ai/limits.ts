@@ -2,7 +2,9 @@ import { eq, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 
 const PER_IP_PER_HOUR = 20;
-const PER_DAY = 300;
+const PER_DAY = Number(process.env.AI_DAILY_LIMIT ?? 1000); // the whole public site, per day
+// Running on our own machine (next dev, scripts) has no caps; only the public site does.
+const ON_OUR_MACHINE = process.env.NODE_ENV !== "production";
 
 export class AiLimitError extends Error {}
 
@@ -13,6 +15,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 // Throws if this IP or the whole app has used its AI allowance.
 export async function checkAiLimits(ip?: string) {
+  if (ON_OUR_MACHINE) return;
   if (ip) {
     const hourAgo = Date.now() - 60 * 60 * 1000;
     const recent = (callsByIp.get(ip) ?? []).filter((t) => t > hourAgo);

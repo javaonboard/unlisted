@@ -34,3 +34,15 @@ export async function postNeed(ownerId: string, need: NewNeed) {
 export async function setNeedRange(ownerId: string, needId: string, miles: number) {
   await db.update(schema.intents).set({ maxMiles: Math.max(1, Math.round(miles)) }).where(and(eq(schema.intents.id, needId), eq(schema.intents.ownerId, ownerId)));
 }
+
+// The owner edits their need: wording, budget, deadline.
+export async function updateNeed(ownerId: string, needId: string, f: { text?: string; maxPrice?: number; dueAt?: Date }) {
+  await db
+    .update(schema.intents)
+    .set({
+      ...(f.text ? { text: f.text } : {}),
+      ...(f.maxPrice !== undefined ? { maxPrice: f.maxPrice.toFixed(2) } : {}),
+      ...(f.dueAt ? { dueAt: f.dueAt } : {}),
+    })
+    .where(and(eq(schema.intents.id, needId), eq(schema.intents.ownerId, ownerId)));
+}

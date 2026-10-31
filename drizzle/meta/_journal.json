@@ -162,6 +162,13 @@
       "when": 1793477158892,
       "tag": "0022_room_stops",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793479125168,
+      "tag": "0023_price_check",
+      "breakpoints": true
     }
   ]
 }

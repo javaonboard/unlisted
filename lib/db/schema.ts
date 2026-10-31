@@ -1,3 +1,4 @@
+import type { PriceCheck } from "@/lib/pricing/check";
 import {
   boolean,
   integer,
@@ -48,6 +49,7 @@ export const vaultItems = pgTable("vault_items", {
   minPrice: money("min_price"), // never shown to other users
   openToOffers: boolean("open_to_offers").default(false).notNull(),
   maxMiles: integer("max_miles"), // how far the owner will travel; 0 = pickup only. Empty = the default
+  priceCheck: jsonb("price_check").$type<PriceCheck>(), // the agent's price advice, with sources
   createdAt: createdAt(),
 });
 
@@ -73,6 +75,7 @@ export const intents = pgTable("intents", {
   category: text("category").notNull(),
   maxPrice: money("max_price"),
   maxMiles: integer("max_miles"), // how far away is fine. Empty = the default
+  priceCheck: jsonb("price_check").$type<PriceCheck>(), // the agent's budget advice, with sources
   minPrice: money("min_price"),
   constraints: jsonb("constraints").$type<Record<string, unknown>>().default({}).notNull(),
   dependsOn: jsonb("depends_on").$type<string[]>().default([]).notNull(), // other intent ids
