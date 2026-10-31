@@ -49,7 +49,8 @@ async function main() {
   );
   await db.insert(schema.memoryFacts).values(data.memoryFacts);
   await db.insert(schema.notifications).values(data.notifications);
-  await suggestPlan("maya"); // her sale, purchase and mover fit together
+  await suggestPlan("maya"); // moving day: sell, buy, mover
+  await suggestPlan("priya"); // upgrade day: sell, buy, installer
 
   console.log(`seeded ${data.users.length} users, ${items.length} vault items, ${rows.length} intents`);
 

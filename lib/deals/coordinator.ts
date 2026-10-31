@@ -1,7 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { rankBuyers, rankSellers } from "@/lib/scout/rank";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
+import { inSentence } from "@/lib/text/words";
 
 const starting = new Set<string>(); // deals whose service leg is being opened right now
 
@@ -29,25 +30,22 @@ export async function onLegFinished(dealId: string) {
     return rooms.some((r) => r.status === "agreed") && !rooms.some((r) => r.status === "open" || r.status === "waiting_owner");
   });
 
-  // Once the goods are settled, book the mover around their times.
-  if (!service && goods.length && ready && !starting.has(dealId)) {
+  // Once the goods are settled, book the plan's service (a mover, an installer) around their times.
+  if (!service && deal.serviceId && goods.length && ready && !starting.has(dealId)) {
     starting.add(dealId);
     try {
-      const [need] = await db
-        .select()
-        .from(schema.intents)
-        .where(and(eq(schema.intents.ownerId, deal.ownerId), eq(schema.intents.type, "request_service")));
+      const [need] = await db.select().from(schema.intents).where(eq(schema.intents.id, deal.serviceId));
       const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, deal.ownerId));
       const providers = need ? (await rankSellers(need.id, owner.area)).slice(0, 2) : [];
       if (!providers.length) return;
 
       // Talk to the Scout's top providers at once; the first fit wins and the rest close.
       const rooms = await Promise.all(
-        providers.map((provider) =>
+        providers.map(async (provider) =>
           openRoom({
             dealId,
-            label: `Mover · ${provider.name.split(" ")[0]}`,
-            dependsOn: goods.filter((l) => l.room.status === "agreed").map((l) => l.room.id), // the mover serves these handoffs
+            label: `${provider.name.split(" ")[0]}: ${await itemTitle(provider.itemId!)}`,
+            dependsOn: goods.filter((l) => l.room.status === "agreed").map((l) => l.room.id), // the service is planned around these handoffs
             buyerId: deal.ownerId,
             sellerId: provider.userId,
             itemId: provider.itemId!,
@@ -70,6 +68,8 @@ export async function onLegFinished(dealId: string) {
 
 const MAX_TRIES = 5;
 
+const itemTitle = async (id: string) => (await db.select({ title: schema.vaultItems.title }).from(schema.vaultItems).where(eq(schema.vaultItems.id, id)))[0]?.title ?? "item";
+
 type Room = typeof schema.negotiations.$inferSelect;
 
 // Opens one more room for a sale or purchase where nobody is talking and nothing was agreed.
@@ -91,7 +91,7 @@ async function hopIfStuck(deal: typeof schema.deals.$inferSelect, rooms: Room[])
 
     const room = await openRoom({
       dealId: deal.id,
-      label: selling ? `${anchor.label?.split(" → ")[0]} → ${next.name.split(" ")[0]}` : `${next.name.split(" ")[0]}'s sofa`,
+      label: selling ? `${anchor.label?.split(" → ")[0]} → ${next.name.split(" ")[0]}` : `${next.name.split(" ")[0]}'s ${inSentence(await itemTitle(next.itemId!))}`,
       buyerId: selling ? next.userId : deal.ownerId,
       sellerId: selling ? deal.ownerId : next.userId,
       itemId: selling ? anchor.itemId! : next.itemId!,

@@ -7,6 +7,7 @@ import { milesBetween } from "@/lib/places";
 import { suggest } from "./suggest";
 import { suggestPlan } from "./plan";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
+import { inSentence } from "@/lib/text/words";
 
 const WAIT = 2 * 3_600_000; // time to answer before the next wave
 
@@ -59,7 +60,7 @@ export async function runWave(needId: string, wave: number): Promise<void> {
         needId,
         wave,
         kind: item.kind === "skill" ? "offer_skill" : "open_item",
-        title: item.kind === "skill" ? `${first(asker.name)} needs ${item.title.toLowerCase()}` : `Someone wants your ${item.title.toLowerCase()}`,
+        title: item.kind === "skill" ? `${first(asker.name)} needs ${inSentence(item.title)}` : `Someone wants your ${inSentence(item.title)}`,
         body: `${miles} mi away: “${need.text}”${typical && item.kind === "skill" ? ` · jobs like this pay ~$${typical}` : ""}. Want your agent to talk to them?`,
         action: { itemId: item.id, needId },
       });
@@ -79,8 +80,8 @@ export async function runWave(needId: string, wave: number): Promise<void> {
         needId,
         wave,
         kind: "add_skill",
-        title: `Your ${tool.title.toLowerCase()} could earn money`,
-        body: `${first(asker.name)} nearby needs ${skill.toLowerCase()}${typical ? `, ~$${typical} a job` : ""}. Offer it?`,
+        title: `Your ${inSentence(tool.title)} could earn money`,
+        body: `${first(asker.name)} nearby needs ${inSentence(skill)}${typical ? `, ~$${typical} a job` : ""}. Offer it?`,
         action: { needId, category: need.category, skill, value: typical ?? 0 },
       });
       if (ok) sent++;
@@ -143,7 +144,7 @@ export async function onVaultAdded(itemId: string) {
     userId: item.ownerId,
     needId: demand[0].id,
     kind: item.kind === "skill" ? "offer_skill" : "open_item",
-    title: item.kind === "skill" ? `${demand.length} neighbors need ${item.title.toLowerCase()}` : `${demand.length} ${demand.length === 1 ? "person wants" : "people want"} something like your ${item.title.toLowerCase()}`,
+    title: item.kind === "skill" ? `${demand.length} neighbors need ${inSentence(item.title)}` : `${demand.length} ${demand.length === 1 ? "person wants" : "people want"} something like your ${inSentence(item.title)}`,
     body: item.kind === "skill" && typical ? `Jobs like this pay ~$${typical}. Let your agent take the closest one?` : "Want your agent to talk to the best one?",
     action: { itemId, needId: demand[0].id },
   });

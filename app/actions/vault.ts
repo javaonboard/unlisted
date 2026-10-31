@@ -13,6 +13,7 @@ import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { postNeed } from "@/lib/intents/mutations";
 import { AiLimitError } from "@/lib/ai/limits";
+import { inSentence } from "@/lib/text/words";
 
 export type Suggestion = {
   kind: "goods" | "skill";
@@ -88,8 +89,8 @@ export async function saveCards(cards: Card[], said: string) {
   }
   const lines = cards.map((c) =>
     c.kind === "need" ? `I'm looking for “${c.title}” for up to $${c.maxPrice}.`
-    : c.kind === "goods" ? `Added your ${c.title.toLowerCase()}. It stays private until someone wants it.`
-    : `Added ${c.title.toLowerCase()} at $${c.value} a job. I'll tell you when neighbors need it.`,
+    : c.kind === "goods" ? `Added your ${inSentence(c.title)}. It stays private until someone wants it.`
+    : `Added ${inSentence(c.title)} at $${c.value} a job. I'll tell you when neighbors need it.`,
   );
   await notify(userId, "Got it", lines.join(" "));
   revalidatePath("/", "layout");

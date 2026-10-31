@@ -2,6 +2,7 @@ import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { money, payoutOf } from "@/lib/payments/fees";
+import { inSentence } from "@/lib/text/words";
 
 // When a deal is agreed with a time, put it on both people's calendars as tentative.
 // It is final once both confirm: the payer by placing the PayPal hold, the other side with "Confirm time".
@@ -21,7 +22,7 @@ export async function bookAgreedDeal(roomId: string) {
   const first = (id: string) => users.find((u) => u.id === id)?.name.split(" ")[0] ?? id;
   const service = item.kind === "skill";
   const end = new Date(start.getTime() + (service ? 2 * 3_600_000 : 30 * 60_000));
-  const what = item.title.toLowerCase();
+  const what = inSentence(item.title);
   const when = start.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" });
 
   // The time was changed: move both rows and ask whoever hasn't said yes yet.

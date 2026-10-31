@@ -1,5 +1,6 @@
 import type { getRoomView } from "./queries";
 import { money, payoutOf } from "@/lib/payments/fees";
+import { inSentence } from "@/lib/text/words";
 
 type RoomView = NonNullable<Awaited<ReturnType<typeof getRoomView>>>;
 export type Next = { state: "needs_you" | "waiting" | "upcoming" | "talking" | "done"; label: string };
@@ -11,7 +12,7 @@ export function roleOf(data: RoomView, viewerId: string) {
   const service = item.kind === "skill";
   const price = room.agreedPrice ? money(Number(room.agreedPrice)) : null;
   const payout = room.agreedPrice ? `${money(payoutOf(Number(room.agreedPrice)))} after fees` : null; // what the seller really receives
-  const what = item.title.toLowerCase();
+  const what = inSentence(item.title);
 
   if (room.sellerId === viewerId) {
     return service

@@ -26,3 +26,10 @@ test("bold is picked out", () => {
     { bold: false, text: " please" },
   ]);
 });
+
+test("titles read naturally mid-sentence but keep names and acronyms", async () => {
+  const { inSentence } = await import("@/lib/text/words");
+  assert.equal(inSentence("Grey 3-seat sectional"), "grey 3-seat sectional");
+  assert.equal(inSentence("RTX 4070 graphics card"), "RTX 4070 graphics card");
+  assert.equal(inSentence("Wi-Fi, TV mounting and PC setup"), "Wi-Fi, TV mounting and PC setup");
+});

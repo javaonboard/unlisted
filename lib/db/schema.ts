@@ -131,6 +131,7 @@ export const deals = pgTable("deals", {
   ownerId: text("owner_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   scoutNote: text("scout_note"), // the Scout's short "why I picked these"
+  serviceId: uuid("service_id").references(() => intents.id), // the service booked once the goods are agreed, if any
   status: text("status", {
     enum: ["proposed", "approved", "held", "settled", "cancelled"],
   })

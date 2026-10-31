@@ -14,7 +14,8 @@ export const users = [
   { id: "lily", name: "Lily Nguyen", area: "Cherrywood", address: "3300 Willow Example St, Austin, TX", paypalEmail: null, bio: "Mows lawns around the neighborhood." },
   { id: "ivan", name: "Ivan Petrov", area: "Hyde Park", address: "4708 Elm Example Ave, Austin, TX", paypalEmail: null, bio: "IT help: Wi-Fi, TV mounting, PC builds." },
   { id: "kai", name: "Kai Johnson", area: "Holly", address: "2001 Magnolia Example Ct, Austin, TX", paypalEmail: null, bio: "Wants a Quest 3. Owns a long ladder." },
-  { id: "priya", name: "Priya Shah", area: "Mueller", address: "2650 Aspen Example Dr, Austin, TX", paypalEmail: null, bio: "Building a gaming PC. Needs an oil change." },
+  { id: "priya", name: "Priya Shah", area: "Mueller", address: "2650 Aspen Example Dr, Austin, TX", paypalEmail: null, bio: "Upgrading her graphics card. Needs an oil change." },
+  { id: "leo", name: "Leo Park", area: "Windsor Park", address: "6110 Birch Example Ln, Austin, TX", paypalEmail: null, bio: "Upgraded his PC. Selling an RTX 4070." },
 ];
 
 export const mandates = users.map((u) => ({
@@ -52,6 +53,9 @@ export const vaultItems: Item[] = [
   { key: "gutters", ownerId: "gus", kind: "skill", title: "Gutter cleaning", category: "gutters", estimatedValue: "80.00", openToOffers: true, details: { equipment: ["ladder"] } },
   { key: "lawn", ownerId: "lily", kind: "skill", title: "Lawn mowing", category: "lawn", estimatedValue: "40.00", openToOffers: true, details: { equipment: ["mower", "trimmer"] } },
   { key: "it-setup", ownerId: "ivan", kind: "skill", title: "Wi-Fi, TV mounting and PC setup", category: "it-setup", estimatedValue: "60.00", openToOffers: true },
+  // Upgrade day: Priya sells her old card, buys Leo's, and Ivan installs it.
+  { key: "rtx3070", ownerId: "priya", kind: "goods", title: "RTX 3070 graphics card", category: "gpu", condition: "Good. Used for gaming, never mined.", estimatedValue: "260.00", minPrice: "220.00" },
+  { key: "rtx4070", ownerId: "leo", kind: "goods", title: "RTX 4070 graphics card", category: "gpu", condition: "Like new, in the box.", estimatedValue: "470.00", minPrice: "420.00", openToOffers: true },
 ];
 
 export const evidence = [
@@ -90,6 +94,9 @@ export const intents: Intent[] = [
   { key: "ben-gutters", ownerId: "ben", type: "request_service", text: "Clean the gutters on a one-story house.", category: "gutters", maxPrice: "80.00", dueInDays: 10 },
   { key: "omar-gutters", ownerId: "omar", type: "request_service", text: "Gutters are overflowing, need help this week.", category: "gutters", maxPrice: "90.00", dueInDays: 6 },
   { key: "bella-lawn", ownerId: "bella", type: "request_service", text: "Mow and edge a small front yard every two weeks.", category: "lawn", maxPrice: "45.00", dueInDays: 7 },
+  { key: "priya-sell", ownerId: "priya", type: "sell", text: "Sell my RTX 3070 once I have the new card.", category: "gpu", minPrice: "220.00", dueInDays: 10 },
+  { key: "priya-install", ownerId: "priya", type: "request_service", text: "Someone to install the new graphics card and drivers.", category: "it-setup", maxPrice: "60.00", dueInDays: 10 },
+  { key: "kai-gpu", ownerId: "kai", type: "buy", text: "A used RTX 3070 or similar for my first gaming PC.", category: "gpu", maxPrice: "280.00", dueInDays: 14 },
   { key: "priya-oil", ownerId: "priya", type: "request_service", text: "Oil change at home, I have the oil.", category: "car-care", maxPrice: "60.00", dueInDays: 8 },
   { key: "kai-oil", ownerId: "kai", type: "request_service", text: "Someone to change my oil on a weekend.", category: "car-care", maxPrice: "55.00", dueInDays: 12 },
 ];

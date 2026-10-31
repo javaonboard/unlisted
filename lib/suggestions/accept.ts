@@ -4,10 +4,11 @@ import { addVaultItem } from "@/lib/vault/mutations";
 import { postNeed } from "@/lib/intents/mutations";
 import { startNegotiation } from "@/lib/negotiation/start";
 import { onDismissed, runWave } from "./engine";
-import { startLinkedDeal } from "@/lib/deals/planner";
+import { startLinkedDeal, type PlanChoice } from "@/lib/deals/planner";
 
 // "Yes" on a suggestion. Returns where to go next, if anywhere.
-export async function acceptSuggestion(id: string, userId: string): Promise<string | null> {
+// A plan can come with the owner's own choices ("Change the plan").
+export async function acceptSuggestion(id: string, userId: string, plan?: Partial<PlanChoice>): Promise<string | null> {
   const [s] = await db.select().from(schema.suggestions).where(eq(schema.suggestions.id, id));
   if (!s || s.userId !== userId || s.status !== "new") return null;
   await db.update(schema.suggestions).set({ status: "accepted" }).where(eq(schema.suggestions.id, id));
@@ -37,7 +38,13 @@ export async function acceptSuggestion(id: string, userId: string): Promise<stri
       await runWave(String(a.needId), 1);
       return `/needs/${a.needId}`;
     case "plan": {
-      const deal = await startLinkedDeal(userId, String(a.title));
+      const deal = await startLinkedDeal(userId, {
+        title: String(a.title),
+        sellId: plan ? plan.sellId : (a.sellId as string) || undefined,
+        buyId: plan ? plan.buyId : (a.buyId as string) || undefined,
+        serviceId: plan ? plan.serviceId : (a.serviceId as string) || undefined,
+        sellOnlyIfBought: plan?.sellOnlyIfBought ?? true,
+      });
       return `/deals/${deal.id}`;
     }
     case "post_need": {

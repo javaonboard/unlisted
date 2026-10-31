@@ -134,6 +134,13 @@
       "when": 1793426614716,
       "tag": "0018_max_miles",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793473117772,
+      "tag": "0019_deal_service",
+      "breakpoints": true
     }
   ]
 }
