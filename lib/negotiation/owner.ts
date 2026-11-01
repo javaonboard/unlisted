@@ -34,6 +34,7 @@ If the reply allows or sets a price, give it as newLimit. "Yes" means the sugges
     .update(schema.negotiations)
     .set({
       status: "open",
+      maxRounds: Math.max(room.maxRounds, room.round + 3), // room to act on the owner's answer
       ...(newLimit !== null && side === "buyer" ? { buyerLimit: newLimit.toFixed(2) } : {}),
       ...(newLimit !== null && side === "seller" ? { sellerLimit: newLimit.toFixed(2) } : {}),
     })

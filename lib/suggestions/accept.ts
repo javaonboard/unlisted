@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { addVaultItem } from "@/lib/vault/mutations";
 import { postNeed } from "@/lib/intents/mutations";
@@ -7,6 +7,7 @@ import { onDismissed, runWave } from "./engine";
 import { startLinkedDeal } from "@/lib/deals/planner";
 import { goPublic } from "@/lib/vault/visibility";
 import { playLater } from "@/lib/negotiation/start";
+import { retryPurchase } from "@/lib/deals/coordinator";
 
 export type PlanPick = { partIds?: string[]; sellOnlyIfBought?: boolean };
 
@@ -37,10 +38,17 @@ export async function acceptSuggestion(id: string, userId: string, plan?: PlanPi
       const skill = await addVaultItem(userId, { kind: "skill", title: String(a.skill), category: String(a.category), estimatedValue: Number(a.value) || undefined, openToOffers: true });
       return talk(skill.id, String(a.needId));
     }
-    case "raise_offer":
+    case "raise_offer": {
       await db.update(schema.intents).set({ maxPrice: Number(a.maxPrice).toFixed(2), wave: 0 }).where(eq(schema.intents.id, String(a.needId)));
+      // Part of a plan: try the plan's sellers again at the new budget. Otherwise the normal waves.
+      const [inPlan] = await db.select({ dealId: schema.negotiations.dealId }).from(schema.negotiations).where(and(eq(schema.negotiations.intentId, String(a.needId)), isNotNull(schema.negotiations.dealId)));
+      if (inPlan?.dealId) {
+        playLater(await retryPurchase(inPlan.dealId, String(a.needId)));
+        return `/deals/${inPlan.dealId}`;
+      }
       await runWave(String(a.needId), 1);
       return `/needs/${a.needId}`;
+    }
     case "go_public": {
       playLater(await goPublic(userId, String(a.itemId)));
       return `/my-stuff/${a.itemId}`;

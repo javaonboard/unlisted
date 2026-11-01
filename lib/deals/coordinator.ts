@@ -4,6 +4,8 @@ import { rankBuyers, rankSellers } from "@/lib/scout/rank";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
 import { inSentence } from "@/lib/text/words";
 import { stopsFor } from "./stops";
+import { notify } from "@/lib/notifications/notify";
+import { suggest } from "@/lib/suggestions/suggest";
 
 type Room = typeof schema.negotiations.$inferSelect;
 type Deal = typeof schema.deals.$inferSelect;
@@ -68,6 +70,39 @@ export async function onLegFinished(dealId: string) {
   }
 }
 
+// After a budget raise: talk to the best two sellers again for this part of the plan.
+export async function retryPurchase(dealId: string, needId: string) {
+  const [deal] = await db.select().from(schema.deals).where(eq(schema.deals.id, dealId));
+  const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, deal.ownerId));
+  const rooms: Room[] = [];
+  for (const s of (await rankSellers(needId, owner.area)).slice(0, 2)) {
+    rooms.push(await openRoom({ dealId, label: `${first(s.name)}'s ${inSentence(await itemTitle(s.itemId!))}`, buyerId: deal.ownerId, sellerId: s.userId, itemId: s.itemId!, intentId: needId }));
+  }
+  return rooms;
+}
+
+// Every talk about one part of the plan ended without a deal and there's nobody new to try.
+// The owner hears it once, with a one-tap way to try again for a little more (or less).
+async function stuck(deal: Deal, selling: boolean, anchor: Room) {
+  const [need] = await db.select().from(schema.intents).where(eq(schema.intents.id, anchor.intentId!));
+  const title = `${deal.title}: no ${selling ? "buyer" : "seller"} agreed yet`;
+  const [told] = await db.select({ id: schema.suggestions.id }).from(schema.suggestions).where(eq(schema.suggestions.title, title));
+  if (told || !need) return;
+  if (selling) {
+    await notify(deal.ownerId, title, "Nobody nearby agreed on your price. I'll tell you when someone new wants it, or you can lower your lowest price on the item.", anchor.id);
+    return;
+  }
+  const raised = Math.round(Number(need.maxPrice ?? 0) * 1.1);
+  await suggest({
+    userId: deal.ownerId,
+    needId: need.id,
+    kind: "raise_offer",
+    title,
+    body: `The sellers stopped just above your budget for “${need.text}”. Raise it to $${raised} and I'll try again?`,
+    action: { needId: need.id, maxPrice: raised, label: `Raise to $${raised}` },
+  });
+}
+
 // Opens one more talk for a sale or purchase where nobody is talking and nothing was agreed.
 async function hopIfStuck(deal: Deal, groups: { selling: boolean; rooms: Room[] }[]) {
   const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, deal.ownerId));
@@ -77,7 +112,10 @@ async function hopIfStuck(deal: Deal, groups: { selling: boolean; rooms: Room[] 
     const anchor = tried[0];
     const ranked = selling ? await rankBuyers(anchor.itemId!, owner.area) : await rankSellers(anchor.intentId!, owner.area);
     const next = ranked.find((p) => !tried.some((r) => (selling ? r.buyerId : r.sellerId) === p.userId));
-    if (!next) continue;
+    if (!next) {
+      await stuck(deal, selling, anchor); // nobody left to try: tell the owner instead of waiting quietly
+      continue;
+    }
 
     const room = await openRoom({
       dealId: deal.id,
