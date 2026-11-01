@@ -76,6 +76,13 @@ export async function askForNewTime(roomId: string, ownerId: string, words: stri
     .where(eq(schema.negotiations.id, roomId));
 
   const other = askerIsBuyer ? room.sellerId : room.buyerId;
-  await notify(other, by === "plan" ? "Their plan changed" : "They asked for another time", `“${words}” I'm working it out with their agent; you'll approve the new time.`, roomId);
+  const [asker] = await db.select({ name: schema.users.name }).from(schema.users).where(eq(schema.users.id, ownerId));
+  const name = asker?.name.split(" ")[0] ?? "They";
+  await notify(
+    other,
+    by === "plan" ? `${name}'s plan changed` : `${name} asked for another time`,
+    by === "plan" ? `Another part of ${name}'s plan moved, so this one needs a new time too. Their agent is proposing one; you'll approve it.` : `“${words}” I'm working it out with their agent; you'll approve the new time.`,
+    roomId,
+  );
   console.log(`[room] ${roomId.slice(0, 8)} new time asked: "${words}"`);
 }
