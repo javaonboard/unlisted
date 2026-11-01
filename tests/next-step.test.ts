@@ -67,7 +67,7 @@ test("in a plan, a sale that waits for the purchase can't move yet, for either s
 });
 
 test("an agent's question is only for its own owner", () => {
-  const v = view({ room: { id: "r1", status: "waiting_owner", buyerId: "sara", sellerId: "gus", agreedPrice: null }, messages: [{ kind: "ask_owner", fromUserId: "gus" }] });
+  const v = view({ room: { id: "r1", status: "waiting_owner", buyerId: "sara", sellerId: "gus", agreedPrice: null }, messages: [{ kind: "ask_owner", fromUserId: "gus" }], pendingAsk: { id: "q1", by: "gus" } });
   assert.equal(nextFor(v, "gus").label, "Answer your agent");
   assert.equal(nextFor(v, "sara").state, "talking");
 });
