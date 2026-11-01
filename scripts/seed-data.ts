@@ -13,7 +13,7 @@ export const users = [
   { id: "gus", name: "Gus Patel", area: "Mueller", address: "2410 Sage Example Ln, Austin, TX", paypalEmail: null, bio: "Cleans gutters. Has a tall ladder." },
   { id: "lily", name: "Lily Nguyen", area: "Cherrywood", address: "3300 Willow Example St, Austin, TX", paypalEmail: null, bio: "Mows lawns around the neighborhood." },
   { id: "ivan", name: "Ivan Petrov", area: "Hyde Park", address: "4708 Elm Example Ave, Austin, TX", paypalEmail: null, bio: "IT help: Wi-Fi, TV mounting, PC builds." },
-  { id: "kai", name: "Kai Johnson", area: "Holly", address: "2001 Magnolia Example Ct, Austin, TX", paypalEmail: null, bio: "Wants a Quest 3. Rents out his long ladder." },
+  { id: "kai", name: "Kai Johnson", area: "Holly", address: "2001 Magnolia Example Ct, Austin, TX", paypalEmail: null, bio: "Wants a Quest 3. Rents out his old wooden ladder." },
   { id: "priya", name: "Priya Shah", area: "Mueller", address: "2650 Aspen Example Dr, Austin, TX", paypalEmail: null, bio: "Upgrading her graphics card. Needs an oil change." },
   { id: "leo", name: "Leo Park", area: "Windsor Park", address: "6110 Birch Example Ln, Austin, TX", paypalEmail: null, bio: "Upgraded his PC. Selling an RTX 4070 and a 750W power supply." },
 ];
@@ -52,13 +52,13 @@ export const vaultItems: Item[] = [
   // Local skills.
   { key: "moving", ownerId: "marco", kind: "skill", title: "Moving help with pickup truck", category: "moving", estimatedValue: "85.00", minPrice: "70.00", openToOffers: true, details: { days: ["Sat", "Sun"], equipment: ["truck", "dolly", "straps"] } },
   { key: "moving-dev", ownerId: "dev", kind: "skill", title: "Moving help with a cargo van", category: "moving", estimatedValue: "95.00", minPrice: "85.00", openToOffers: true, details: { days: ["Sat afternoon"], equipment: ["van", "blankets"] } },
-  // Kai keeps his ladder but rents it out: $15 a day, $60 deposit held by PayPal while it's out.
-  { key: "ladder", ownerId: "kai", kind: "goods", title: "Extension ladder, 24 ft", category: "tools", condition: "Good", estimatedValue: "120.00", forSale: false, rentPerDay: "15.00", deposit: "60.00", openToOffers: true },
+  // Kai keeps his ladder but rents it out: $10 a day, $30 deposit held by PayPal while it's out.
+  { key: "ladder", ownerId: "kai", kind: "goods", title: "Wooden ladder, 8 ft", category: "tools", condition: "Old and weathered, still sturdy.", estimatedValue: "40.00", forSale: false, rentPerDay: "10.00", deposit: "30.00", openToOffers: true },
   { key: "gutters", ownerId: "gus", kind: "skill", title: "Gutter cleaning", category: "gutters", estimatedValue: "80.00", openToOffers: true, details: { equipment: ["ladder"] } },
   { key: "lawn", ownerId: "lily", kind: "skill", title: "Lawn mowing", category: "lawn", estimatedValue: "40.00", openToOffers: true, details: { equipment: ["mower", "trimmer"] } },
   { key: "it-setup", ownerId: "ivan", kind: "skill", title: "Wi-Fi, TV mounting and PC setup", category: "it-setup", estimatedValue: "60.00", openToOffers: true },
   // PC upgrade: Priya sells her old card and buys Leo's. Her agent should notice she also needs a bigger power supply.
-  { key: "rtx3070", ownerId: "priya", kind: "goods", title: "RTX 3070 graphics card", category: "gpu", condition: "Good. Used for gaming, never mined.", estimatedValue: "260.00", minPrice: "220.00" },
+  { key: "gpu2080", ownerId: "priya", kind: "goods", title: "RTX 2080 Super graphics card", category: "gpu", condition: "Good. Used for gaming, never mined.", estimatedValue: "210.00", minPrice: "175.00" },
   { key: "rtx4070", ownerId: "leo", kind: "goods", title: "RTX 4070 graphics card", category: "gpu", condition: "Like new, in the box.", estimatedValue: "470.00", minPrice: "420.00", openToOffers: true },
   { key: "psu750", ownerId: "leo", kind: "goods", title: "750W power supply, fully modular", category: "psu", condition: "Good, two years old.", estimatedValue: "80.00", minPrice: "60.00", openToOffers: true, details: { watts: 750 } },
 ];
@@ -100,9 +100,9 @@ export const intents: Intent[] = [
   { key: "ben-gutters", ownerId: "ben", type: "request_service", text: "Clean the gutters on a one-story house.", category: "gutters", maxPrice: "80.00", dueInDays: 10 },
   { key: "omar-gutters", ownerId: "omar", type: "request_service", text: "Gutters are overflowing, need help this week.", category: "gutters", maxPrice: "90.00", dueInDays: 6 },
   { key: "bella-lawn", ownerId: "bella", type: "request_service", text: "Mow and edge a small front yard every two weeks.", category: "lawn", maxPrice: "45.00", dueInDays: 7 },
-  { key: "priya-sell", ownerId: "priya", type: "sell", text: "Sell my RTX 3070 once I have the new card.", category: "gpu", minPrice: "220.00", dueInDays: 10 },
-  { key: "kai-gpu", ownerId: "kai", type: "buy", text: "A used RTX 3070 or similar for my first gaming PC.", category: "gpu", maxPrice: "280.00", dueInDays: 14 },
-  { key: "bella-ladder", ownerId: "bella", type: "rent", days: 1, text: "A tall ladder for Saturday to hang string lights.", category: "tools", maxPrice: "25.00", dueInDays: 4 },
+  { key: "priya-sell", ownerId: "priya", type: "sell", text: "Sell my RTX 2080 Super once I have the new card.", category: "gpu", minPrice: "175.00", dueInDays: 10 },
+  { key: "kai-gpu", ownerId: "kai", type: "buy", text: "A used RTX 2080 Super or similar for my first gaming PC.", category: "gpu", maxPrice: "230.00", dueInDays: 14 },
+  { key: "bella-ladder", ownerId: "bella", type: "rent", days: 1, text: "A ladder for Saturday to hang string lights.", category: "tools", maxPrice: "15.00", dueInDays: 4 },
   { key: "priya-oil", ownerId: "priya", type: "request_service", text: "Oil change at home, I have the oil.", category: "car-care", maxPrice: "60.00", dueInDays: 8 },
   { key: "kai-oil", ownerId: "kai", type: "request_service", text: "Someone to change my oil on a weekend.", category: "car-care", maxPrice: "55.00", dueInDays: 12 },
 ];
@@ -129,5 +129,5 @@ export const talks = [
   { itemKey: "gutters", intentKey: "sara-gutters", label: "Gutter cleaning" },
   { itemKey: "gutters", intentKey: "omar-gutters", label: "Gutter cleaning" },
   { itemKey: "lawn", intentKey: "bella-lawn", label: "Lawn mowing" },
-  { itemKey: "ladder", intentKey: "bella-ladder", label: "Extension ladder, 24 ft" },
+  { itemKey: "ladder", intentKey: "bella-ladder", label: "Wooden ladder, 8 ft" },
 ];

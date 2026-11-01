@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Thumb, seenText } from "@/components/anchors/Thumb";
 import { currentUserId } from "@/lib/session";
 import { getRoomView } from "@/lib/anchors/queries";
 import { BackLink } from "@/components/anchors/BackLink";
@@ -25,7 +26,13 @@ async function Room({ params }: { params: Promise<{ id: string }> }) {
     <>
       <LiveRefresh active={room.status === "open" || childSummaries.some((c) => c.room.status === "open")} />
       <BackLink {...back} />
-      <h1 className="mb-1 text-xl font-semibold">{other}&apos;s agent</h1>
+      <div className="mb-2 flex items-center gap-3">
+        <Thumb item={item} />
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold">{other}&apos;s agent</h1>
+          <p className="text-sm text-muted-foreground">{item.title}{seenText(item.inspection) ? ` · ${seenText(item.inspection)}` : ""}</p>
+        </div>
+      </div>
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
         <RoleBadge role={roleOf(data, viewerId)} />
         <StatusPill next={nextFor(data, viewerId)} />

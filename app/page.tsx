@@ -65,7 +65,7 @@ async function Inbox() {
   const count = needsYou.length + open.length;
 
   const thread = (t: (typeof threads)[number], expanded: boolean) => (
-    <DealThread key={t.roomId} roomId={t.roomId} viewerId={userId} role={t.role} next={t.next} distance={t.view.distance} plan={t.view.deal?.isPlan ? t.view.deal.title : null} notes={t.notes} open={expanded} />
+    <DealThread key={t.roomId} roomId={t.roomId} item={{ kind: t.view.item.kind, photos: t.view.item.photos }} viewerId={userId} role={t.role} next={t.next} distance={t.view.distance} plan={t.view.deal?.isPlan ? t.view.deal.title : null} notes={t.notes} open={expanded} />
   );
 
   return (

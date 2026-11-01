@@ -1,0 +1,12 @@
+Demo photos
+sectional, lamp, loveseat, small-sofa, ladder, gpu2080, rtx4070, psu750: Unsplash (Unsplash License)
+  sectional  https://unsplash.com/photos/a-modern-grey-sectional-sofa-against-a-white-wall-ERtuYB5ZG2Q
+  lamp       https://unsplash.com/photos/a-lamp-that-is-on-top-of-a-table-4GKF49FpNWg
+  loveseat   https://unsplash.com/photos/a-living-room-with-a-blue-couch-and-a-rug-mfWUQfMTqe8
+  small-sofa https://unsplash.com/photos/beige-leather-2-seat-sofa-4uD9w-pxBTA
+  ladder     https://unsplash.com/photos/a-ladder-leaning-against-a-brick-wall-T4TQIhkTduw
+  gpu2080    https://unsplash.com/photos/a-close-up-of-a-video-card-on-a-yellow-background-ipVMl4H6g6o
+  rtx4070    https://unsplash.com/photos/a-close-up-of-a-computer-processor-on-a-table-6T_Yvxw2z9Q
+  psu750     https://unsplash.com/photos/a-black-computer-case-sitting-on-top-of-a-wooden-table-6ygxaQ5h5Es
+quest3: "Meta Quest 3 front View" by Roy.wonder.cohen, CC BY-SA 4.0
+  https://commons.wikimedia.org/wiki/File:Meta_Quest_3_front_View.jpg

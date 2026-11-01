@@ -6,6 +6,8 @@ import { nextSaturday } from "@/lib/dates";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
 import { checkIn } from "@/lib/agent/checkin";
 import { priceItem } from "@/lib/pricing/save";
+import { inspectItem } from "@/lib/vault/inspect";
+import { existsSync, readFileSync } from "node:fs";
 import * as data from "./seed-data";
 
 async function main() {
@@ -20,6 +22,13 @@ async function main() {
     .values(data.vaultItems.map(({ key: _key, ...item }) => item))
     .returning({ id: schema.vaultItems.id });
   const itemId = Object.fromEntries(data.vaultItems.map((item, i) => [item.key, items[i].id]));
+
+  // Demo photos live in public/seed (credits.txt there).
+  const photoOf = (key: string) => (existsSync(`public/seed/${key}.jpg`) ? `/seed/${key}.jpg` : null);
+  for (const item of data.vaultItems) {
+    const photo = photoOf(item.key);
+    if (photo) await db.update(schema.vaultItems).set({ photos: [photo] }).where(sql`${schema.vaultItems.id} = ${itemId[item.key]}`);
+  }
 
   await db.insert(schema.evidence).values(
     data.evidence.map(({ itemKey, ...e }) => ({ ...e, itemId: itemId[itemKey] })),
@@ -57,13 +66,18 @@ async function main() {
   if (!process.argv.includes("--quiet")) {
     const owners = Object.fromEntries(data.vaultItems.map((item) => [item.key, item.ownerId]));
     const buyers = Object.fromEntries(data.intents.map((intent) => [intent.key, intent.ownerId]));
+    // The agents look at each photo first, so what they saw is evidence in the talks.
+    for (const item of data.vaultItems.filter((i) => photoOf(i.key))) {
+      const image = `data:image/jpeg;base64,${readFileSync(`public/seed/${item.key}.jpg`).toString("base64")}`;
+      await inspectItem(itemId[item.key], [image]).catch((e) => console.error("[inspect] skipped:", e.message));
+    }
     for (const talk of data.talks) {
       const room = await openRoom({ label: talk.label, buyerId: buyers[talk.intentKey], sellerId: owners[talk.itemKey], itemId: itemId[talk.itemKey], intentId: intentId[talk.intentKey] });
       const done = await playRoom(room.id);
       console.log(`talk: ${talk.intentKey} → ${done.status}${done.agreedPrice ? ` $${done.agreedPrice}` : ""}`);
     }
     // Price advice (web search, Channel3, our sales) on the two things the demo sells.
-    for (const key of ["sectional", "rtx3070"]) await priceItem(itemId[key]).catch((e) => console.error("[price] skipped:", e.message));
+    for (const key of ["sectional", "gpu2080"]) await priceItem(itemId[key]).catch((e) => console.error("[price] skipped:", e.message));
     // Then each person's agent takes its first look: buyers for private things, plans, missing pieces.
     for (const u of data.users) await checkIn(u.id, "a first look at their situation").catch((e) => console.error("[checkin] skipped:", e.message));
   }

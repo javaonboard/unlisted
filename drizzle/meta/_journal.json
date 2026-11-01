@@ -253,6 +253,13 @@
       "when": 1793566026808,
       "tag": "0035_offer_over_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793568736916,
+      "tag": "0036_thankful_komodo",
+      "breakpoints": true
     }
   ]
 }

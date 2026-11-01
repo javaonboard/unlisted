@@ -13,12 +13,14 @@ import { setItemRangeAction } from "@/app/actions/range";
 import { rangeOfOffer } from "@/lib/places";
 import { PriceAdvice } from "@/components/anchors/PriceAdvice";
 import { EditItem } from "@/components/anchors/EditForms";
+import { ItemPhotos } from "@/components/vault/ItemPhotos";
 import { checkItemPriceAction, updateItemAction, useItemPriceAction } from "@/app/actions/edit";
 
 async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
   const data = await getItemAnchor((await params).id, await currentUserId());
   if (!data) notFound();
   const { item, evidence, negotiations } = data;
+  const notes = evidence.filter((e) => !e.summary.startsWith("Photo check:")); // the photo check shows with the photos
 
   return (
     <>
@@ -31,6 +33,7 @@ async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
             <Badge variant={item.openToOffers ? "default" : "secondary"}>{item.openToOffers ? "Open to offers" : "Private"}</Badge>
           </CardTitle>
           <CardDescription>{item.condition ?? item.category}</CardDescription>
+          {item.kind === "goods" && <ItemPhotos itemId={item.id} photos={item.photos} inspection={item.inspection ?? null} />}
         </CardHeader>
         <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
@@ -41,8 +44,8 @@ async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
           </div>
           <div>
             <p className="font-medium">Evidence</p>
-            {evidence.length === 0 && <p className="text-muted-foreground">None yet.</p>}
-            {evidence.map((e) => (
+            {notes.length === 0 && <p className="text-muted-foreground">None yet.</p>}
+            {notes.map((e) => (
               <p key={e.id} className="text-muted-foreground">{e.summary} <span className="text-xs">({e.verified ? "verified" : "their claim"})</span></p>
             ))}
           </div>

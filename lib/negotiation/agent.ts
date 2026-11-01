@@ -38,6 +38,7 @@ function describe(c: TurnContext) {
   return `Today is ${today} (Austin time). This Saturday 9am is ${saturday}.
 ${c.item.kind === "skill" ? "Service" : "Item"}: ${c.item.title} (${c.item.condition ?? "no condition notes"}), est. value $${c.item.estimatedValue ?? "?"}.
 Details: ${JSON.stringify(c.item.details)}
+${c.item.inspection?.needsWorking && !c.item.inspection.workingShown ? "Not shown working yet: the buyer can fairly ask for proof at handoff or a little off the price.\n" : ""}
 Evidence you may cite:
 ${c.evidence.map((e) => `- ${e.id}: ${e.summary} (${e.verified ? "verified" : "unverified claim"})`).join("\n") || "- none"}
 

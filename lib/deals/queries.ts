@@ -16,7 +16,7 @@ export async function getPlan(dealId: string, viewerId: string) {
     visible.map(async (room) => {
       const view = (await getRoomView(room.id, viewerId))!;
       const group = deal.helperIds.includes(room.intentId!) ? "helper" : room.sellerId === deal.ownerId ? "sell" : "buy";
-      return { room, group, role: roleOf(view, viewerId), next: nextFor(view, viewerId), distance: view.distance };
+      return { room, group, item: { kind: view.item.kind, photos: view.item.photos }, role: roleOf(view, viewerId), next: nextFor(view, viewerId), distance: view.distance };
     }),
   );
   return { deal, parts, isOwner: deal.ownerId === viewerId };

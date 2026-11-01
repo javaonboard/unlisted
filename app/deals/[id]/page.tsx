@@ -9,6 +9,7 @@ import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
 import { FormattedText } from "@/components/FormattedText";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { ConfirmAction } from "@/components/ConfirmAction";
+import { Thumb } from "@/components/anchors/Thumb";
 import { dropPartAction } from "@/app/actions/deals";
 
 const GROUPS = [
@@ -54,7 +55,8 @@ async function Plan({ params }: { params: Promise<{ id: string }> }) {
             <div className="flex flex-col gap-2">
               {rows.map((p) => (
                 <Link key={p.room.id} href={`/rooms/${p.room.id}`} className="flex items-center justify-between gap-3 rounded-xl border p-3 text-sm hover:bg-muted/40">
-                  <span className="min-w-0">
+                  <Thumb item={p.item} size="size-10" />
+                  <span className="min-w-0 flex-1">
                     <span className="font-medium">{p.room.label}</span>
                     <span className="text-muted-foreground">{p.room.agreedPrice ? ` · $${Number(p.room.agreedPrice).toFixed(0)}` : ""} · {p.distance}</span>
                     <span className="mt-1 flex flex-wrap gap-2"><RoleBadge role={p.role} /><StatusPill next={p.next} /></span>

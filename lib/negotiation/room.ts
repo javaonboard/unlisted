@@ -17,6 +17,9 @@ export async function openRoom(input: NewRoom) {
   return room;
 }
 
+// How a talk ended, in plain words.
+const ENDED: Record<string, string> = { reject: "they said no", walk_away: "they walked away" };
+
 const termsOf = (move: Move) => ({ when: move.when, slotStart: move.slotStart, place: move.place, meetAt: move.meetAt, costs: move.costs, extras: move.extras });
 
 // Plays the next turn. The buyer opens, then sides alternate.
@@ -95,7 +98,7 @@ export async function playTurn(roomId: string): Promise<boolean> {
     .set({
       round,
       status: closing ? "closed" : "open",
-      closedReason: closing ? (round >= room.maxRounds ? "round limit" : move.action) : undefined,
+      closedReason: closing ? (round >= room.maxRounds ? "no deal in time" : ENDED[move.action]) : undefined,
     })
     .where(eq(schema.negotiations.id, roomId));
 
@@ -129,7 +132,7 @@ export async function recordOutsideMove(roomId: string, fromUserId: string, move
   const closing = ["reject", "walk_away"].includes(move.action) || round >= room.maxRounds;
   await db
     .update(schema.negotiations)
-    .set({ round, status: closing ? "closed" : "open", closedReason: closing ? move.action : undefined })
+    .set({ round, status: closing ? "closed" : "open", closedReason: closing ? ENDED[move.action] : undefined })
     .where(eq(schema.negotiations.id, roomId));
 }
 

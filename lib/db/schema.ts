@@ -1,4 +1,5 @@
 import type { PriceCheck } from "@/lib/pricing/check";
+import type { Inspection } from "@/lib/vault/inspect";
 import {
   boolean,
   integer,
@@ -51,6 +52,7 @@ export const vaultItems = pgTable("vault_items", {
   openToOffers: boolean("open_to_offers").default(false).notNull(),
   maxMiles: integer("max_miles"), // how far the owner will travel; 0 = pickup only. Empty = the default
   priceCheck: jsonb("price_check").$type<PriceCheck>(), // the agent's price advice, with sources
+  inspection: jsonb("inspection").$type<Inspection>(), // what the agent saw in the owner's photos
   forSale: boolean("for_sale").default(true).notNull(), // goods: can be bought
   rentPerDay: money("rent_per_day"), // goods: can be rented, at this price a day. Empty = not for rent
   deposit: money("deposit"), // held by PayPal during a rental, released when it comes back

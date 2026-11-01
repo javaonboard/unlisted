@@ -8,7 +8,8 @@ const areaOf = async (userId: string) => (await db.select({ area: schema.users.a
 export async function priceItem(itemId: string) {
   const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, itemId));
   if (!item) return null;
-  const check = await checkPrice({ title: item.title, condition: item.condition, category: item.category, kind: item.kind === "skill" ? "service" : "goods", area: await areaOf(item.ownerId) });
+  const seen = item.inspection?.matches ? `; photo check: ${item.inspection.grade}${item.inspection.wear.length ? `, ${item.inspection.wear.join(", ")}` : ""}${item.inspection.needsWorking && !item.inspection.workingShown ? ", not shown working" : ""}` : "";
+  const check = await checkPrice({ title: item.title, condition: `${item.condition ?? ""}${seen}` || null, category: item.category, kind: item.kind === "skill" ? "service" : "goods", area: await areaOf(item.ownerId) });
   if (!check) return null;
   await db.update(schema.vaultItems).set({ priceCheck: check, estimatedValue: item.estimatedValue ?? check.suggested.toFixed(2) }).where(eq(schema.vaultItems.id, itemId));
   return check;
