@@ -38,7 +38,7 @@ export function nextFor(data: RoomView, viewerId: string): Next {
   const other = first(isBuyer ? room.sellerId : room.buyerId);
 
   if (room.status === "waiting_owner") {
-    const asked = data.messages.some((m) => m.kind === "ask_owner" && m.fromUserId === viewerId);
+    const asked = data.pendingAsk?.by === viewerId;
     return asked ? { state: "needs_you", label: "Answer your agent" } : { state: "talking", label: `${other} is checking with their agent` };
   }
   if (room.status === "open") return { state: "talking", label: "Agents are talking" };

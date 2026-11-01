@@ -3,7 +3,8 @@ import type { MeetAt } from "@/lib/places";
 
 export type Limits = {
   role: "buyer" | "seller";
-  limit: number; // hard limit: buyer pays at most, seller takes at least
+  limit: number; // the owner's limit: buyer pays at most, seller takes at least
+  stretch: number; // how far past it the agent may go on its own, with a reason (the owner still approves the deal)
   target: number; // where the owner would be happy
 };
 
@@ -30,12 +31,10 @@ export function checkMove(
   if (move.action === "accept" && price === null) return "There is no offer to accept yet.";
 
   if (price !== null && (needsPrice || move.action === "accept")) {
-    if (limits.role === "buyer" && price > limits.limit) {
-      return `$${price} is above your owner's limit of $${limits.limit}. Counter lower, or use ask_owner if this deal is worth it.`;
-    }
-    if (limits.role === "seller" && price < limits.limit) {
-      return `$${price} is below your owner's minimum of $${limits.limit}. Counter higher, or use ask_owner if this deal is worth it.`;
-    }
+    const past = limits.role === "buyer" ? price > limits.limit : price < limits.limit;
+    const beyond = limits.role === "buyer" ? price > limits.stretch : price < limits.stretch;
+    if (beyond) return `$${price} is too far past your owner's ${limits.role === "buyer" ? "budget" : "minimum"}. Stay within $${limits.stretch}, or use ask_owner.`;
+    if (past && !move.overLimitReason) return `$${price} is past your owner's limit of $${limits.limit}. That's allowed up to $${limits.stretch} with a good reason: set overLimitReason.`;
   }
 
   // Every offer names an exact time, so the deal can go on both calendars.

@@ -11,7 +11,9 @@ You act only for ${c.owner.name}, as the ${c.side}. Get a good deal that actuall
 How to negotiate:
 - Talk like a real neighbor, at most two short sentences. Be warm, a bit playful, never rude.
 - Price is only one lever. Bargain over place (who drives where), time (fits the moving day?) and costs (stairs, helper, delivery, gas). Use the distance: a longer drive is worth a few dollars either way.
-- Aim for your target, never pass your hard limit. If the other side is reasonable and a deal slightly past your limit would clearly help your owner, use ask_owner with a short question and a suggested price.
+- Aim for your target. Your owner's limit is a guide, not a wall: you may go past it up to the stretch on your own when there's a good reason (the market price, how your owner has dealt before, their deadline, a scarce item). Say why in overLimitReason; your owner approves the deal anyway. Past the stretch, use ask_owner.
+- Watch the rounds left. Near the end, close small gaps (split the difference) rather than let a good deal die.
+- Share personal facts about your owner only when the deal needs them (like stairs for a pickup), never their address.
 - Follow your owner's notes. They overrule everything else.
 - Be honest: cite evidence ids for condition claims. Never invent defects, other offers or deadlines. Never reveal your limit.
 - Read the signals about the other side for timing and framing. Never pressure or exploit anyone.
@@ -40,7 +42,9 @@ Evidence you may cite:
 ${c.evidence.map((e) => `- ${e.id}: ${e.summary} (${e.verified ? "verified" : "unverified claim"})`).join("\n") || "- none"}
 
 Buyer's request: "${c.intent.text}". Buyer area: ${c.side === "buyer" ? c.owner.area : c.other.area}. Seller area: ${c.side === "seller" ? c.owner.area : c.other.area}. Distance between you: ${distanceText(c.owner.area, c.other.area)}.
-Your target: $${c.limits.target}. Your hard limit: ${c.limits.role === "buyer" ? "pay at most" : "accept at least"} $${c.limits.limit}.
+Your target: $${c.limits.target}. Your owner's limit: ${c.limits.role === "buyer" ? "pay at most" : "accept at least"} $${c.limits.limit} (stretch on your own, with a reason: $${c.limits.stretch}).
+${c.market ? `Market: ${c.market}.
+` : ""}Rounds left after this one: ${Math.max(0, c.roundsLeft - 1)}.
 What you know about your owner:
 ${c.facts.map((f) => `- ${f.fact}`).join("\n") || "- nothing yet"}
 ${c.ownerTalk.length ? `\nYour owner's notes in this room:\n${c.ownerTalk.map((m) => `- ${m.kind === "ask_owner" ? "you asked" : "owner said"}: ${m.note}`).join("\n")}` : ""}
@@ -74,6 +78,7 @@ const walkAway: Move = {
   evidenceIds: [],
   message: "Thanks, but I don't think we can make this one work.",
   askOwner: null,
+  overLimitReason: null,
   reasoning: "Could not find a move within your limits.",
   signalsUsed: [],
 };

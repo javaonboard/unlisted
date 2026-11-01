@@ -30,6 +30,7 @@ type Props = {
   stops: string[];
   rentalDays: number | null;
   blockedBy: string | null;
+  overLimit: string | null;
   clientId: string;
 };
 
@@ -85,6 +86,7 @@ export function NextSteps(p: Props) {
           </p>
           {p.stops.length > 0 && <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-muted-foreground">{p.stops.map((s) => <li key={s}>{s}</li>)}</ol>}
           {p.blockedBy && <p className="mt-1 text-amber-700">Part of a plan: waiting for {p.blockedBy}.</p>}
+          {p.overLimit && <p className="mt-1 text-amber-700">Your agent went a little past your limit: {p.overLimit}</p>}
         </Step>
 
         <Step n={2} title={accepted ? "Approved by both" : iApproved ? "You approved" : "Approve the deal, time and place"} state={stateOf(accepted, !p.blockedBy)}>

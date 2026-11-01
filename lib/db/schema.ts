@@ -137,6 +137,7 @@ export const offers = pgTable("offers", {
   evidenceIds: jsonb("evidence_ids").$type<string[]>().default([]).notNull(),
   note: text("note"), // what the other side sees
   reasoning: text("reasoning"), // private, only the sender's owner sees it
+  overLimit: text("over_limit"), // private: why the agent went past its owner's limit (within the stretch)
   signalsUsed: jsonb("signals_used").$type<string[]>().default([]).notNull(),
   a2a: jsonb("a2a").$type<Record<string, unknown>>(), // the A2A message as sent
   createdAt: createdAt(),

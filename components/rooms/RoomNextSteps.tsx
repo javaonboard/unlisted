@@ -25,6 +25,7 @@ export function RoomNextSteps({ data, viewerId }: { data: RoomView; viewerId: st
       stops={data.stops}
       rentalDays={data.need?.type === "rent" ? (data.need.days ?? 1) : null}
       blockedBy={data.blockedBy}
+      overLimit={data.overLimit}
       clientId={process.env.PAYPAL_CLIENT_ID ?? ""}
     />
   );

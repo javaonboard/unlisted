@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
@@ -14,6 +14,9 @@ const Reply = z.object({
 // The owner answers their agent in their own words, e.g. "try $200 instead".
 // We keep the words for the agent and pull out a new limit if there is one.
 export async function applyOwnerReply(roomId: string, ownerId: string, words: string) {
+  // Only the person the newest question was asked of can answer it.
+  const [latest] = await db.select().from(schema.offers).where(and(eq(schema.offers.negotiationId, roomId), eq(schema.offers.kind, "ask_owner"))).orderBy(desc(schema.offers.createdAt)).limit(1);
+  if (latest?.fromUserId !== ownerId) return;
   // Claimed in one step: a second click finds the room already answered.
   const [room] = await db.update(schema.negotiations).set({ status: "open" }).where(and(eq(schema.negotiations.id, roomId), eq(schema.negotiations.status, "waiting_owner"))).returning();
   if (!room) return;

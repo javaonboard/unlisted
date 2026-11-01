@@ -19,12 +19,13 @@ export const Move = z.object({
     .describe("Only for ask_owner: a short question to your own owner"),
   reasoning: z.string().describe("Private note for your owner: why this move"),
   signalsUsed: z.array(z.string()).describe("Which counterparty signals influenced this move"),
+  overLimitReason: z.string().nullable().describe("Only if your price goes past your owner's limit (within the stretch): why it's still a good deal, in one short line your owner will read"),
 });
 export type Move = z.infer<typeof Move>;
 
 // Wraps a move in an A2A v1.0 message: a text part for people, a data part for code.
 export function toA2AMessage(move: Move, from: string, contextId: string) {
-  const { reasoning: _r, signalsUsed: _s, askOwner: _a, ...shared } = move;
+  const { reasoning: _r, signalsUsed: _s, askOwner: _a, overLimitReason: _o, ...shared } = move;
   return {
     messageId: randomUUID(),
     contextId,

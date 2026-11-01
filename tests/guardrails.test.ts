@@ -5,9 +5,9 @@ import type { Move } from "@/lib/negotiation/moves";
 
 const sat9 = "2026-10-31T14:00:00.000Z";
 const move = (m: Partial<Move>): Move =>
-  ({ action: "offer", price: 200, when: null, slotStart: sat9, place: null, meetAt: null, costs: null, extras: [], evidenceIds: [], message: "hi", askOwner: null, reasoning: "", signalsUsed: [], ...m }) as Move;
+  ({ action: "offer", price: 200, when: null, slotStart: sat9, place: null, meetAt: null, costs: null, extras: [], evidenceIds: [], message: "hi", askOwner: null, reasoning: "", signalsUsed: [], overLimitReason: null, ...m }) as Move;
 const rules = (r: Partial<Parameters<typeof checkMove>[1]> = {}) => ({
-  limits: { role: "buyer" as const, limit: 250, target: 210 },
+  limits: { role: "buyer" as const, limit: 250, target: 210, stretch: 275 },
   evidenceIds: ["ev1"],
   standingPrice: null,
   alreadyAsked: false,
@@ -15,20 +15,24 @@ const rules = (r: Partial<Parameters<typeof checkMove>[1]> = {}) => ({
   ...r,
 });
 
-test("a buyer's agent can't offer above the owner's limit", () => {
-  assert.match(checkMove(move({ price: 260 }), rules())!, /above your owner's limit/);
+test("a buyer's agent may go a little past the limit with a reason, never further", () => {
   assert.equal(checkMove(move({ price: 250 }), rules()), null);
+  assert.match(checkMove(move({ price: 260 }), rules())!, /past your owner's limit/); // needs a reason
+  assert.equal(checkMove(move({ price: 260, overLimitReason: "Market is ~$290 and Sam is firm" }), rules()), null);
+  assert.match(checkMove(move({ price: 280, overLimitReason: "I really want it" }), rules())!, /too far past/);
 });
 
 test("a seller's agent can't go below the owner's minimum", () => {
-  const seller = rules({ limits: { role: "seller", limit: 150, target: 240 } });
-  assert.match(checkMove(move({ price: 140 }), seller)!, /below your owner's minimum/);
+  const seller = rules({ limits: { role: "seller", limit: 150, target: 240, stretch: 135 } });
+  assert.match(checkMove(move({ price: 140 }), seller)!, /past your owner's limit/);
+  assert.equal(checkMove(move({ price: 140, overLimitReason: "Two buyers walked; it's been listed a while" }), seller), null);
+  assert.match(checkMove(move({ price: 130, overLimitReason: "x" }), seller)!, /too far past/);
   assert.equal(checkMove(move({ price: 150 }), seller), null);
 });
 
 test("accepting uses the other side's standing price, which must be within limits", () => {
   assert.match(checkMove(move({ action: "accept", price: null }), rules())!, /no offer to accept/);
-  assert.match(checkMove(move({ action: "accept", price: null }), rules({ standingPrice: 300 }))!, /above/);
+  assert.match(checkMove(move({ action: "accept", price: null }), rules({ standingPrice: 300 }))!, /too far past/);
   assert.equal(checkMove(move({ action: "accept", price: null }), rules({ standingPrice: 240 })), null);
 });
 

@@ -105,6 +105,10 @@ export async function getRoomView(roomId: string, viewerId: string) {
     item,
     need,
     names: who,
+    // The question waiting for an answer right now (only the newest one counts), and who it's for.
+    pendingAsk: room.status === "waiting_owner" ? (() => { const q = [...moves].reverse().find((m) => m.kind === "ask_owner"); return q ? { id: q.id, by: q.fromUserId } : null; })() : null,
+    // Why the viewer's own agent went past their limit, if it did. Only for them.
+    overLimit: [...moves].reverse().find((m) => m.fromUserId === viewerId && m.overLimit)?.overLimit ?? null,
     // Talk between an agent and its owner is only for that owner.
     messages: moves.filter((m) => (m.kind === "ask_owner" || m.kind === "owner_note" ? m.fromUserId === viewerId : true)),
     parents: all.filter((r) => room.dependsOn.includes(r.id) && visible(r)),

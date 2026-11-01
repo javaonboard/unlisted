@@ -85,7 +85,7 @@ export class UnlistedAgent implements AgentExecutor {
     await recordOutsideMove(
       room.id,
       guestId,
-      { action: move.action, price: move.price ?? null, when: move.when ?? move.pickup ?? null, slotStart: validTime(move.slotStart), place: move.place ?? null, meetAt: validMeetAt(move.meetAt), costs: move.costs ?? null, extras: move.extras ?? [], evidenceIds: [], message: words, askOwner: null, reasoning: "", signalsUsed: [] },
+      { action: move.action, price: move.price ?? null, when: move.when ?? move.pickup ?? null, slotStart: validTime(move.slotStart), place: move.place ?? null, meetAt: validMeetAt(move.meetAt), costs: move.costs ?? null, extras: move.extras ?? [], evidenceIds: [], message: words, askOwner: null, reasoning: "", signalsUsed: [], overLimitReason: null },
       { parts: context.userMessage.parts.map((p) => ({ [p.content?.$case ?? "text"]: p.content?.value })), role: "ROLE_USER", contextId },
     );
     await playTurn(room.id); // our agent answers, unless the room just closed

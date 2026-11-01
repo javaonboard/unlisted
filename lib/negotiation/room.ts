@@ -72,6 +72,7 @@ export async function playTurn(roomId: string): Promise<boolean> {
     evidenceIds: move.evidenceIds,
     note: move.message,
     reasoning: move.reasoning,
+    overLimit: move.overLimitReason, // private: only the owner sees why their agent went past their limit
     signalsUsed: move.signalsUsed,
     a2a: toA2AMessage(move, context.owner.id, roomId),
   });

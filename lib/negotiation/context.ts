@@ -43,8 +43,8 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
   const sellerLimit = Number(room.sellerLimit ?? (rental ? Math.round(asking * 0.8) : (item.minPrice ?? 0)));
   const limits: Limits =
     side === "buyer"
-      ? { role: "buyer", limit: buyerLimit, target: Math.round(buyerLimit * 0.85) }
-      : { role: "seller", limit: sellerLimit, target: asking || sellerLimit };
+      ? { role: "buyer", limit: buyerLimit, target: Math.round(buyerLimit * 0.85), stretch: Math.floor(buyerLimit * 1.1) }
+      : { role: "seller", limit: sellerLimit, target: asking || sellerLimit, stretch: Math.ceil(sellerLimit * 0.9) };
 
   // Other legs of the same deal, so this leg can fit around them.
   const legs = room.dealId
@@ -101,6 +101,8 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
     places,
     stops: room.stops,
     rental,
+    market: item.priceCheck ? `used ~$${item.priceCheck.usedLow.toFixed(0)}–$${item.priceCheck.usedHigh.toFixed(0)}, fair price ~$${item.priceCheck.suggested.toFixed(0)}` : null,
+    roundsLeft: room.maxRounds - room.round,
     signals,
     standingPrice: lastFromOther ? Number(lastFromOther.price) : null,
   };

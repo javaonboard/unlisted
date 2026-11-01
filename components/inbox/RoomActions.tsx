@@ -13,7 +13,7 @@ export async function RoomActions({ roomId, viewerId, header = true }: { roomId:
   const { room } = data;
   const role = roleOf(data, viewerId);
   const next = nextFor(data, viewerId);
-  const question = [...data.messages].reverse().find((m) => m.kind === "ask_owner" && m.fromUserId === viewerId);
+  const question = data.pendingAsk?.by === viewerId ? data.messages.find((m) => m.id === data.pendingAsk!.id) : undefined; // only the newest question, only for its owner
 
   return (
     <div className={header ? "mt-3 border-t pt-3" : "mt-2"}>

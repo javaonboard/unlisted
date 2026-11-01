@@ -35,7 +35,7 @@ async function Room({ params }: { params: Promise<{ id: string }> }) {
       <div className="flex flex-col gap-1 rounded-2xl border p-2">
         {messages.length === 0 && <p className="p-2 text-sm text-muted-foreground">Agents are getting ready…</p>}
         {messages.map((m) => (
-          <ChatMessage key={m.id} m={m} viewerId={viewerId} name={first(m.fromUserId)} thread="" waiting={room.status === "waiting_owner"} />
+          <ChatMessage key={m.id} m={m} viewerId={viewerId} name={first(m.fromUserId)} thread="" waiting={data.pendingAsk?.id === m.id} />
         ))}
         {room.status === "agreed" && (
           <p className="m-2 rounded-xl bg-accent px-3 py-2 text-sm font-medium">Deal agreed at ${Number(room.agreedPrice).toFixed(0)} · moved to next step</p>
