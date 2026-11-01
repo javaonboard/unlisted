@@ -36,3 +36,11 @@ export async function sendPayout(receiverEmail: string, amount: string, note: st
   console.log("[paypal] payout sent", batch.payout_batch_id, batch.batch_status);
   return { batchId: batch.payout_batch_id as string, status: batch.batch_status as string };
 }
+
+// The status of a payout's (only) item, straight from PayPal: SUCCESS, PENDING, UNCLAIMED, FAILED...
+export async function getPayoutItemStatus(batchId: string) {
+  const response = await fetch(`${API}/v1/payments/payouts/${batchId}`, { headers: { Authorization: `Bearer ${await paypalAccessToken()}` } });
+  const result = await response.json();
+  if (!response.ok) throw new Error(JSON.stringify(result));
+  return (result.items?.[0]?.transaction_status ?? result.batch_header?.batch_status) as string;
+}

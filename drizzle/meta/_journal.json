@@ -225,6 +225,13 @@
       "when": 1793559746771,
       "tag": "0031_payer_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793562168521,
+      "tag": "0032_paypal_confirmations",
+      "breakpoints": true
     }
   ]
 }

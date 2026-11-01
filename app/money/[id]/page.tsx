@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import { currentUserId } from "@/lib/session";
 import { getReceipt } from "@/lib/money/receipt";
 import { BackLink } from "@/components/anchors/BackLink";
+import { STATUS_TEXT } from "@/lib/payments/states";
 
 const when = (d: Date) => d.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const usd = (n: number) => `${n < 0 ? "−" : ""}$${Math.abs(n).toFixed(2)}`;
@@ -32,6 +33,7 @@ async function Receipt({ params }: { params: Promise<{ id: string }> }) {
             <li key={t.label} className={`flex items-center gap-2 ${t.at ? "" : "text-muted-foreground"}`}>
               <span className={`flex size-4 items-center justify-center rounded-full ${t.at ? "bg-primary text-primary-foreground" : "border"}`}>{t.at && <Check className="size-3" />}</span>
               {t.label}{t.at ? <span className="text-muted-foreground"> · {when(t.at)}</span> : null}
+              {t.paypal && <span className="text-xs text-emerald-700" title={`PayPal event ${t.paypal.eventId}`}>· confirmed by PayPal</span>}
             </li>
           ))}
         </ol>
@@ -39,7 +41,8 @@ async function Receipt({ params }: { params: Promise<{ id: string }> }) {
 
       <section className="rounded-2xl border p-4 text-sm">
         <p className="mb-2 font-medium">PayPal</p>
-        {r.paypalStatus && <p className="mb-2">Live status: <span className="font-medium">{r.paypalStatus}</span></p>}
+        <p className="mb-1">Status: <span className="font-medium">{STATUS_TEXT[r.status] ?? r.status}</span></p>
+        {r.paypalStatus && <p className="mb-2 text-muted-foreground">PayPal order status right now: {r.paypalStatus}</p>}
         {r.paypal.filter((p) => p.id).map((p) => (
           <p key={p.label} className="flex justify-between gap-3 py-0.5"><span className="text-muted-foreground">{p.label}</span><span className="font-mono text-xs">{p.id}</span></p>
         ))}

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { FormattedText } from "@/components/FormattedText";
 import Link from "next/link";
-import { and, asc, eq, inArray, or } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { currentUserId } from "@/lib/session";
 import { findDemandFor } from "@/lib/matching/matcher";
@@ -18,7 +18,7 @@ import { TellAgent } from "@/components/vault/TellAgent";
 async function MyStuff() {
   const userId = await currentUserId();
   const [items, needs, users, plans] = await Promise.all([
-    db.select().from(schema.vaultItems).where(eq(schema.vaultItems.ownerId, userId)).orderBy(asc(schema.vaultItems.createdAt)),
+    db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.ownerId, userId), isNull(schema.vaultItems.soldAt))).orderBy(asc(schema.vaultItems.createdAt)),
     db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, userId), eq(schema.intents.status, "open"))),
     db.select().from(schema.users),
     db.select().from(schema.deals).where(eq(schema.deals.ownerId, userId)),
@@ -94,7 +94,10 @@ async function MyStuff() {
 export default function MyStuffPage() {
   return (
     <main className="mx-auto w-full max-w-3xl p-8">
-      <h1 className="text-2xl font-semibold">My stuff</h1>
+      <div className="flex items-baseline justify-between gap-3">
+        <h1 className="text-2xl font-semibold">My stuff</h1>
+        <Link href="/my-stuff/past" className="text-sm text-primary hover:underline">Things I had</Link>
+      </div>
       <p className="mt-1 mb-6 text-muted-foreground">What you own, what you can do, and what you need. Private until you say yes.</p>
       <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <MyStuff />

@@ -3,6 +3,7 @@ import { onNeedPosted, onVaultAdded, runDueWaves } from "./lib/suggestions/engin
 import { runTimeouts } from "./lib/jobs/timeouts";
 import { resumeStuckRooms } from "./lib/negotiation/resume";
 import { remindToday } from "./lib/jobs/reminders";
+import { checkWaitingPayouts } from "./lib/payments/confirm";
 
 // React to new needs and vault items the moment they are saved.
 await listen(async (type, payload) => {
@@ -11,9 +12,10 @@ await listen(async (type, payload) => {
 });
 
 // Every 10 minutes: needs nobody answered widen to the next wave, rooms a restart stopped carry on,
-// and people with a handoff today get a reminder.
+// people with a handoff today get a reminder, and payouts PayPal hasn't confirmed yet get checked.
 setInterval(() => {
   remindToday().catch((e) => console.error("[reminders] failed", e?.message));
+  checkWaitingPayouts().catch((e) => console.error("[payouts] check failed", e?.message));
   runDueWaves().catch((e) => console.error("[waves] failed", e?.message));
   resumeStuckRooms().catch((e) => console.error("[resume] failed", e?.message));
 }, 10 * 60 * 1000);

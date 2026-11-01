@@ -25,13 +25,16 @@ export async function getReceipt(legId: string, viewerId: string) {
       { label: `Unlisted fee, 8%, paid by ${names[leg.payeeId]?.split(" ")[0]}`, amount: -feeOf(charged) },
       { label: `${names[leg.payeeId]?.split(" ")[0]} receives`, amount: payoutOf(charged) },
     ],
+    // Each money step, with PayPal's signed webhook that confirmed it (if it has arrived).
     timeline: [
-      { label: "Accepted", at: leg.createdAt },
-      { label: "Paid, held by PayPal", at: leg.heldAt },
-      { label: leg.kind === "rental" ? "Picked up" : "Handed off", at: leg.handoffAt },
-      { label: "Charged by PayPal", at: leg.capturedAt },
-      { label: "Paid out", at: leg.paidOutAt },
+      { label: "Approved by both", at: leg.createdAt, paypal: null },
+      { label: "Paid, held by PayPal", at: leg.heldAt, paypal: leg.confirmed.hold ?? null },
+      { label: leg.kind === "rental" ? "Picked up" : "Handed off", at: leg.handoffAt, paypal: null },
+      { label: "Charged by PayPal", at: leg.capturedAt, paypal: leg.confirmed.capture ?? null },
+      { label: leg.status === "payout_sent" ? "Payout sent, waiting for PayPal" : leg.status === "payout_failed" ? "Payout didn't go through" : "Paid out", at: leg.paidOutAt, paypal: leg.confirmed.payout ?? null },
+      ...(leg.refundId ? [{ label: "Refunded", at: null, paypal: leg.confirmed.refund ?? null }] : []),
     ],
+    status: leg.status,
     paypal: [
       { label: "Paid from PayPal account", id: leg.payerPaypalEmail ? `${leg.payerPaypalEmail}${leg.payerPaypalId ? ` (${leg.payerPaypalId})` : ""}` : null },
       { label: "Order", id: leg.orderId },

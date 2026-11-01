@@ -48,6 +48,9 @@ export function nextFor(data: RoomView, viewerId: string): Next {
   if (leg?.problem?.status === "open") {
     return leg.payeeId === viewerId ? { state: "needs_you", label: "Answer a refund request" } : { state: "waiting", label: `Waiting for ${other} to answer your problem` };
   }
+  if (leg?.status === "capture_failed") return room.buyerId === viewerId ? { state: "needs_you", label: "PayPal declined: pay again" } : { state: "waiting", label: "PayPal declined their payment" };
+  if (leg?.status === "payout_failed") return leg.payeeId === viewerId ? { state: "needs_you", label: "Payout failed: check your PayPal email" } : { state: "done", label: "Done, you have it" };
+  if (leg?.status === "payout_sent") return leg.payeeId === viewerId ? { state: "upcoming", label: "Payout on its way" } : { state: "done", label: "Done and paid" };
   if (leg?.status === "paid_out" || leg?.status === "captured") return { state: "done", label: leg.problem?.status === "refunded" ? "Done, refunded" : "Done and paid" };
   // A rental that's out: the owner confirms when it comes back.
   if (leg?.status === "in_use") {

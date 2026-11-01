@@ -5,16 +5,8 @@ import { myMoney } from "@/lib/money/ask";
 import { money, payoutOf } from "@/lib/payments/fees";
 import { BackLink } from "@/components/anchors/BackLink";
 import { AskMoney } from "@/components/money/AskMoney";
+import { STATUS_TEXT } from "@/lib/payments/states";
 
-const STATUS: Record<string, string> = {
-  pending: "Not paid yet",
-  held: "Held by PayPal",
-  in_use: "Rented out, deposit held",
-  captured: "Charged",
-  paid_out: "Paid out",
-  voided: "Released, nothing charged",
-  refunded: "Refunded",
-};
 
 async function MyMoney() {
   const rows = await myMoney(await currentUserId());
@@ -33,7 +25,7 @@ async function MyMoney() {
             <span className="shrink-0 text-right">
               {r.youPay ? money(r.amount) : `${money(payoutOf(r.amount))} after fees`}
               {r.deposit ? <span className="text-muted-foreground"> + {money(r.deposit)} deposit</span> : null}
-              <span className="block text-xs text-muted-foreground">{STATUS[r.status] ?? r.status} · receipt</span>
+              <span className="block text-xs text-muted-foreground">{STATUS_TEXT[r.status] ?? r.status} · receipt</span>
             </span>
           </Link>
           </li>

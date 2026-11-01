@@ -3,6 +3,7 @@ import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { voidAuthorization } from "@/lib/paypal/payments";
 import { inSentence } from "@/lib/text/words";
+import { AFTER_HANDOFF } from "@/lib/payments/states";
 
 export const REASONS = {
   price: "the price",
@@ -23,7 +24,7 @@ export async function backOut(roomId: string, userId: string, reason: Reason, no
   const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
   if (!room || (room.buyerId !== userId && room.sellerId !== userId)) return { error: "Not your deal." };
   const [leg] = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.roomId, roomId));
-  if (leg && ["in_use", "captured", "paid_out", "refunded"].includes(leg.status)) {
+  if (leg && (leg.status === "in_use" || AFTER_HANDOFF.includes(leg.status))) {
     return { error: leg.status === "in_use" ? "It's out on rent: bring it back first." : "It's already handed off. Use “Report a problem” instead." };
   }
 

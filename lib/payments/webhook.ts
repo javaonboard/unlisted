@@ -1,6 +1,7 @@
 import { eq, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { logActivity } from "@/lib/db/activity";
+import { applyPayPal, PAYPAL_EVENTS } from "./confirm";
 
 type PayPalEvent = { id: string; event_type: string; summary?: string; resource?: { id?: string; payout_batch_id?: string } };
 
@@ -18,10 +19,15 @@ export async function recordPayPalEvent(event: PayPalEvent) {
               eq(schema.dealLegs.authorizationId, id),
               eq(schema.dealLegs.captureId, id),
               eq(schema.dealLegs.payoutBatchId, id),
+              eq(schema.dealLegs.refundId, id),
             ]),
           ),
         )
     : [];
+
+  // Known money events confirm (or fail) that step of the payment.
+  const meaning = PAYPAL_EVENTS[event.event_type];
+  if (leg && meaning) await applyPayPal(leg, meaning.stage, meaning.ok, event.id);
 
   await logActivity({
     type: "paypal",

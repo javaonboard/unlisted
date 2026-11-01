@@ -5,6 +5,7 @@ import { notify } from "@/lib/notifications/notify";
 import { askForData } from "@/lib/ai/structured";
 import { MODELS } from "@/lib/ai/client";
 import { reapprove } from "@/lib/deals/approval";
+import { AFTER_HANDOFF } from "@/lib/payments/states";
 
 const Reply = z.object({
   newLimit: z.number().nullable().describe("A new price limit if the owner gave or allowed one, else null"),
@@ -49,7 +50,7 @@ export async function askForNewTime(roomId: string, ownerId: string, words: stri
   const [current] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
   if (!current || (current.buyerId !== ownerId && current.sellerId !== ownerId)) return;
   const [done] = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.roomId, roomId));
-  if (done && ["captured", "paid_out", "in_use"].includes(done.status)) return; // already handed off
+  if (done && (done.status === "in_use" || AFTER_HANDOFF.includes(done.status))) return; // already handed off
   // Claimed in one step: a second click finds the room already reopened.
   const [room] = await db.update(schema.negotiations).set({ status: "open" }).where(and(eq(schema.negotiations.id, roomId), eq(schema.negotiations.status, "agreed"))).returning();
   if (!room) return;

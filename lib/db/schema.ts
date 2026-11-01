@@ -53,6 +53,7 @@ export const vaultItems = pgTable("vault_items", {
   forSale: boolean("for_sale").default(true).notNull(), // goods: can be bought
   rentPerDay: money("rent_per_day"), // goods: can be rented, at this price a day. Empty = not for rent
   deposit: money("deposit"), // held by PayPal during a rental, released when it comes back
+  soldAt: timestamp("sold_at"), // sold and handed over: it moves to "Things I had"
   createdAt: createdAt(),
 });
 
@@ -171,6 +172,7 @@ export const dealLegs = pgTable("deal_legs", {
   problem: jsonb("problem").$type<{ note: string; refund: number; status: "open" | "refunded" | "declined" }>(), // reported after payment
   refundId: text("refund_id"),
   payerPaypalId: text("payer_paypal_id"), // who actually approved in PayPal (PayPal checked their login)
+  confirmed: jsonb("confirmed").$type<Partial<Record<"hold" | "capture" | "payout" | "refund" | "release", { eventId: string; at: string }>>>().default({}).notNull(), // PayPal's signed webhooks, per step
   payerPaypalEmail: text("payer_paypal_email"),
   paidOutAt: timestamp("paid_out_at"),
   feePercent: integer("fee_percent").default(5).notNull(),
@@ -179,7 +181,7 @@ export const dealLegs = pgTable("deal_legs", {
   captureId: text("capture_id"),
   payoutBatchId: text("payout_batch_id"),
   status: text("status", {
-    enum: ["pending", "held", "in_use", "captured", "voided", "paid_out", "refunded"],
+    enum: ["pending", "held", "in_use", "captured", "capture_failed", "voided", "payout_sent", "paid_out", "payout_failed", "refunded"],
   })
     .default("pending")
     .notNull(),

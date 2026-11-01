@@ -10,6 +10,7 @@ import { Problem } from "@/components/payments/Problem";
 import { FEE, feeOf, money, payoutOf } from "@/lib/payments/fees";
 import { mapsLink } from "@/lib/places";
 import type { MeetAt } from "@/lib/deals/meet";
+import { AFTER_HANDOFF, PAID } from "@/lib/payments/states";
 
 type Props = {
   roomId: string;
@@ -19,7 +20,7 @@ type Props = {
   buyerId: string;
   sellerId: string;
   first: (id: string) => string;
-  leg: { id: string; kind: string; payerId: string; payeeId: string; amount: string; deposit: string | null; status: string; handoffCode: string | null; charged: string | null; problem: { note: string; refund: number; status: "open" | "refunded" | "declined" } | null } | null;
+  leg: { id: string; kind: string; payerId: string; payeeId: string; amount: string; deposit: string | null; status: string; handoffCode: string | null; charged: string | null; problem: { note: string; refund: number; status: "open" | "refunded" | "declined" } | null; confirmed: Partial<Record<string, { eventId: string; at: string }>> } | null;
   price: number;
   deposit: number;
   booking: { startsAt: Date; endsAt: Date } | null;
@@ -33,6 +34,11 @@ type Props = {
 };
 
 type State = "done" | "now" | "later";
+
+// A small mark that PayPal's own signed webhook confirmed this step.
+const Confirmed = ({ what = "" }: { what?: string }) => (
+  <span className="inline-flex items-center gap-1 text-xs text-emerald-700"><Check className="size-3" />{what ? `${what} confirmed` : "Confirmed"} by PayPal</span>
+);
 
 // One step of the deal: a check when done, a filled dot when it's the current one.
 function Step({ n, title, state, children }: { n: number; title: string; state: State; children?: React.ReactNode }) {
@@ -58,9 +64,10 @@ export function NextSteps(p: Props) {
   const status = leg?.status ?? "pending";
 
   const accepted = p.waitingOn.length === 0 && !!leg;
-  const paid = ["held", "in_use", "captured", "paid_out"].includes(status);
-  const handedOff = ["captured", "paid_out"].includes(status) || (rental && status === "in_use");
+  const paid = PAID.includes(status);
+  const handedOff = AFTER_HANDOFF.includes(status) || (rental && status === "in_use");
   const paidOut = status === "paid_out";
+  const ok = (stage: "hold" | "capture" | "payout") => !!leg?.confirmed?.[stage]; // PayPal's signed webhook arrived
   const cancelled = status === "voided";
   const otherId = iPay ? p.sellerId : p.buyerId;
   const other = p.first(otherId);
@@ -96,7 +103,8 @@ export function NextSteps(p: Props) {
           )}
         </Step>
 
-        <Step n={3} title={paid ? "Paid, PayPal is holding it" : rental ? "Pay the fee and deposit with PayPal" : "Pay with PayPal"} state={stateOf(paid, accepted && !cancelled)}>
+        <Step n={3} title={paid ? "Paid, PayPal is holding it" : status === "capture_failed" ? "PayPal declined the payment" : rental ? "Pay the fee and deposit with PayPal" : "Pay with PayPal"} state={stateOf(paid, accepted && !cancelled)}>
+          {paid && ok("hold") && <p><Confirmed /></p>}
           <p className="text-muted-foreground">
             {iPay
               ? `You pay ${money(p.price)}${p.deposit ? ` plus a ${money(p.deposit)} deposit you get back` : ""}. PayPal only charges after the ${rental ? "return" : "handoff"}.`
@@ -122,6 +130,7 @@ export function NextSteps(p: Props) {
             </p>
           )}
           {!paid && !cancelled && <p className="text-muted-foreground">The exact address shows here once it&apos;s paid.</p>}
+          {handedOff && status !== "in_use" && ok("capture") && <p><Confirmed what="Charge" /></p>}
           {status === "held" && !iPay && <p className="mt-1 text-muted-foreground">{other} confirms {rental ? "the pickup" : "once they have it"}. Then PayPal pays you.</p>}
           {status === "held" && iPay && leg && (
             <div className="mt-2">
@@ -158,9 +167,10 @@ export function NextSteps(p: Props) {
           {status === "in_use" && iPay && <p className="mt-1">Bring it back by {p.booking ? time(p.booking.endsAt) : "the end date"}; then the deposit is released.</p>}
         </Step>
 
-        <Step n={5} title={paidOut ? `Paid out to ${p.first(p.sellerId)}` : "PayPal pays out"} state={stateOf(paidOut, status === "captured")}>
-          {paidOut && <p className="text-muted-foreground">{p.sellerId === p.viewerId ? `${money(payoutOf(p.price))} sent to your PayPal.` : "All done."}</p>}
-          {leg && ["captured", "paid_out"].includes(status) && (
+        <Step n={5} title={paidOut ? `Paid out to ${p.first(p.sellerId)}` : status === "payout_sent" ? "Payout sent, waiting for PayPal" : status === "payout_failed" ? "Payout didn't go through" : "PayPal pays out"} state={stateOf(paidOut, ["captured", "payout_sent", "payout_failed"].includes(status))}>
+          {paidOut && <p className="text-muted-foreground">{p.sellerId === p.viewerId ? `${money(payoutOf(p.price))} is in your PayPal.` : "All done."} <Confirmed /></p>}
+          {status === "payout_failed" && p.sellerId === p.viewerId && <p className="text-amber-700">PayPal couldn&apos;t deliver it. Check that your PayPal email is right; Unlisted still holds the money for you.</p>}
+          {leg && AFTER_HANDOFF.includes(status) && (
             <Problem legId={leg.id} problem={leg.problem} iPay={iPay} charged={Number(leg.charged ?? leg.amount)} other={other} />
           )}
         </Step>
