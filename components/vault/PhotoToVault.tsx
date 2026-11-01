@@ -21,6 +21,7 @@ export function PhotoToVault() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [thumb, setThumb] = useState("");
+  const [full, setFull] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -31,6 +32,7 @@ export function PhotoToVault() {
     start(async () => {
       const [photo, small] = await Promise.all([shrink(file, 1280), shrink(file, 240, 0.7)]);
       setThumb(small);
+      setFull(photo);
       const result = await suggestFromPhoto(photo.split(",")[1]);
       setError(result.error);
       setSuggestions(result.suggestions);
@@ -75,7 +77,7 @@ export function PhotoToVault() {
               loading={pending}
               disabled={picked.size === 0}
               onClick={() => start(async () => {
-                await addSuggestions(suggestions.filter((_, i) => picked.has(i)), thumb);
+                await addSuggestions(suggestions.filter((_, i) => picked.has(i)), thumb, full);
                 setSuggestions([]);
               })}
             >

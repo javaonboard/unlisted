@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { currentUserId } from "@/lib/session";
@@ -15,6 +16,7 @@ import { notify } from "@/lib/notifications/notify";
 import { postNeed } from "@/lib/intents/mutations";
 import { AiLimitError } from "@/lib/ai/limits";
 import { inSentence } from "@/lib/text/words";
+import { inspectItem } from "@/lib/vault/inspect";
 
 export type Suggestion = {
   kind: "goods" | "skill";
@@ -44,8 +46,10 @@ export async function suggestFromPhoto(base64: string): Promise<{ suggestions: S
   }
 }
 
-export async function addSuggestions(picked: Suggestion[], thumbnail: string) {
+export async function addSuggestions(picked: Suggestion[], thumbnail: string, photo: string) {
   const userId = await currentUserId();
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0] ?? "local";
+  const goods: string[] = [];
   for (const s of picked) {
     const item = await addVaultItem(userId, {
       kind: s.kind,
@@ -58,7 +62,16 @@ export async function addSuggestions(picked: Suggestion[], thumbnail: string) {
       rentPerDay: s.ways?.includes("rent") ? (s.rentPerDay ?? undefined) : undefined,
       deposit: s.ways?.includes("rent") && s.value ? Math.round(s.value * 0.5) : undefined, // half its value, editable
     });
-    if (s.kind === "goods") await setPhoto(item.id, thumbnail);
+    if (s.kind === "goods") {
+      await setPhoto(item.id, thumbnail);
+      goods.push(item.id);
+    }
+  }
+  // The agent checks each new thing in the same photo, after the response so Save stays quick.
+  if (photo.startsWith("data:image/jpeg;base64,")) {
+    after(async () => {
+      for (const id of goods) await inspectItem(id, [photo], false, ip).catch((e) => console.error("[inspect] failed", e?.message));
+    });
   }
   revalidatePath("/my-stuff");
 }
