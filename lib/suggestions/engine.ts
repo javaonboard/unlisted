@@ -5,8 +5,8 @@ import { findDemandFor, findSupplyFor } from "@/lib/matching/matcher";
 import { skillDemand } from "@/lib/vault/demand";
 import { milesBetween } from "@/lib/places";
 import { suggest } from "./suggest";
-import { suggestPlan } from "./plan";
 import { toolOwnersFor } from "./tools";
+import { checkIn } from "@/lib/agent/checkin";
 import { priceItem } from "@/lib/pricing/save";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
 import { inSentence } from "@/lib/text/words";
@@ -106,27 +106,23 @@ export async function onNeedPosted(needId: string) {
   const [need] = await db.select().from(schema.intents).where(eq(schema.intents.id, needId));
   if (!need) return;
   await runWave(needId, 1);
-  await suggestPlan(need.ownerId); // the planning agent spots needs that go together, and what's missing
+  await checkIn(need.ownerId, `they posted “${need.text}”`);
+  // The market changed for people whose things fit this need: their agents take a look too.
+  if (need.type === "sell") return;
+  const owners = [...new Set((await findSupplyFor(needId)).map((i) => i.ownerId))].filter((id) => id !== need.ownerId).slice(0, 5);
+  for (const owner of owners) await checkIn(owner, `someone nearby posted “${need.text}”, which fits something of theirs`);
 }
 
-// Something new in a vault: tell the owner if people already want it.
+// Something new in someone's things: price advice first, then their agent takes a look.
+// People who need it only hear if it's public; a private thing stays private.
 export async function onVaultAdded(itemId: string) {
   const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, itemId));
   if (!item) return;
   await priceItem(itemId).catch((e) => console.error("[price] failed", e?.message)); // web, Channel3 and our own sales
-  await suggestPlan(item.ownerId); // a new thing can complete a plan, e.g. something to sell
-  const demand = await findDemandFor(itemId);
-  if (!demand.length || item.openToOffers) return;
-
-  // Private, but people want it: offer to go public, with the button right on the message.
-  const typical = (await skillDemand(item.category, item.ownerId)).perJob;
-  await suggest({
-    userId: item.ownerId,
-    kind: "go_public",
-    title: item.kind === "skill" ? `${demand.length} ${demand.length === 1 ? "neighbor needs" : "neighbors need"} ${inSentence(item.title)}` : `${demand.length} ${demand.length === 1 ? "person wants" : "people want"} something like your ${inSentence(item.title)}`,
-    body: `${item.kind === "skill" && typical ? `Jobs like this pay ~$${typical}. ` : ""}It's private now. Make it public and I'll talk to the best ${Math.min(3, demand.length)} nearby right away.`,
-    action: { itemId, label: "Make it public" },
-  });
+  await checkIn(item.ownerId, `they added ${item.title}`);
+  if (!item.openToOffers) return;
+  const askers = [...new Set((await findDemandFor(itemId)).map((n) => n.ownerId))].slice(0, 5);
+  for (const asker of askers) await checkIn(asker, `a new listing nearby fits one of their needs: ${item.title}`);
 }
 
 // Needs whose wave had no answer in time move on to the next wave.

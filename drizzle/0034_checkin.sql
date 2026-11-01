@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "checked_in_at" timestamp;

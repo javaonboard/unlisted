@@ -24,6 +24,7 @@ export const users = pgTable("users", {
   paypalEmail: text("paypal_email"),
   bio: text("bio"),
   connectorKey: text("connector_key").unique(), // secret part of the user's MCP connector link
+  checkedInAt: timestamp("checked_in_at"), // the agent's last look at this person's situation
   createdAt: createdAt(),
 });
 
@@ -270,7 +271,7 @@ export const suggestions = pgTable("suggestions", {
   id: id(),
   userId: text("user_id").notNull().references(() => users.id),
   kind: text("kind", {
-    enum: ["open_item", "offer_skill", "add_skill", "raise_offer", "post_need", "plan", "go_public"],
+    enum: ["open_item", "offer_skill", "add_skill", "raise_offer", "post_need", "plan", "go_public", "set_price"],
   }).notNull(),
   title: text("title").notNull(),
   body: text("body").notNull(),

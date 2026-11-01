@@ -5,13 +5,14 @@ import { openRoom, playRoom } from "@/lib/negotiation/room";
 import { rankBuyers, rankSellers } from "@/lib/scout/rank";
 import { scoutNote } from "@/lib/scout/note";
 import { inSentence } from "@/lib/text/words";
+import { postNeed } from "@/lib/intents/mutations";
 
 const SELL_AT_ONCE = 3;
 const BUY_AT_ONCE = 2;
 
 export type PlanChoice = {
   title: string;
-  sells: { needId: string; itemId: string }[];
+  sells: { needId?: string; itemId: string }[]; // a thing to sell, with its "sell" need if there is one
   buyIds: string[];
   helperIds: string[];
   sellOnlyIfBought: boolean;
@@ -24,9 +25,14 @@ export async function startLinkedDeal(ownerId: string, choice: PlanChoice) {
   const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, ownerId));
   const mine = await db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, ownerId), eq(schema.intents.status, "open")));
   const things = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.ownerId, ownerId));
-  const sells = choice.sells
-    .map((s) => ({ need: mine.find((n) => n.id === s.needId && n.type === "sell"), item: things.find((i) => i.id === s.itemId) }))
-    .filter((s): s is { need: (typeof mine)[number]; item: (typeof things)[number] } => !!s.need && !!s.item);
+  // A thing can be sold in a plan even if they never wrote a "sell" need: one is added for it.
+  const sells = [];
+  for (const s of choice.sells) {
+    const item = things.find((i) => i.id === s.itemId);
+    if (!item) continue;
+    const need = mine.find((n) => n.id === s.needId && n.type === "sell") ?? (await postNeed(ownerId, { type: "sell", text: `Sell my ${item.title}`, category: item.category }));
+    sells.push({ need, item });
+  }
   const buys = mine.filter((n) => choice.buyIds.includes(n.id) && n.type === "buy");
   const helpers = mine.filter((n) => choice.helperIds.includes(n.id) && n.type === "request_service");
   if (!sells.length && !buys.length) throw new Error("A plan needs something to sell or to buy.");

@@ -239,6 +239,13 @@
       "when": 1793563478105,
       "tag": "0033_reopened_by",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793564506263,
+      "tag": "0034_checkin",
+      "breakpoints": true
     }
   ]
 }

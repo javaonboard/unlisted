@@ -3,7 +3,7 @@ import { db, schema } from "@/lib/db";
 import { publish } from "@/lib/events/bus";
 
 type NewNeed = {
-  type: "buy" | "rent" | "request_service";
+  type: "buy" | "rent" | "request_service" | "sell";
   days?: number; // rentals
   text: string;
   category: string;

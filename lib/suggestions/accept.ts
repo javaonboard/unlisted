@@ -63,7 +63,7 @@ export async function acceptSuggestion(id: string, userId: string, plan?: PlanPi
       const chosen = plan?.partIds ? parts.filter((p) => plan.partIds!.includes(p.id)) : parts;
       const deal = await startLinkedDeal(userId, {
         title: String(a.title),
-        sells: chosen.filter((p) => p.kind === "sell").map((p) => ({ needId: p.id, itemId: p.itemId! })),
+        sells: chosen.filter((p) => p.kind === "sell").map((p) => ({ needId: p.id.startsWith("item:") ? undefined : p.id, itemId: p.itemId! })),
         buyIds: chosen.filter((p) => p.kind === "buy").map((p) => p.id),
         helperIds: chosen.filter((p) => p.kind === "helper").map((p) => p.id),
         sellOnlyIfBought: plan?.sellOnlyIfBought ?? Boolean(a.sellWaitsForBuy),
@@ -71,9 +71,17 @@ export async function acceptSuggestion(id: string, userId: string, plan?: PlanPi
       await db.insert(schema.notifications).values({ userId, title: `${deal.title}: started`, body: "My agents are talking to the best matches. Each part shows up here as its own deal when it needs you.", link: `/deals/${deal.id}` });
       return "/";
     }
+    case "set_price": {
+      // A lower asking price; the lowest they'd take moves down with it if needed.
+      const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, String(a.itemId)), eq(schema.vaultItems.ownerId, userId)));
+      if (!item) return null;
+      const price = Number(a.price);
+      await db.update(schema.vaultItems).set({ estimatedValue: price.toFixed(2), minPrice: (Math.min(Number(item.minPrice ?? price), Math.round(price * 0.9))).toFixed(2) }).where(eq(schema.vaultItems.id, item.id));
+      return `/my-stuff/${item.id}`;
+    }
     case "post_need": {
       // The suggestion said the budget out loud, so "Yes" agrees to it.
-      const need = await postNeed(userId, { type: a.type as "buy" | "request_service", text: String(a.text), category: String(a.category), maxPrice: a.maxPrice ? Number(a.maxPrice) : undefined, dueInDays: 7, constraints: a.constraints ? JSON.parse(String(a.constraints)) : undefined });
+      const need = await postNeed(userId, { type: a.type as "buy" | "request_service", text: String(a.text), category: String(a.category), maxPrice: a.maxPrice ? Number(a.maxPrice) : undefined, dueInDays: 7, days: a.days ? Number(a.days) : undefined, constraints: a.constraints ? JSON.parse(String(a.constraints)) : undefined });
       return `/needs/${need.id}`;
     }
   }

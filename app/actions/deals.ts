@@ -7,6 +7,7 @@ import { applyOwnerReply, askForNewTime } from "@/lib/negotiation/owner";
 import { acceptDeal } from "@/lib/deals/accept";
 import { nudge } from "@/lib/deals/nudge";
 import { onPlanChanged } from "@/lib/plans/cascade";
+import { checkIn } from "@/lib/agent/checkin";
 import { backOnTheMarket, backOut, type Reason } from "@/lib/deals/backout";
 import { answerProblem, reportProblem } from "@/lib/payments/problems";
 import { changeMeetAt, type MeetAt } from "@/lib/deals/meet";
@@ -51,7 +52,11 @@ export async function backOutAction(roomId: string, reason: Reason, note: string
   const result = await backOut(roomId, userId, reason, note);
   if (result.room) {
     const room = result.room;
-    after(() => backOnTheMarket(room, userId).catch((e) => console.error("[backout] failed", e?.message)));
+    after(async () => {
+      await backOnTheMarket(room, userId).catch((e) => console.error("[backout] failed", e?.message));
+      // A deal fell through: both agents take a fresh look (another buyer, a lower price, another seller).
+      for (const id of [room.buyerId, room.sellerId]) await checkIn(id, "a deal fell through").catch(() => {});
+    });
   }
   revalidatePath("/", "layout");
   return result.error;
