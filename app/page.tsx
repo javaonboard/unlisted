@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { Bot, Check, CircleAlert } from "lucide-react";
 import { db, schema } from "@/lib/db";
 import { currentUserId } from "@/lib/session";
@@ -38,6 +38,23 @@ async function Inbox() {
       }),
     )
   ).filter((t) => t !== null);
+
+  // Talks that ended without a deal: how they ended, so the chat is never lost.
+  const ended = (await db.select().from(schema.negotiations).where(and(or(eq(schema.negotiations.buyerId, userId), eq(schema.negotiations.sellerId, userId)), eq(schema.negotiations.status, "closed"))))
+    .filter((r) => !roomIds.includes(r.id))
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 10);
+  const lastPrices = Object.fromEntries(
+    await Promise.all(
+      ended.map(async (r) => {
+        const moves = (await db.select().from(schema.offers).where(eq(schema.offers.negotiationId, r.id))).filter((m) => m.price && !["ask_owner", "owner_note"].includes(m.kind)).sort((a, b) => b.round - a.round);
+        const mine = moves.find((m) => m.fromUserId === userId)?.price;
+        const theirs = moves.find((m) => m.fromUserId !== userId)?.price;
+        const at = (n: string) => `$${Number(n).toFixed(0)}`;
+        return [r.id, !mine || !theirs ? "" : mine === theirs ? ` · both at ${at(mine)}` : ` · you ${at(mine)}, them ${at(theirs)}`] as const;
+      }),
+    ),
+  );
 
   const open = suggestions.filter((s) => s.status === "new");
   const answered = suggestions.filter((s) => s.status !== "new");
@@ -96,11 +113,17 @@ async function Inbox() {
         </>
       )}
 
-      {(done.length > 0 || answered.length > 0 || updates.length > 4) && (
+      {(done.length > 0 || answered.length > 0 || updates.length > 4 || ended.length > 0) && (
         <details className="mt-6">
-          <summary className="cursor-pointer font-medium">Done ({done.length + answered.length + Math.max(0, updates.length - 4)})</summary>
+          <summary className="cursor-pointer font-medium">Done ({done.length + ended.length + answered.length + Math.max(0, updates.length - 4)})</summary>
           <div className="mt-3 flex flex-col gap-3">
             {done.map((t) => thread(t, false))}
+            {ended.map((r) => (
+              <Link key={r.id} href={`/rooms/${r.id}`} className="rounded-xl border px-3 py-2 text-sm hover:bg-muted/40">
+                <span className="font-medium">{r.label}</span>
+                <span className="block text-muted-foreground">Ended: {r.closedReason ?? "no deal"}{lastPrices[r.id]} · see the chat</span>
+              </Link>
+            ))}
             {answered.map((s) => (
               <p key={s.id} className="rounded-xl border px-3 py-2 text-sm text-muted-foreground">{s.title} · <span className="text-foreground">{s.status === "accepted" ? "You said yes" : "Not now"}</span></p>
             ))}

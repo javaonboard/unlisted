@@ -12,6 +12,7 @@ import { backOnTheMarket, backOut, type Reason } from "@/lib/deals/backout";
 import { answerProblem, reportProblem } from "@/lib/payments/problems";
 import { changeMeetAt, type MeetAt } from "@/lib/deals/meet";
 import { playRoom } from "@/lib/negotiation/room";
+import { dropPart } from "@/lib/deals/drop";
 
 // The owner answers their agent in their own words; the agent then carries on.
 export async function replyToAgent(roomId: string, words: string) {
@@ -71,4 +72,12 @@ export async function reportProblemAction(legId: string, note: string, refund: n
 export async function answerProblemAction(legId: string, agree: boolean) {
   await answerProblem(legId, await currentUserId(), agree);
   revalidatePath("/", "layout");
+}
+
+// Let the rest of a plan go ahead without one stuck part.
+export async function dropPartAction(roomId: string) {
+  const { error, carryOn } = await dropPart(roomId, await currentUserId());
+  if (carryOn) after(() => carryOn().catch((e) => console.error("[plan] carry on failed", e?.message)));
+  revalidatePath("/", "layout");
+  return error;
 }

@@ -8,6 +8,8 @@ import { BackLink } from "@/components/anchors/BackLink";
 import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
 import { FormattedText } from "@/components/FormattedText";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
+import { ConfirmAction } from "@/components/ConfirmAction";
+import { dropPartAction } from "@/app/actions/deals";
 
 const GROUPS = [
   { key: "sell", title: "Selling" },
@@ -41,6 +43,11 @@ async function Plan({ params }: { params: Promise<{ id: string }> }) {
       {GROUPS.map(({ key, title }) => {
         const rows = parts.filter((p) => p.group === key);
         if (!rows.length) return null;
+        // One thing sold, or one need, can be several talks. Parts not agreed can be dropped from the plan.
+        const keyOf = (p: (typeof rows)[number]) => (key === "sell" ? p.room.itemId : p.room.intentId);
+        const droppable = isOwner && parts.length > rows.length
+          ? [...new Set(rows.map(keyOf))].map((k) => rows.find((p) => keyOf(p) === k)!).filter((p) => !rows.some((r) => keyOf(r) === keyOf(p) && r.room.status === "agreed"))
+          : [];
         return (
           <section key={key} className="mb-5">
             <h2 className="mb-2 font-medium">{title}</h2>
@@ -56,6 +63,18 @@ async function Plan({ params }: { params: Promise<{ id: string }> }) {
                 </Link>
               ))}
             </div>
+            {droppable.map((p) => (
+              <div key={p.room.id} className="mt-2">
+                <ConfirmAction
+                  variant="outline"
+                  label={droppable.length > 1 ? `Go ahead without ${p.room.label}` : "Go ahead without this"}
+                  title="Go ahead without this part?"
+                  points={["The rest of the plan carries on now.", "This part leaves the plan and your agent keeps looking for it on its own.", "Nothing is paid or cancelled."]}
+                  confirm="Go ahead"
+                  action={dropPartAction.bind(null, p.room.id)}
+                />
+              </div>
+            ))}
           </section>
         );
       })}
