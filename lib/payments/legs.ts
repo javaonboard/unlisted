@@ -1,11 +1,11 @@
 import { randomInt } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { logActivity } from "@/lib/db/activity";
 import { createAuthorizeOrder, authorizeOrder } from "@/lib/paypal/orders";
 import { captureAuthorization, voidAuthorization } from "@/lib/paypal/payments";
 import { sendPayout } from "@/lib/paypal/payouts";
-import { confirmTime, waitingOn } from "@/lib/bookings";
+import { approve, waitingFor } from "@/lib/deals/approval";
 import { notify } from "@/lib/notifications/notify";
 import { FEE, payoutOf, rentalCapture } from "./fees";
 
@@ -65,7 +65,7 @@ export async function holdPayment(orderId: string, payerId: string) {
 
   const { authorizationId } = await authorizeOrder(orderId);
   await db.update(schema.dealLegs).set({ authorizationId, status: "held", heldAt: new Date() }).where(eq(schema.dealLegs.orderId, orderId));
-  for (const leg of legs) if (leg.roomId) await confirmTime(leg.roomId, payerId); // paying is saying yes to the time
+  for (const leg of legs) if (leg.roomId) await approve(leg.roomId, payerId); // paying is saying yes
   const total = legs.reduce((sum, l) => sum + Number(l.amount) + Number(l.deposit ?? 0), 0);
   await say(legs[0].dealId, payerId, `PayPal hold placed: $${total.toFixed(0)} for ${legs.map((l) => l.description).join(" + ")}. Not charged yet.`, { orderId, authorizationId });
   for (const leg of legs) {
@@ -79,11 +79,19 @@ export async function confirmHandoff(legId: string, payerId: string, code: strin
   const [leg] = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.id, legId));
   if (!leg || leg.payerId !== payerId || leg.status !== "held") throw new Error("This handoff can't be confirmed.");
   if (leg.handoffCode !== code.trim()) throw new Error("That code doesn't match.");
-  if (leg.roomId && (await waitingOn([leg.roomId]))[leg.roomId].length) throw new Error("Both sides need to confirm the time first.");
+  const [room] = leg.roomId ? await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, leg.roomId)) : [];
+  if (room && waitingFor(room).length) throw new Error("Both sides need to approve the deal first.");
+
+  // Claimed in one step, so a double click can't run the handoff twice.
+  const [claimed] = await db
+    .update(schema.dealLegs)
+    .set({ handoffAt: new Date(), ...(leg.kind === "rental" ? { status: "in_use" as const } : {}) })
+    .where(and(eq(schema.dealLegs.id, legId), eq(schema.dealLegs.status, "held"), isNull(schema.dealLegs.handoffAt)))
+    .returning();
+  if (!claimed) return;
 
   // A rental starts at pickup. The money moves when it comes back (confirmReturn).
   if (leg.kind === "rental") {
-    await db.update(schema.dealLegs).set({ status: "in_use", handoffAt: new Date() }).where(eq(schema.dealLegs.id, legId));
     await notify(payerId, "Picked up", `Enjoy it. The deposit is released when ${leg.description.toLowerCase()} goes back.`, leg.roomId);
     await notify(leg.payeeId, "It's out on rent", "Confirm here when it comes back. PayPal then takes the fee and releases the deposit.", leg.roomId);
     return;
@@ -93,8 +101,11 @@ export async function confirmHandoff(legId: string, payerId: string, code: strin
   const sameHold = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.authorizationId, leg.authorizationId!));
   const final = sameHold.every((l) => l.id === leg.id || l.status !== "held");
 
-  const { captureId } = await captureAuthorization(leg.authorizationId!, leg.amount, final, `capture-${leg.id}`);
-  await db.update(schema.dealLegs).set({ captureId, status: "captured", handoffAt: new Date(), capturedAt: new Date(), charged: leg.amount }).where(eq(schema.dealLegs.id, legId));
+  const { captureId } = await captureAuthorization(leg.authorizationId!, leg.amount, final, `capture-${leg.id}`).catch(async (error) => {
+    await db.update(schema.dealLegs).set({ handoffAt: null }).where(eq(schema.dealLegs.id, legId)); // let them try again
+    throw error;
+  });
+  await db.update(schema.dealLegs).set({ captureId, status: "captured", capturedAt: new Date(), charged: leg.amount }).where(eq(schema.dealLegs.id, legId));
   await say(leg.dealId, payerId, `Handoff confirmed for ${leg.description}. PayPal captured $${Number(leg.amount).toFixed(0)}.`, { legId, captureId });
   await notify(payerId, "Handoff done", `PayPal charged $${Number(leg.amount).toFixed(0)}.`, leg.roomId);
 
@@ -113,10 +124,19 @@ export async function confirmReturn(legId: string, payeeId: string, goodShape: b
   const [leg] = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.id, legId));
   if (!leg || leg.payeeId !== payeeId || leg.kind !== "rental" || leg.status !== "in_use") throw new Error("This return can't be confirmed.");
   const take = rentalCapture(Number(leg.amount), Number(leg.deposit ?? 0), goodShape);
+  const [claimed] = await db
+    .update(schema.dealLegs)
+    .set({ capturedAt: new Date() })
+    .where(and(eq(schema.dealLegs.id, legId), eq(schema.dealLegs.status, "in_use"), isNull(schema.dealLegs.capturedAt)))
+    .returning();
+  if (!claimed) return; // already being confirmed
 
   const sameHold = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.authorizationId, leg.authorizationId!));
   const final = sameHold.every((l) => l.id === leg.id || !["held", "in_use"].includes(l.status));
-  const { captureId } = await captureAuthorization(leg.authorizationId!, money(take), final, `capture-${leg.id}`);
+  const { captureId } = await captureAuthorization(leg.authorizationId!, money(take), final, `capture-${leg.id}`).catch(async (error) => {
+    await db.update(schema.dealLegs).set({ capturedAt: null }).where(eq(schema.dealLegs.id, legId));
+    throw error;
+  });
   await db.update(schema.dealLegs).set({ captureId, status: "captured", capturedAt: new Date(), charged: money(take) }).where(eq(schema.dealLegs.id, legId));
   await notify(leg.payerId, goodShape ? "Returned, deposit released" : "Returned with a problem", goodShape ? `PayPal charged the $${take.toFixed(0)} fee and released your deposit.` : `The owner kept the deposit. PayPal charged $${take.toFixed(0)}.`, leg.roomId);
 
@@ -131,9 +151,13 @@ export async function confirmReturn(legId: string, payeeId: string, goodShape: b
 // Before the handoff, the payer can cancel: the hold is released and nothing is charged.
 export async function cancelHold(legId: string, payerId: string) {
   const [leg] = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.id, legId));
-  if (!leg || leg.payerId !== payerId || leg.status !== "held") throw new Error("Only an untouched hold can be released.");
-  await voidAuthorization(leg.authorizationId!);
-  await db.update(schema.dealLegs).set({ status: "voided" }).where(eq(schema.dealLegs.id, legId));
+  if (!leg || leg.payerId !== payerId) throw new Error("Only an untouched hold can be released.");
+  const [claimed] = await db.update(schema.dealLegs).set({ status: "voided" }).where(and(eq(schema.dealLegs.id, legId), eq(schema.dealLegs.status, "held"), isNull(schema.dealLegs.handoffAt))).returning();
+  if (!claimed) return; // already released, or the handoff happened
+  await voidAuthorization(leg.authorizationId!).catch(async (error) => {
+    await db.update(schema.dealLegs).set({ status: "held" }).where(eq(schema.dealLegs.id, legId));
+    throw error;
+  });
   await say(leg.dealId, payerId, "Hold released. Nothing was charged.");
   await notify(payerId, "Hold released", "Nothing was charged.", leg.roomId);
   await notify(leg.payeeId, "They cancelled", "The buyer released the hold before the handoff. Nothing was charged.", leg.roomId);

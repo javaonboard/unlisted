@@ -1,11 +1,11 @@
 import { Suspense } from "react";
+import { SubmitButton } from "@/components/ui/submit-button";
 import Link from "next/link";
 import { currentUserId } from "@/lib/session";
 import { getUser } from "@/lib/users/queries";
 import { myBookings, waitingOn } from "@/lib/bookings";
 import { BackLink } from "@/components/anchors/BackLink";
 import { ScheduleView } from "@/components/bryntum/ScheduleView";
-import { Button } from "@/components/ui/button";
 import { freeTimes } from "@/lib/availability";
 import { clearFreeAction, markFreeAction, moveBookingAction } from "@/app/actions/schedule";
 import { getRoomView } from "@/lib/anchors/queries";
@@ -46,7 +46,7 @@ async function MySchedule() {
       />
       <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
         <span>Drag across empty time to mark yourself free; agents then only pick times inside it. Drag a bar to ask for another time.</span>
-        {free.length > 0 && <form action={clearFreeAction}><Button size="sm" variant="ghost">Clear free hours</Button></form>}
+        {free.length > 0 && <form action={clearFreeAction}><SubmitButton size="sm" variant="ghost">Clear free hours</SubmitButton></form>}
       </div>
       <ul className="mt-4 flex flex-col gap-2 text-sm">
         {upcoming.length === 0 && <li className="text-muted-foreground">Nothing booked this week.</li>}

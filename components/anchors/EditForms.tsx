@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 const field = "h-9 rounded-full border bg-background px-3";
 
@@ -21,7 +21,7 @@ export function EditItem({ action, item }: { action: (f: FormData) => Promise<vo
           </>
         )}
         <label className="flex items-center gap-2"><input name="openToOffers" type="checkbox" defaultChecked={item.openToOffers} className="size-4 accent-primary" /> Open to offers (otherwise private)</label>
-        <div className="sm:col-span-2"><Button size="sm" type="submit">Save</Button></div>
+        <div className="sm:col-span-2"><SubmitButton size="sm">Save</SubmitButton></div>
       </form>
     </details>
   );
@@ -35,7 +35,7 @@ export function EditNeed({ action, need }: { action: (f: FormData) => Promise<vo
         <label className="flex flex-col gap-1 sm:col-span-2">What you need<input name="text" defaultValue={need.text} className={field} /></label>
         <label className="flex flex-col gap-1">Budget ($, only you see it)<input name="maxPrice" type="number" min={0} defaultValue={need.maxPrice ? Number(need.maxPrice) : ""} className={field} /></label>
         <label className="flex flex-col gap-1">By<input name="dueAt" type="date" defaultValue={need.dueAt ? need.dueAt.toISOString().slice(0, 10) : ""} className={field} /></label>
-        <div className="sm:col-span-2"><Button size="sm" type="submit">Save</Button></div>
+        <div className="sm:col-span-2"><SubmitButton size="sm">Save</SubmitButton></div>
       </form>
     </details>
   );

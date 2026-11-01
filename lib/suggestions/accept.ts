@@ -14,9 +14,13 @@ export type PlanPick = { partIds?: string[]; sellOnlyIfBought?: boolean };
 // "Yes" on a suggestion. Returns where to go next, if anywhere.
 // A plan can come with the owner's own choices ("Change the plan").
 export async function acceptSuggestion(id: string, userId: string, plan?: PlanPick): Promise<string | null> {
-  const [s] = await db.select().from(schema.suggestions).where(eq(schema.suggestions.id, id));
-  if (!s || s.userId !== userId || s.status !== "new") return null;
-  await db.update(schema.suggestions).set({ status: "accepted" }).where(eq(schema.suggestions.id, id));
+  // Claimed in one step, so a double click (or two tabs) can only run it once.
+  const [s] = await db
+    .update(schema.suggestions)
+    .set({ status: "accepted" })
+    .where(and(eq(schema.suggestions.id, id), eq(schema.suggestions.userId, userId), eq(schema.suggestions.status, "new")))
+    .returning();
+  if (!s) return null;
   const a = s.action;
 
   const talk = async (itemId: string, needId: string) => {
@@ -76,8 +80,10 @@ export async function acceptSuggestion(id: string, userId: string, plan?: PlanPi
 }
 
 export async function dismissSuggestion(id: string, userId: string) {
-  const [s] = await db.select().from(schema.suggestions).where(eq(schema.suggestions.id, id));
-  if (!s || s.userId !== userId) return;
-  await db.update(schema.suggestions).set({ status: "dismissed" }).where(eq(schema.suggestions.id, id));
-  if (s.needId) await onDismissed(s.needId, s.wave);
+  const [s] = await db
+    .update(schema.suggestions)
+    .set({ status: "dismissed" })
+    .where(and(eq(schema.suggestions.id, id), eq(schema.suggestions.userId, userId), eq(schema.suggestions.status, "new")))
+    .returning();
+  if (s?.needId) await onDismissed(s.needId, s.wave);
 }

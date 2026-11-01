@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { FormattedText } from "@/components/FormattedText";
 import { Lightbulb } from "lucide-react";
 import { IconCircle } from "@/components/anchors/Badges";
@@ -11,9 +11,9 @@ export function SuggestionCard({ s }: { s: { id: string; kind: string; title: st
       <p className="flex items-center gap-2 font-medium"><IconCircle icon={Lightbulb} size="size-7" /> {s.title}</p>
       <FormattedText text={s.body} className="mt-1 text-sm text-muted-foreground" />
       <div className="mt-3 flex flex-wrap gap-2">
-        <form action={acceptSuggestionAction.bind(null, s.id)}><Button size="sm" type="submit">{String(s.action.label ?? "Yes")}</Button></form>
+        <form action={acceptSuggestionAction.bind(null, s.id)}><SubmitButton size="sm">{String(s.action.label ?? "Yes")}</SubmitButton></form>
         {s.kind === "plan" && <PlanChoices id={s.id} parts={JSON.parse(String(s.action.parts))} linked={Boolean(s.action.sellWaitsForBuy)} />}
-        <form action={dismissSuggestionAction.bind(null, s.id)}><Button size="sm" variant="ghost" type="submit">Not now</Button></form>
+        <form action={dismissSuggestionAction.bind(null, s.id)}><SubmitButton size="sm" variant="ghost">Not now</SubmitButton></form>
       </div>
     </div>
   );

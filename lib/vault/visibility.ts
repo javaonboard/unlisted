@@ -11,7 +11,7 @@ const AT_ONCE = 3; // talk to the best few, not everyone
 // right away. Both sides hear about it. Everyone else finds it later through their own suggestions.
 export async function goPublic(ownerId: string, itemId: string) {
   const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, ownerId)));
-  if (!item) return [];
+  if (!item || item.openToOffers) return []; // already public: nothing to start again
   await db.update(schema.vaultItems).set({ openToOffers: true }).where(eq(schema.vaultItems.id, itemId));
 
   const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, ownerId));

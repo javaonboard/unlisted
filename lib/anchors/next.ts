@@ -54,9 +54,9 @@ export function nextFor(data: RoomView, viewerId: string): Next {
 
   // In a plan, a sale can wait for the purchase. Then: both accept, the buyer pays, the handoff.
   if (data.blockedBy) return { state: "waiting", label: `Waiting for ${data.blockedBy}` };
-  if (data.waitingOn.includes(viewerId)) return { state: "needs_you", label: "Accept the deal" };
+  if (data.waitingOn.includes(viewerId)) return { state: "needs_you", label: "Approve the deal" };
   const notMe = data.waitingOn.filter((id) => id !== viewerId);
-  if (notMe.length) return { state: "waiting", label: `Waiting for ${notMe.map(first).join(" and ")} to accept` };
+  if (notMe.length) return { state: "waiting", label: `Waiting for ${notMe.map(first).join(" and ")} to approve` };
   if (!leg || leg.status === "pending") {
     return room.buyerId === viewerId ? { state: "needs_you", label: "Pay with PayPal" } : { state: "waiting", label: `Waiting for ${other} to pay` };
   }

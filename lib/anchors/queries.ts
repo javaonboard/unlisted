@@ -1,6 +1,7 @@
 import { asc, eq, inArray } from "drizzle-orm";
 import { distanceText } from "@/lib/places";
 import { blockedBy } from "@/lib/deals/dependency";
+import { waitingFor } from "@/lib/deals/approval";
 import { db, schema } from "@/lib/db";
 import { meetAtOf, meetingPoint, placesFor } from "@/lib/deals/meet";
 
@@ -90,7 +91,7 @@ export async function getRoomView(roomId: string, viewerId: string) {
     stops: room.stops,
     blockedBy: blockedBy(room, deal, all), // in a plan: what this deal is still waiting for
     booking: bookings.find((b) => b.userId === viewerId) ?? null,
-    waitingOn: bookings.filter((b) => !b.confirmedAt).map((b) => b.userId), // who still has to confirm the time
+    waitingOn: waitingFor(room), // who still has to approve the deal
     when: agreedTerms?.when ?? null,
     place: agreedTerms?.place ?? null,
     childSummaries: await Promise.all(

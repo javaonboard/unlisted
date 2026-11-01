@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 // "How far will you go?" with a small number box.
 export function RangeForm({ action, miles, label }: { action: (form: FormData) => Promise<void>; miles: number; label: string }) {
@@ -7,7 +7,7 @@ export function RangeForm({ action, miles, label }: { action: (form: FormData) =
       <span>{label}</span>
       <input name="miles" type="number" min={0} max={50} defaultValue={miles} className="h-8 w-16 rounded-full border bg-background px-3" />
       <span>mi</span>
-      <Button size="sm" variant="outline" type="submit">Save</Button>
+      <SubmitButton size="sm" variant="outline">Save</SubmitButton>
     </form>
   );
 }

@@ -18,7 +18,8 @@ export function TellAgent() {
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const complete = cards.length > 0 && cards.every((c) => missing(c).length === 0);
-  const reset = () => { setCards([]); setSaid([]); setQuestion(null); setText(""); };
+  const [saveKey, setSaveKey] = useState(() => crypto.randomUUID()); // one key per Save, so a double click counts once
+  const reset = () => { setCards([]); setSaid([]); setQuestion(null); setText(""); setSaveKey(crypto.randomUUID()); };
 
   return (
     <div className="rounded-2xl border p-4">
@@ -44,9 +45,10 @@ export function TellAgent() {
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={reset}>Cancel</Button>
             <Button
+              loading={pending && cards.length > 0 && complete}
               disabled={pending || !complete}
               onClick={() => start(async () => {
-                await saveCards(cards, said.join(" "));
+                await saveCards(cards, said.join(" "), saveKey);
                 reset();
               })}
             >
@@ -80,7 +82,7 @@ export function TellAgent() {
           className="h-10 flex-1 rounded-full border bg-background px-4 text-sm"
           disabled={pending}
         />
-        <Button type="submit" disabled={pending || !text.trim()}>{pending ? "…" : "Send"}</Button>
+        <Button type="submit" loading={pending} disabled={!text.trim()}>Send</Button>
       </form>
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
     </div>

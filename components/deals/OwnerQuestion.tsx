@@ -8,15 +8,16 @@ import { replyToAgent } from "@/app/actions/deals";
 export function OwnerQuestion({ roomId, suggestedPrice }: { roomId: string; suggestedPrice: number | null }) {
   const [words, setWords] = useState("");
   const [pending, start] = useTransition();
-  const send = (text: string) => text.trim() && start(() => replyToAgent(roomId, text));
+  const [busy, setBusy] = useState("");
+  const send = (key: string, text: string) => { if (!text.trim()) return; setBusy(key); start(() => replyToAgent(roomId, text)); };
 
   return (
     <div className="mt-2 flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={pending} onClick={() => send(suggestedPrice ? `Yes, $${suggestedPrice} is fine.` : "Yes, go ahead.")}>Yes</Button>
-        <Button size="sm" variant="outline" disabled={pending} onClick={() => send("No, keep my original limit.")}>No</Button>
+        <Button size="sm" loading={pending && busy === "yes"} disabled={pending} onClick={() => send("yes", suggestedPrice ? `Yes, $${suggestedPrice} is fine.` : "Yes, go ahead.")}>Yes</Button>
+        <Button size="sm" variant="outline" loading={pending && busy === "no"} disabled={pending} onClick={() => send("no", "No, keep my original limit.")}>No</Button>
       </div>
-      <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); send(words); }}>
+      <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); send("words", words); }}>
         <input
           value={words}
           onChange={(e) => setWords(e.target.value)}
@@ -24,7 +25,7 @@ export function OwnerQuestion({ roomId, suggestedPrice }: { roomId: string; sugg
           className="h-8 flex-1 rounded-full border bg-background px-3 text-sm"
           disabled={pending}
         />
-        <Button size="sm" type="submit" variant="secondary" disabled={pending || !words.trim()}>Send</Button>
+        <Button size="sm" type="submit" variant="secondary" loading={pending && busy === "words"} disabled={pending || !words.trim()}>Send</Button>
       </form>
     </div>
   );

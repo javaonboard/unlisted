@@ -28,14 +28,14 @@ test("each side sees who they are in the deal", () => {
 
 test("first step for both sides: accept the deal and its time", () => {
   const v = view({ hasLegs: false, leg: null, deal: null, waitingOn: ["gus", "sara"] });
-  assert.deepEqual(nextFor(v, "gus"), { state: "needs_you", label: "Accept the deal" });
-  assert.deepEqual(nextFor(v, "sara"), { state: "needs_you", label: "Accept the deal" });
+  assert.deepEqual(nextFor(v, "gus"), { state: "needs_you", label: "Approve the deal" });
+  assert.deepEqual(nextFor(v, "sara"), { state: "needs_you", label: "Approve the deal" });
 });
 
 test("after the seller accepts, the buyer still accepts before paying", () => {
   const v = view({ waitingOn: ["sara"] });
-  assert.deepEqual(nextFor(v, "sara"), { state: "needs_you", label: "Accept the deal" });
-  assert.deepEqual(nextFor(v, "gus"), { state: "waiting", label: "Waiting for Sara to accept" });
+  assert.deepEqual(nextFor(v, "sara"), { state: "needs_you", label: "Approve the deal" });
+  assert.deepEqual(nextFor(v, "gus"), { state: "waiting", label: "Waiting for Sara to approve" });
 });
 
 test("both accepted: the buyer pays with PayPal", () => {
@@ -51,8 +51,8 @@ test("held and accepted by both: the handoff is next, nothing needs anyone", () 
 
 test("a new time after paying is accepted again by whoever didn't ask for it", () => {
   const v = view({ waitingOn: ["sara"], leg: { id: "l1", payerId: "sara", payeeId: "gus", status: "held" } });
-  assert.equal(nextFor(v, "sara").label, "Accept the deal");
-  assert.equal(nextFor(v, "gus").label, "Waiting for Sara to accept");
+  assert.equal(nextFor(v, "sara").label, "Approve the deal");
+  assert.equal(nextFor(v, "gus").label, "Waiting for Sara to approve");
 });
 
 test("paid out or cancelled deals are done", () => {

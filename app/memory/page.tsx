@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { currentUserId } from "@/lib/session";
 import { listFacts } from "@/lib/memory/queries";
 import { BackLink } from "@/components/anchors/BackLink";
@@ -17,14 +17,14 @@ async function Facts() {
         <div key={f.id} className="rounded-2xl border p-3 text-sm">
           <form action={editFactAction.bind(null, f.id)} className="flex gap-2">
             <input name="fact" defaultValue={f.fact} className="h-8 flex-1 rounded-full border bg-background px-3" />
-            <Button size="sm" variant="outline" type="submit">Save</Button>
+            <SubmitButton size="sm" variant="outline">Save</SubmitButton>
           </form>
           <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
             <span>{f.verified ? "confirmed by you" : `guess · ${Math.round(f.confidence * 100)}% sure`}</span>
             <span>from {f.source}</span>
             <span className="ml-auto flex gap-2">
-              {!f.verified && <form action={confirmFactAction.bind(null, f.id)}><Button size="sm" variant="ghost" type="submit">That&apos;s right</Button></form>}
-              <form action={deleteFactAction.bind(null, f.id)}><Button size="sm" variant="ghost" type="submit">Forget</Button></form>
+              {!f.verified && <form action={confirmFactAction.bind(null, f.id)}><SubmitButton size="sm" variant="ghost">That&apos;s right</SubmitButton></form>}
+              <form action={deleteFactAction.bind(null, f.id)}><SubmitButton size="sm" variant="ghost">Forget</SubmitButton></form>
             </span>
           </div>
         </div>
@@ -42,7 +42,7 @@ async function Address() {
       <p className="mt-1 text-muted-foreground">Private. Agents only see your neighborhood ({user?.area}). It&apos;s shown to the other person only after both of you accept and the payment is held.</p>
       <div className="mt-3 flex gap-2">
         <input name="address" defaultValue={user?.address ?? ""} placeholder="Street, unit, city" className="h-10 flex-1 rounded-full border bg-background px-4" />
-        <Button type="submit" variant="outline">Save</Button>
+        <SubmitButton variant="outline">Save</SubmitButton>
       </div>
     </form>
   );

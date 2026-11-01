@@ -10,6 +10,7 @@ import { understandText } from "@/lib/vault/understand";
 import { asRecord, missing, type Card } from "@/lib/vault/card";
 import { addFreeTime } from "@/lib/availability";
 import { db, schema } from "@/lib/db";
+import { once } from "@/lib/db/once";
 import { notify } from "@/lib/notifications/notify";
 import { postNeed } from "@/lib/intents/mutations";
 import { AiLimitError } from "@/lib/ai/limits";
@@ -72,9 +73,10 @@ export async function understandAction(text: string): Promise<{ cards: Card[]; q
   }
 }
 
-export async function saveCards(cards: Card[], said: string) {
+export async function saveCards(cards: Card[], said: string, key: string) {
   if (cards.some((c) => missing(c).length)) throw new Error("Some must-haves are still missing.");
   const userId = await currentUserId();
+  if (!(await once(`save:${userId}:${key}`))) return; // a second click on the same Save does nothing
   await db.insert(schema.notifications).values({ userId, title: "", body: said, fromMe: true });
   for (const c of cards) {
     if (c.kind === "need") {

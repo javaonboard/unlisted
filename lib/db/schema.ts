@@ -103,6 +103,9 @@ export const negotiations = pgTable("negotiations", {
   label: text("label"), // thread name in the deal channel, e.g. "Sectional → Ben"
   meetAt: text("meet_at", { enum: ["seller_home", "buyer_home", "public"] }), // set by hand; otherwise what the agents agreed
   stops: jsonb("stops").$type<string[]>().default([]).notNull(), // a helper's job, stop by stop, built from the agreed handoffs
+  buyerApprovedAt: timestamp("buyer_approved_at"), // each side's own yes to the agreed deal, time and place
+  sellerApprovedAt: timestamp("seller_approved_at"),
+  nudgedAt: timestamp("nudged_at"), // last "poke", so nobody gets spammed
   status: text("status", { enum: ["open", "waiting_owner", "agreed", "closed"] })
     .default("open")
     .notNull(),
@@ -265,5 +268,11 @@ export const suggestions = pgTable("suggestions", {
   needId: uuid("need_id").references(() => intents.id), // the demand this answers, if any
   wave: integer("wave").default(1).notNull(),
   status: text("status", { enum: ["new", "accepted", "dismissed"] }).default("new").notNull(),
+  createdAt: createdAt(),
+});
+
+// Click keys already handled, so a repeated click (double click, retry, two tabs) does nothing the second time.
+export const actionKeys = pgTable("action_keys", {
+  key: text("key").primaryKey(),
   createdAt: createdAt(),
 });

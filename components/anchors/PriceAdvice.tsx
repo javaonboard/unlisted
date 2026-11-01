@@ -1,12 +1,13 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import type { PriceCheck } from "@/lib/pricing/check";
 
 // The agent's price advice with where it came from. "Use it" fills the owner's price; they can still change it.
 export function PriceAdvice({ check, onCheck, onUse, useLabel }: { check: PriceCheck | null; onCheck: () => Promise<void>; onUse?: () => Promise<void>; useLabel: string }) {
   const [pending, start] = useTransition();
+  const [busy, setBusy] = useState("");
   return (
     <div className="mt-3 rounded-xl bg-secondary p-3 text-sm">
       {check ? (
@@ -26,8 +27,8 @@ export function PriceAdvice({ check, onCheck, onUse, useLabel }: { check: PriceC
         <p className="text-muted-foreground">No price check yet.</p>
       )}
       <div className="mt-2 flex flex-wrap gap-2">
-        {check && onUse && <Button size="sm" variant="secondary" disabled={pending} onClick={() => start(onUse)}>{useLabel} ${check.suggested.toFixed(0)}</Button>}
-        <Button size="sm" variant="outline" disabled={pending} onClick={() => start(onCheck)}>{pending ? "Checking the web…" : check ? "Check again" : "Check the price"}</Button>
+        {check && onUse && <Button size="sm" variant="secondary" loading={pending && busy === "use"} disabled={pending} onClick={() => { setBusy("use"); start(onUse); }}>{useLabel} ${check.suggested.toFixed(0)}</Button>}
+        <Button size="sm" variant="outline" loading={pending && busy === "check"} disabled={pending} onClick={() => { setBusy("check"); start(onCheck); }}>{pending && busy === "check" ? "Checking the web…" : check ? "Check again" : "Check the price"}</Button>
       </div>
     </div>
   );

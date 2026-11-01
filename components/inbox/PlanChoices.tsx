@@ -13,6 +13,7 @@ export function PlanChoices({ id, parts, linked: linkedByAgent }: { id: string; 
   const [picked, setPicked] = useState(parts.map((p) => p.id));
   const [linked, setLinked] = useState(linkedByAgent);
   const [words, setWords] = useState("");
+  const [busy, setBusy] = useState("");
   const [pending, start] = useTransition();
 
   if (!open) return <Button size="sm" variant="outline" onClick={() => setOpen(true)}>Change the plan</Button>;
@@ -33,7 +34,7 @@ export function PlanChoices({ id, parts, linked: linkedByAgent }: { id: string; 
           Only sell once the purchase works out
         </label>
       )}
-      <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (words.trim()) start(() => replanAction(id, words)); }}>
+      <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (words.trim()) { setBusy("ask"); start(() => replanAction(id, words)); } }}>
         <input
           value={words}
           onChange={(e) => setWords(e.target.value)}
@@ -41,10 +42,10 @@ export function PlanChoices({ id, parts, linked: linkedByAgent }: { id: string; 
           className="h-8 flex-1 rounded-full border bg-background px-3"
           disabled={pending}
         />
-        <Button size="sm" type="submit" variant="secondary" disabled={pending || !words.trim()}>{pending ? "Re-planning…" : "Ask"}</Button>
+        <Button size="sm" type="submit" variant="secondary" loading={pending && busy === "ask"} disabled={pending || !words.trim()}>{pending && busy === "ask" ? "Re-planning…" : "Ask"}</Button>
       </form>
       <div className="flex gap-2">
-        <Button size="sm" disabled={pending || (!has("sell") && !has("buy"))} onClick={() => start(() => acceptPlanAction(id, { partIds: picked, sellOnlyIfBought: has("sell") && has("buy") && linked }))}>
+        <Button size="sm" loading={pending && busy === "start"} disabled={pending || (!has("sell") && !has("buy"))} onClick={() => { setBusy("start"); start(() => acceptPlanAction(id, { partIds: picked, sellOnlyIfBought: has("sell") && has("buy") && linked })); }}>
           Start this plan
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>

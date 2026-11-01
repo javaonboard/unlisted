@@ -6,7 +6,7 @@ import { db, schema } from "@/lib/db";
 import { currentUserId } from "@/lib/session";
 import { findDemandFor } from "@/lib/matching/matcher";
 import { statusLine } from "@/lib/anchors/status";
-import { toggleVisibilityAction } from "@/app/actions/edit";
+import { setVisibilityAction } from "@/app/actions/edit";
 import { VisibilitySwitch } from "@/components/anchors/VisibilitySwitch";
 import { rangeOfNeed, rangeOfOffer, rangeText } from "@/lib/places";
 import { ChevronRight, ClipboardList, Compass } from "lucide-react";
@@ -53,7 +53,7 @@ async function MyStuff() {
             </div>
           </Link>
           <div className="px-3 pb-3 pl-20">
-            <VisibilitySwitch action={toggleVisibilityAction.bind(null, item.id)} open={item.openToOffers} />
+            <VisibilitySwitch action={setVisibilityAction.bind(null, item.id, !item.openToOffers)} open={item.openToOffers} />
           </div>
           </div>
         ))}

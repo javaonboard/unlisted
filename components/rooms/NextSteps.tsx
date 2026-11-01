@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Check, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cancelHoldAction } from "@/app/actions/payments";
 import { PayButton } from "@/components/payments/PayButton";
 import { ConfirmHandoff, ConfirmReturn } from "@/components/payments/LegActions";
 import { AcceptDeal } from "@/components/rooms/AcceptDeal";
+import { Nudge } from "@/components/rooms/Nudge";
 import { FEE, feeOf, money, payoutOf } from "@/lib/payments/fees";
 import { mapsLink } from "@/lib/places";
 import type { MeetAt } from "@/lib/deals/meet";
@@ -60,13 +61,16 @@ export function NextSteps(p: Props) {
   const handedOff = ["captured", "paid_out"].includes(status) || (rental && status === "in_use");
   const paidOut = status === "paid_out";
   const cancelled = status === "voided";
-  const others = p.waitingOn.filter((id) => id !== p.viewerId).map(p.first).join(" and ");
+  const otherId = iPay ? p.sellerId : p.buyerId;
+  const other = p.first(otherId);
+  const iApproved = !p.waitingOn.includes(p.viewerId);
+  const theyApproved = !p.waitingOn.includes(otherId);
   const stateOf = (done: boolean, ready: boolean): State => (done ? "done" : ready ? "now" : "later");
 
   return (
     <div className="mt-3 rounded-2xl border p-4 text-sm">
       <ol className="flex flex-col gap-3">
-        <Step n={1} title={`Deal agreed at ${money(p.price)}`} state="done">
+        <Step n={1} title={`Agents agreed on ${money(p.price)}`} state="done">
           <p className="text-muted-foreground">
             {p.booking ? `${time(p.booking.startsAt)}${rental ? ` to ${time(p.booking.endsAt)}` : ""}` : ""}
             {p.meet ? ` · ${p.meet.label}` : ""}
@@ -75,12 +79,17 @@ export function NextSteps(p: Props) {
           {p.blockedBy && <p className="mt-1 text-amber-700">Part of a plan: waiting for {p.blockedBy}.</p>}
         </Step>
 
-        <Step n={2} title={accepted ? "Accepted by both" : "Accept the deal, time and place"} state={stateOf(accepted, !p.blockedBy)}>
-          {!accepted && others && !p.waitingOn.includes(p.viewerId) && <p className="text-muted-foreground">You accepted. Waiting for {others}.</p>}
+        <Step n={2} title={accepted ? "Approved by both" : iApproved ? "You approved" : "Approve the deal, time and place"} state={stateOf(accepted, !p.blockedBy)}>
+          {!p.blockedBy && !cancelled && (
+            <p className="flex flex-wrap items-center gap-2 text-muted-foreground">
+              {other}: {theyApproved ? "approved" : "hasn't approved yet"}
+              {iApproved && !theyApproved && <Nudge roomId={p.roomId} />}
+            </p>
+          )}
           {!handedOff && !cancelled && p.booking && p.meet && !p.blockedBy && (
             <AcceptDeal
               roomId={p.roomId}
-              canAccept={p.waitingOn.includes(p.viewerId)}
+              canAccept={!iApproved}
               place={{ meetAt: p.meet.meetAt, isSeller: p.sellerId === p.viewerId, other: p.first(iPay ? p.sellerId : p.buyerId), allowed: p.places }}
             />
           )}
@@ -94,6 +103,12 @@ export function NextSteps(p: Props) {
           </p>
           {accepted && leg && status === "pending" && iPay && (
             <div className="mt-2"><PayButton legId={leg.id} clientId={p.clientId} total={Number(leg.amount)} deposit={Number(leg.deposit ?? 0)} /></div>
+          )}
+          {accepted && !iPay && !cancelled && (
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
+              {other}: {paid ? "paid, PayPal is holding it" : "hasn't paid yet"}
+              {!paid && <Nudge roomId={p.roomId} />}
+            </p>
           )}
           {cancelled && <p className="mt-1">Hold released. Nothing was charged.</p>}
         </Step>
@@ -110,7 +125,7 @@ export function NextSteps(p: Props) {
           {status === "held" && iPay && leg && <ConfirmHandoff legId={leg.id} />}
           {status === "held" && iPay && leg && (
             <form action={cancelHoldAction.bind(null, leg.id)} className="mt-1">
-              <Button size="sm" variant="ghost">Cancel and release the hold</Button>
+              <SubmitButton size="sm" variant="ghost">Cancel and release the hold</SubmitButton>
             </form>
           )}
           {status === "in_use" && !iPay && leg && <ConfirmReturn legId={leg.id} deposit={Number(leg.deposit ?? 0)} />}

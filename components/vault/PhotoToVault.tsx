@@ -72,7 +72,8 @@ export function PhotoToVault() {
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setSuggestions([])}>Cancel</Button>
             <Button
-              disabled={pending || picked.size === 0}
+              loading={pending}
+              disabled={picked.size === 0}
               onClick={() => start(async () => {
                 await addSuggestions(suggestions.filter((_, i) => picked.has(i)), thumb);
                 setSuggestions([]);

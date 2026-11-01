@@ -1,7 +1,7 @@
 import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
-import { confirmTime } from "@/lib/bookings";
+import { reapprove } from "./approval";
 import { distanceText, placesInReach, publicSpot, rangeOfNeed, rangeOfOffer, type MeetAt } from "@/lib/places";
 
 export type { MeetAt };
@@ -53,8 +53,8 @@ export async function changeMeetAt(roomId: string, userId: string, meetAt: MeetA
   if (!(await placesFor(room)).includes(meetAt)) return; // too far for someone's range
   const other = room.buyerId === userId ? room.sellerId : room.buyerId;
 
+  if (room.meetAt === meetAt) return; // a second click changes nothing
   await db.update(schema.negotiations).set({ meetAt }).where(eq(schema.negotiations.id, roomId));
-  await db.update(schema.bookings).set({ confirmedAt: null }).where(eq(schema.bookings.roomId, roomId));
-  await confirmTime(roomId, userId);
+  await reapprove(roomId, userId);
   await notify(other, "They changed where to meet", `Now ${SAY[meetAt]}. Please accept or change it.`, roomId);
 }

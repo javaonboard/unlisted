@@ -65,11 +65,10 @@ export async function useNeedBudgetAction(needId: string) {
 }
 
 // One click on My stuff: public starts talks with the best matches, private stops new ones.
-export async function toggleVisibilityAction(itemId: string) {
+// It says which state it wants, so a double click can't flip it back.
+export async function setVisibilityAction(itemId: string, open: boolean) {
   const userId = await currentUserId();
-  const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, userId)));
-  if (!item) return;
-  if (item.openToOffers) await goPrivate(userId, itemId);
-  else playLater(await goPublic(userId, itemId));
+  if (open) playLater(await goPublic(userId, itemId));
+  else await goPrivate(userId, itemId);
   refresh();
 }

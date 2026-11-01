@@ -33,7 +33,7 @@ export function AskMoney() {
           className="h-10 flex-1 rounded-full border bg-background px-4"
           disabled={pending}
         />
-        <Button type="submit" disabled={pending || !question.trim()}>{pending ? "Checking PayPal…" : "Ask"}</Button>
+        <Button type="submit" loading={pending} disabled={!question.trim()}>{pending ? "Checking PayPal…" : "Ask"}</Button>
       </form>
       {answer && <FormattedText text={answer} className="mt-3 rounded-xl bg-accent px-3 py-2" />}
       {error && <p className="mt-2 text-destructive">{error}</p>}
