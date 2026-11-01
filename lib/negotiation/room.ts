@@ -1,11 +1,11 @@
-import { and, eq, ne } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { logActivity } from "@/lib/db/activity";
 import { loadTurnContext } from "./context";
 import { decideMove } from "./agent";
 import { toA2AMessage, type Move } from "./moves";
-import { claimAgreement } from "./claim";
+import { claimAgreement, settleAgreement } from "./claim";
 
 type NewRoom = { id?: string; dealId?: string; dependsOn?: string[]; stops?: string[]; label?: string; buyerId: string; sellerId: string; itemId: string; intentId: string };
 
@@ -35,6 +35,13 @@ export async function playTurn(roomId: string): Promise<boolean> {
     const closedReason = sold ? "sold to someone else" : "went with another option";
     await db.update(schema.negotiations).set({ status: "closed", closedReason }).where(eq(schema.negotiations.id, roomId));
     console.log(`[room] ${roomId.slice(0, 8)} closed: ${closedReason}`);
+    return false;
+  }
+
+  // Stopped (a restart) after both said yes but before it was settled: settle it now.
+  const [last] = await db.select().from(schema.offers).where(eq(schema.offers.negotiationId, roomId)).orderBy(desc(schema.offers.createdAt)).limit(1);
+  if (last?.kind === "accept" && last.round === room.round) {
+    await settleAgreement(roomId, room.round, last.price ?? undefined);
     return false;
   }
 
@@ -80,7 +87,7 @@ export async function playTurn(roomId: string): Promise<boolean> {
 
   const closing = ["accept", "reject", "walk_away"].includes(move.action) || round >= room.maxRounds;
   if (move.action === "accept") {
-    await claimAgreement(roomId, round, price?.toFixed(2)); // only one deal per goods or need
+    await settleAgreement(roomId, round, price?.toFixed(2)); // only one deal per goods or need, the best one
     return false;
   }
   await db
