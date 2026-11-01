@@ -60,7 +60,8 @@ export async function authorizeOrder(orderId: string) {
   const authorization =
     result.purchaseUnits?.[0]?.payments?.authorizations?.[0];
   console.log("[paypal] order authorized", orderId, authorization?.status);
-  return { authorizationId: authorization?.id, status: authorization?.status };
+  // PayPal tells us which account approved: kept for receipts, refunds and disputes.
+  return { authorizationId: authorization?.id, status: authorization?.status, payerId: result.payer?.payerId, payerEmail: result.payer?.emailAddress };
 }
 
 export async function getOrder(orderId: string) {

@@ -26,7 +26,11 @@ export async function Header() {
           </Link>
         ))}
       </nav>
-      <PersonaSwitcher personas={personas} current={current} />
+      {/* The demo has no login: anyone can switch people to try both sides of a deal. */}
+      <div className="flex flex-col items-end gap-0.5">
+        <PersonaSwitcher personas={personas} current={current} />
+        <span className="text-[11px] text-muted-foreground">Demo mode: no login, switch people to try both sides</span>
+      </div>
     </header>
   );
 }

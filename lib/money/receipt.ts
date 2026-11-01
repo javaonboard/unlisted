@@ -33,6 +33,7 @@ export async function getReceipt(legId: string, viewerId: string) {
       { label: "Paid out", at: leg.paidOutAt },
     ],
     paypal: [
+      { label: "Paid from PayPal account", id: leg.payerPaypalEmail ? `${leg.payerPaypalEmail}${leg.payerPaypalId ? ` (${leg.payerPaypalId})` : ""}` : null },
       { label: "Order", id: leg.orderId },
       { label: "Authorization (hold)", id: leg.authorizationId },
       { label: "Capture", id: leg.captureId },

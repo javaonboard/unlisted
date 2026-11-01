@@ -170,6 +170,8 @@ export const dealLegs = pgTable("deal_legs", {
   charged: money("charged"), // what PayPal actually captured (a rental adds the deposit only if it was kept)
   problem: jsonb("problem").$type<{ note: string; refund: number; status: "open" | "refunded" | "declined" }>(), // reported after payment
   refundId: text("refund_id"),
+  payerPaypalId: text("payer_paypal_id"), // who actually approved in PayPal (PayPal checked their login)
+  payerPaypalEmail: text("payer_paypal_email"),
   paidOutAt: timestamp("paid_out_at"),
   feePercent: integer("fee_percent").default(5).notNull(),
   orderId: text("order_id"),

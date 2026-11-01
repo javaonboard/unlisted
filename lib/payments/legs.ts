@@ -63,8 +63,11 @@ export async function holdPayment(orderId: string, payerId: string) {
   const legs = await db.select().from(schema.dealLegs).where(and(eq(schema.dealLegs.orderId, orderId), eq(schema.dealLegs.payerId, payerId)));
   if (!legs.length) throw new Error("Unknown order.");
 
-  const { authorizationId } = await authorizeOrder(orderId);
-  await db.update(schema.dealLegs).set({ authorizationId, status: "held", heldAt: new Date() }).where(eq(schema.dealLegs.orderId, orderId));
+  const { authorizationId, payerId: paypalId, payerEmail } = await authorizeOrder(orderId);
+  await db
+    .update(schema.dealLegs)
+    .set({ authorizationId, status: "held", heldAt: new Date(), payerPaypalId: paypalId ?? null, payerPaypalEmail: payerEmail ?? null })
+    .where(eq(schema.dealLegs.orderId, orderId));
   for (const leg of legs) if (leg.roomId) await approve(leg.roomId, payerId); // paying is saying yes
   const total = legs.reduce((sum, l) => sum + Number(l.amount) + Number(l.deposit ?? 0), 0);
   await say(legs[0].dealId, payerId, `PayPal hold placed: $${total.toFixed(0)} for ${legs.map((l) => l.description).join(" + ")}. Not charged yet.`, { orderId, authorizationId });
