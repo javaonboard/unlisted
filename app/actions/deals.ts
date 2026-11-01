@@ -6,6 +6,7 @@ import { currentUserId } from "@/lib/session";
 import { applyOwnerReply, askForNewTime } from "@/lib/negotiation/owner";
 import { acceptDeal } from "@/lib/deals/accept";
 import { nudge } from "@/lib/deals/nudge";
+import { onPlanChanged } from "@/lib/plans/cascade";
 import { backOnTheMarket, backOut, type Reason } from "@/lib/deals/backout";
 import { answerProblem, reportProblem } from "@/lib/payments/problems";
 import { changeMeetAt, type MeetAt } from "@/lib/deals/meet";
@@ -32,6 +33,11 @@ export async function changeTimeAction(roomId: string, words: string) {
 
 export async function changeMeetAtAction(roomId: string, meetAt: MeetAt) {
   await changeMeetAt(roomId, await currentUserId(), meetAt);
+  // In a plan, a new place can change a helper's stops or the order of handoffs: the plan agent adjusts.
+  after(async () => {
+    const rooms = await onPlanChanged(roomId);
+    for (const r of rooms) await playRoom(r.id);
+  });
   revalidatePath("/", "layout");
 }
 

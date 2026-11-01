@@ -1,15 +1,15 @@
 import { Suspense } from "react";
-import { FormattedText } from "@/components/FormattedText";
 import Link from "next/link";
 import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { currentUserId } from "@/lib/session";
 import { findDemandFor } from "@/lib/matching/matcher";
 import { statusLine } from "@/lib/anchors/status";
+import { AFTER_HANDOFF } from "@/lib/payments/states";
 import { setVisibilityAction } from "@/app/actions/edit";
 import { VisibilitySwitch } from "@/components/anchors/VisibilitySwitch";
 import { rangeOfNeed, rangeOfOffer, rangeText } from "@/lib/places";
-import { ChevronRight, ClipboardList, Compass } from "lucide-react";
+import { ChevronRight, ClipboardList } from "lucide-react";
 import { CategoryIcon } from "@/components/anchors/Badges";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { PhotoToVault } from "@/components/vault/PhotoToVault";
@@ -29,7 +29,17 @@ async function MyStuff() {
     ? await db.select().from(schema.negotiations).where(or(inArray(schema.negotiations.itemId, ids), inArray(schema.negotiations.intentId, ids)))
     : [];
   const interested = Object.fromEntries(await Promise.all(items.map(async (i) => [i.id, (await findDemandFor(i.id)).length] as const)));
-  const activePlans = plans.filter((p) => p.isPlan && p.status !== "cancelled");
+  // Plans still running: some part is talking, or agreed but not handed over yet.
+  const planRooms = plans.length ? await db.select().from(schema.negotiations).where(inArray(schema.negotiations.dealId, plans.map((p) => p.id))) : [];
+  const planLegs = plans.length ? await db.select().from(schema.dealLegs).where(inArray(schema.dealLegs.dealId, plans.map((p) => p.id))) : [];
+  const finished = (roomId: string) => AFTER_HANDOFF.includes(planLegs.find((l) => l.roomId === roomId)?.status ?? "");
+  const activePlans = plans
+    .filter((p) => p.isPlan && p.status !== "cancelled")
+    .map((p) => {
+      const parts = planRooms.filter((r) => r.dealId === p.id && r.status !== "closed");
+      return { ...p, parts: parts.length, done: parts.filter((r) => finished(r.id)).length };
+    })
+    .filter((p) => p.done < p.parts);
 
   // One card per item, with where its negotiations stand.
   const itemGrid = (title: string, empty: string, list: typeof items) => (
@@ -66,8 +76,7 @@ async function MyStuff() {
       <LiveRefresh active={rooms.some((r) => r.status === "open") || (plans.length > 0 && !rooms.some((r) => r.dependsOn.length > 0))} />
       {activePlans.map((p) => (
         <Link key={p.id} href={`/deals/${p.id}`} className="mb-6 block rounded-2xl bg-accent p-4 text-sm hover:bg-accent/70">
-          <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Plan: <span className="font-medium">{p.title}</span> · see every part, the total and Saturday&apos;s timeline <ChevronRight className="size-4" /></span>
-          {p.scoutNote && <div className="mt-2 flex gap-2 text-muted-foreground"><Compass className="mt-0.5 size-4 shrink-0" /> <FormattedText text={p.scoutNote} /></div>}
+          <span className="flex items-center gap-2"><ClipboardList className="size-4" /> Plan in progress: <span className="font-medium">{p.title}</span> · {p.done} of {p.parts} parts done <ChevronRight className="size-4" /></span>
         </Link>
       ))}
 

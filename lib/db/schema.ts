@@ -107,6 +107,7 @@ export const negotiations = pgTable("negotiations", {
   buyerApprovedAt: timestamp("buyer_approved_at"), // each side's own yes to the agreed deal, time and place
   sellerApprovedAt: timestamp("seller_approved_at"),
   nudgedAt: timestamp("nudged_at"), // last "poke", so nobody gets spammed
+  reopenedBy: text("reopened_by", { enum: ["owner", "plan"] }), // who reopened an agreed deal to change it; plan changes don't cascade again
   backedOutBy: text("backed_out_by"), // who said no after the agents agreed; that pair isn't matched again
   backOutReason: text("back_out_reason"), // price | time | changed_mind | found_other | not_as_described | no_answer | other
   backOutNote: text("back_out_note"),

@@ -35,6 +35,10 @@ export async function bookAgreedDeal(roomId: string) {
       await notify(row.userId, "New time to confirm", `${row.title}, ${when}.`, roomId);
     }
     console.log("[booking] moved", start.toISOString());
+    // In a plan, a new time can affect the other parts: the plan agent adjusts them, and they play on.
+    const { onPlanChanged } = await import("@/lib/plans/cascade");
+    const { playRoom } = await import("@/lib/negotiation/room");
+    for (const r of await onPlanChanged(roomId)) await playRoom(r.id);
     return;
   }
 

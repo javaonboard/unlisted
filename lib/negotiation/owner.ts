@@ -46,19 +46,25 @@ If the reply allows or sets a price, give it as newLimit. "Yes" means the sugges
 
 // After a deal, one side wants another time. The room reopens for the time only:
 // the price is pinned, the asker counts as confirmed, and the asker's agent moves first.
-export async function askForNewTime(roomId: string, ownerId: string, words: string) {
+// `by: "plan"` is the plan agent adjusting this part after another part changed. Unpaid parts may then
+// renegotiate the price too (a split trip costs more); paid parts keep their price, so nobody is charged twice.
+export async function askForNewTime(roomId: string, ownerId: string, words: string, by: "owner" | "plan" = "owner") {
   const [current] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
   if (!current || (current.buyerId !== ownerId && current.sellerId !== ownerId)) return;
   const [done] = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.roomId, roomId));
   if (done && (done.status === "in_use" || AFTER_HANDOFF.includes(done.status))) return; // already handed off
   // Claimed in one step: a second click finds the room already reopened.
-  const [room] = await db.update(schema.negotiations).set({ status: "open" }).where(and(eq(schema.negotiations.id, roomId), eq(schema.negotiations.status, "agreed"))).returning();
+  const [room] = await db.update(schema.negotiations).set({ status: "open", reopenedBy: by }).where(and(eq(schema.negotiations.id, roomId), eq(schema.negotiations.status, "agreed"))).returning();
   if (!room) return;
 
   await reapprove(roomId, ownerId);
 
   const price = Number(room.agreedPrice).toFixed(0);
-  await db.insert(schema.offers).values({ negotiationId: roomId, fromUserId: ownerId, round: room.round, kind: "owner_note", note: `Change the time: ${words}. Keep the price at $${price}, only the time moves.` });
+  const keepPrice = by === "owner" || (done && done.status !== "pending");
+  const note = by === "plan"
+    ? `Plan change: ${words}${keepPrice ? ` Keep the price at $${price}.` : " The price can change if the job changes."}`
+    : `Change the time: ${words}. Keep the price at $${price}, only the time moves.`;
+  await db.insert(schema.offers).values({ negotiationId: roomId, fromUserId: ownerId, round: room.round, kind: "owner_note", note });
 
   // The buyer moves on odd rounds, so skip one if it's the other side's turn.
   const askerIsBuyer = room.buyerId === ownerId;
@@ -66,10 +72,10 @@ export async function askForNewTime(roomId: string, ownerId: string, words: stri
   const round = room.round + (askerIsBuyer === nextIsBuyer ? 0 : 1);
   await db
     .update(schema.negotiations)
-    .set({ status: "open", round, maxRounds: round + 4, buyerLimit: room.agreedPrice, sellerLimit: room.agreedPrice })
+    .set({ status: "open", round, maxRounds: round + 4, ...(keepPrice ? { buyerLimit: room.agreedPrice, sellerLimit: room.agreedPrice } : {}) })
     .where(eq(schema.negotiations.id, roomId));
 
   const other = askerIsBuyer ? room.sellerId : room.buyerId;
-  await notify(other, "They asked for another time", `“${words}” I'm working it out with their agent.`, roomId);
+  await notify(other, by === "plan" ? "Their plan changed" : "They asked for another time", `“${words}” I'm working it out with their agent; you'll approve the new time.`, roomId);
   console.log(`[room] ${roomId.slice(0, 8)} new time asked: "${words}"`);
 }
