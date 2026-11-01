@@ -3,7 +3,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { currentUserId } from "@/lib/session";
 import { listFacts } from "@/lib/memory/queries";
 import { BackLink } from "@/components/anchors/BackLink";
-import { confirmFactAction, deleteFactAction, editFactAction } from "@/app/actions/memory";
+import { addFactAction, confirmFactAction, deleteFactAction, editFactAction } from "@/app/actions/memory";
 import { setAddressAction } from "@/app/actions/profile";
 import { getUser } from "@/lib/users/queries";
 
@@ -55,12 +55,16 @@ export default function MemoryPage() {
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">What my agent knows</h1>
-          <p className="mt-1 text-muted-foreground">Learned from your deals. Only your agent uses it, never anyone else&apos;s.</p>
+          <p className="mt-1 text-muted-foreground">Learned from your deals, or told by you. Only your agent uses it, never anyone else&apos;s.</p>
         </div>
         <a href="/memory/export" className="shrink-0 rounded-full border px-3 py-1.5 text-sm hover:bg-muted">Export</a>
       </div>
       <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <Address />
+        <form action={addFactAction} className="mb-4 flex gap-2">
+          <input name="fact" required maxLength={200} placeholder="Tell your agent something, e.g. “I can only do pickups after 5pm on weekdays”" className="h-10 flex-1 rounded-full border bg-background px-4 text-sm" />
+          <SubmitButton>Add</SubmitButton>
+        </form>
         <Facts />
       </Suspense>
     </main>

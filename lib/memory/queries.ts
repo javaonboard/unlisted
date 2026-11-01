@@ -19,3 +19,8 @@ export async function confirmFact(id: string, userId: string) {
 export async function deleteFact(id: string, userId: string) {
   await db.delete(schema.memoryFacts).where(own(id, userId));
 }
+
+// Something the owner tells their agent directly. It counts as confirmed, since it came from them.
+export async function addFact(userId: string, fact: string) {
+  await db.insert(schema.memoryFacts).values({ userId, fact, source: "you", confidence: 1, verified: true });
+}
