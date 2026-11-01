@@ -6,6 +6,8 @@ import { PayButton } from "@/components/payments/PayButton";
 import { ConfirmHandoff, ConfirmReturn } from "@/components/payments/LegActions";
 import { AcceptDeal } from "@/components/rooms/AcceptDeal";
 import { Nudge } from "@/components/rooms/Nudge";
+import { BackOut } from "@/components/rooms/BackOut";
+import { Problem } from "@/components/payments/Problem";
 import { FEE, feeOf, money, payoutOf } from "@/lib/payments/fees";
 import { mapsLink } from "@/lib/places";
 import type { MeetAt } from "@/lib/deals/meet";
@@ -18,7 +20,7 @@ type Props = {
   buyerId: string;
   sellerId: string;
   first: (id: string) => string;
-  leg: { id: string; kind: string; payerId: string; payeeId: string; amount: string; deposit: string | null; status: string; handoffCode: string | null } | null;
+  leg: { id: string; kind: string; payerId: string; payeeId: string; amount: string; deposit: string | null; status: string; handoffCode: string | null; charged: string | null; problem: { note: string; refund: number; status: "open" | "refunded" | "declined" } | null } | null;
   price: number;
   deposit: number;
   booking: { startsAt: Date; endsAt: Date } | null;
@@ -134,9 +136,13 @@ export function NextSteps(p: Props) {
 
         <Step n={5} title={paidOut ? `Paid out to ${p.first(p.sellerId)}` : "PayPal pays out"} state={stateOf(paidOut, status === "captured")}>
           {paidOut && <p className="text-muted-foreground">{p.sellerId === p.viewerId ? `${money(payoutOf(p.price))} sent to your PayPal.` : "All done."}</p>}
+          {leg && ["captured", "paid_out"].includes(status) && (
+            <Problem legId={leg.id} problem={leg.problem} iPay={iPay} charged={Number(leg.charged ?? leg.amount)} other={other} />
+          )}
         </Step>
       </ol>
 
+      {!handedOff && !cancelled && status !== "in_use" && <div className="mt-2"><BackOut roomId={p.roomId} paid={paid} /></div>}
       <div className="mt-3 flex gap-4 text-xs">
         {leg && <Link href={`/money/${leg.id}`} className="text-primary hover:underline">Receipt</Link>}
         {p.isPlan && p.dealId && <Link href={`/deals/${p.dealId}`} className="text-muted-foreground hover:text-foreground">See the whole plan</Link>}

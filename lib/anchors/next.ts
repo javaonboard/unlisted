@@ -45,7 +45,10 @@ export function nextFor(data: RoomView, viewerId: string): Next {
   if (room.status === "closed") return { state: "done", label: `Closed: ${room.closedReason}` };
 
   // Agreed. Steps in order: accept, pay (PayPal holds it), hand off, paid out.
-  if (leg?.status === "paid_out" || leg?.status === "captured") return { state: "done", label: "Done and paid" };
+  if (leg?.problem?.status === "open") {
+    return leg.payeeId === viewerId ? { state: "needs_you", label: "Answer a refund request" } : { state: "waiting", label: `Waiting for ${other} to answer your problem` };
+  }
+  if (leg?.status === "paid_out" || leg?.status === "captured") return { state: "done", label: leg.problem?.status === "refunded" ? "Done, refunded" : "Done and paid" };
   // A rental that's out: the owner confirms when it comes back.
   if (leg?.status === "in_use") {
     return leg.payeeId === viewerId ? { state: "needs_you", label: "Confirm when it's back" } : { state: "upcoming", label: `Return it by ${data.booking?.endsAt.toLocaleString("en-US", { weekday: "short" }) ?? "the end date"}` };

@@ -106,6 +106,9 @@ export const negotiations = pgTable("negotiations", {
   buyerApprovedAt: timestamp("buyer_approved_at"), // each side's own yes to the agreed deal, time and place
   sellerApprovedAt: timestamp("seller_approved_at"),
   nudgedAt: timestamp("nudged_at"), // last "poke", so nobody gets spammed
+  backedOutBy: text("backed_out_by"), // who said no after the agents agreed; that pair isn't matched again
+  backOutReason: text("back_out_reason"), // price | time | changed_mind | found_other | not_as_described | no_answer | other
+  backOutNote: text("back_out_note"),
   status: text("status", { enum: ["open", "waiting_owner", "agreed", "closed"] })
     .default("open")
     .notNull(),
@@ -165,6 +168,8 @@ export const dealLegs = pgTable("deal_legs", {
   deposit: money("deposit"), // rentals: held with the fee, released when the item comes back
   capturedAt: timestamp("captured_at"),
   charged: money("charged"), // what PayPal actually captured (a rental adds the deposit only if it was kept)
+  problem: jsonb("problem").$type<{ note: string; refund: number; status: "open" | "refunded" | "declined" }>(), // reported after payment
+  refundId: text("refund_id"),
   paidOutAt: timestamp("paid_out_at"),
   feePercent: integer("fee_percent").default(5).notNull(),
   orderId: text("order_id"),

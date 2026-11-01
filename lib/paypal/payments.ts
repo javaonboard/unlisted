@@ -35,7 +35,7 @@ export async function voidAuthorization(authorizationId: string) {
 export async function refundCapture(captureId: string, amount: string) {
   const { result } = await payments().refundCapturedPayment({
     captureId,
-    paypalRequestId: randomUUID(),
+    paypalRequestId: `refund-${captureId}`, // one refund per capture, so a retry can't refund twice
     body: { amount: usd(amount) },
   });
   console.log("[paypal] refunded", captureId, result.id, result.status);

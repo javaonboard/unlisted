@@ -1,4 +1,4 @@
-import { and, eq, inArray, ne } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, ne } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { placesInReach, rangeOfNeed, rangeOfOffer } from "@/lib/places";
 import { meetsRequirements } from "./rules";
@@ -28,6 +28,15 @@ async function inReach() {
     placesInReach({ buyerArea: area(intent.ownerId), sellerArea: area(item.ownerId), buyerMiles: rangeOfNeed(intent.maxMiles), sellerMiles: rangeOfOffer(item.maxMiles) }).length > 0;
 }
 
+// Pairs where someone backed out aren't matched again, so the agents don't loop on the same deal.
+async function backedOutWith(by: { itemId?: string; intentId?: string }) {
+  const rooms = await db
+    .select({ itemId: schema.negotiations.itemId, intentId: schema.negotiations.intentId })
+    .from(schema.negotiations)
+    .where(and(isNotNull(schema.negotiations.backedOutBy), by.itemId ? eq(schema.negotiations.itemId, by.itemId) : eq(schema.negotiations.intentId, by.intentId!)));
+  return new Set(rooms.map((r) => (by.itemId ? r.intentId : r.itemId)));
+}
+
 // Open buy or service requests that this item or skill could fill.
 export async function findDemandFor(itemId: string) {
   const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, itemId));
@@ -38,7 +47,8 @@ export async function findDemandFor(itemId: string) {
     .from(schema.intents)
     .where(and(inArray(schema.intents.type, types), eq(schema.intents.status, "open"), ne(schema.intents.ownerId, item.ownerId)));
   const reach = await inReach();
-  return intents.filter((intent) => fits(item, intent) && reach(item, intent));
+  const blocked = await backedOutWith({ itemId });
+  return intents.filter((intent) => fits(item, intent) && reach(item, intent) && !blocked.has(intent.id));
 }
 
 // Items or skills that could fill this request. Private items count too:
@@ -48,5 +58,6 @@ export async function findSupplyFor(intentId: string) {
   const kind = intent.type === "request_service" ? "skill" : "goods";
   const items = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.kind, kind));
   const reach = await inReach();
-  return items.filter((item) => fits(item, intent) && reach(item, intent));
+  const blocked = await backedOutWith({ intentId });
+  return items.filter((item) => fits(item, intent) && reach(item, intent) && !blocked.has(item.id));
 }

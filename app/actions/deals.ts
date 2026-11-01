@@ -6,6 +6,8 @@ import { currentUserId } from "@/lib/session";
 import { applyOwnerReply, askForNewTime } from "@/lib/negotiation/owner";
 import { acceptDeal } from "@/lib/deals/accept";
 import { nudge } from "@/lib/deals/nudge";
+import { backOnTheMarket, backOut, type Reason } from "@/lib/deals/backout";
+import { answerProblem, reportProblem } from "@/lib/payments/problems";
 import { changeMeetAt, type MeetAt } from "@/lib/deals/meet";
 import { playRoom } from "@/lib/negotiation/room";
 
@@ -35,4 +37,27 @@ export async function changeMeetAtAction(roomId: string, meetAt: MeetAt) {
 
 export async function nudgeAction(roomId: string) {
   return nudge(roomId, await currentUserId());
+}
+
+// Back out of a deal with a reason. The item or need goes back on the market after the response.
+export async function backOutAction(roomId: string, reason: Reason, note: string) {
+  const userId = await currentUserId();
+  const result = await backOut(roomId, userId, reason, note);
+  if (result.room) {
+    const room = result.room;
+    after(() => backOnTheMarket(room, userId).catch((e) => console.error("[backout] failed", e?.message)));
+  }
+  revalidatePath("/", "layout");
+  return result.error;
+}
+
+export async function reportProblemAction(legId: string, note: string, refund: number) {
+  const error = await reportProblem(legId, await currentUserId(), note, refund);
+  revalidatePath("/", "layout");
+  return error;
+}
+
+export async function answerProblemAction(legId: string, agree: boolean) {
+  await answerProblem(legId, await currentUserId(), agree);
+  revalidatePath("/", "layout");
 }

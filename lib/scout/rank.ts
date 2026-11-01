@@ -9,7 +9,8 @@ export type Pick = { userId: string; name: string; intentId?: string; itemId?: s
 // How someone has done in past negotiations: public, from finished rooms.
 async function trackRecord(userId: string) {
   const rooms = (await db.select().from(schema.negotiations)).filter((r) => r.buyerId === userId || r.sellerId === userId);
-  const finished = rooms.filter((r) => r.status === "agreed" || r.status === "closed");
+  // Deals they finished, or walked away from. Someone else backing out doesn't count against them.
+  const finished = rooms.filter((r) => r.status === "agreed" || (r.status === "closed" && (!r.backedOutBy || r.backedOutBy === userId)));
   const agreed = finished.filter((r) => r.status === "agreed").length;
   return finished.length ? agreed / finished.length : null;
 }
