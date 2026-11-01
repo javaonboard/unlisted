@@ -16,9 +16,9 @@ export async function holdPaymentAction(orderId: string) {
   refresh();
 }
 
-export async function confirmHandoffAction(legId: string, code: string) {
+export async function confirmHandoffAction(legId: string) {
   try {
-    await confirmHandoff(legId, await currentUserId(), code);
+    await confirmHandoff(legId, await currentUserId());
   } catch (error) {
     return { error: (error as Error).message };
   }

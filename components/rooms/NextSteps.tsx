@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { Check, MapPin } from "lucide-react";
-import { cancelHoldAction } from "@/app/actions/payments";
 import { PayButton } from "@/components/payments/PayButton";
-import { ConfirmHandoff, ConfirmReturn } from "@/components/payments/LegActions";
+import { ConfirmAction } from "@/components/ConfirmAction";
+import { confirmHandoffAction, confirmReturnAction } from "@/app/actions/payments";
 import { AcceptDeal } from "@/components/rooms/AcceptDeal";
 import { Nudge } from "@/components/rooms/Nudge";
 import { BackOut } from "@/components/rooms/BackOut";
@@ -123,14 +122,39 @@ export function NextSteps(p: Props) {
             </p>
           )}
           {!paid && !cancelled && <p className="text-muted-foreground">The exact address shows here once it&apos;s paid.</p>}
-          {status === "held" && !iPay && <p className="mt-1">Show this code at the {rental ? "pickup" : "handoff"}: <span className="font-mono text-base font-semibold">{leg?.handoffCode}</span></p>}
-          {status === "held" && iPay && leg && <ConfirmHandoff legId={leg.id} />}
+          {status === "held" && !iPay && <p className="mt-1 text-muted-foreground">{other} confirms {rental ? "the pickup" : "once they have it"}. Then PayPal pays you.</p>}
           {status === "held" && iPay && leg && (
-            <form action={cancelHoldAction.bind(null, leg.id)} className="mt-1">
-              <SubmitButton size="sm" variant="ghost">Cancel and release the hold</SubmitButton>
-            </form>
+            <div className="mt-2">
+              <ConfirmAction
+                label={rental ? "I picked it up" : "I have it"}
+                title={rental ? "Picked it up?" : "Got it, and it's as described?"}
+                points={rental
+                  ? [`PayPal keeps holding ${money(p.price)} + the ${money(p.deposit)} deposit while you have it.`, "Bring it back on time to get the deposit back."]
+                  : [`PayPal charges the ${money(p.price)} it's holding and pays ${other}.`, "This can't be undone. If something turns out wrong, use Report a problem."]}
+                confirm={rental ? "Yes, picked up" : "Yes, I have it"}
+                action={confirmHandoffAction.bind(null, leg.id)}
+              />
+            </div>
           )}
-          {status === "in_use" && !iPay && leg && <ConfirmReturn legId={leg.id} deposit={Number(leg.deposit ?? 0)} />}
+          {status === "in_use" && !iPay && leg && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <ConfirmAction
+                label="It's back, all good"
+                title="Back in good shape?"
+                points={[`PayPal charges ${other} the ${money(p.price)} fee and pays you.`, `${other}'s ${money(p.deposit)} deposit is released.`]}
+                confirm="Yes, all good"
+                action={confirmReturnAction.bind(null, leg.id, true)}
+              />
+              <ConfirmAction
+                label="Something's wrong"
+                variant="outline"
+                title="Keep the deposit?"
+                points={[`PayPal charges ${other} the fee plus the ${money(p.deposit)} deposit.`, "Only if it came back damaged or late. Tell them why in the chat."]}
+                confirm="Keep the deposit"
+                action={confirmReturnAction.bind(null, leg.id, false)}
+              />
+            </div>
+          )}
           {status === "in_use" && iPay && <p className="mt-1">Bring it back by {p.booking ? time(p.booking.endsAt) : "the end date"}; then the deposit is released.</p>}
         </Step>
 

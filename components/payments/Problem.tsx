@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { answerProblemAction, reportProblemAction } from "@/app/actions/deals";
+import { ConfirmAction } from "@/components/ConfirmAction";
 
 type Problem = { note: string; refund: number; status: "open" | "refunded" | "declined" } | null;
 
@@ -11,7 +12,6 @@ export function Problem({ legId, problem, iPay, charged, other }: { legId: strin
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [refund, setRefund] = useState(String(charged));
-  const [busy, setBusy] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -24,8 +24,21 @@ export function Problem({ legId, problem, iPay, charged, other }: { legId: strin
       <div className="mt-1">
         <p>{other} reported a problem: {ask}.</p>
         <div className="mt-2 flex gap-2">
-          <Button size="sm" loading={pending && busy === "yes"} disabled={pending} onClick={() => { setBusy("yes"); start(() => answerProblemAction(legId, true)); }}>Refund ${problem.refund.toFixed(2)}</Button>
-          <Button size="sm" variant="outline" loading={pending && busy === "no"} disabled={pending} onClick={() => { setBusy("no"); start(() => answerProblemAction(legId, false)); }}>Decline</Button>
+          <ConfirmAction
+            label={`Refund $${problem.refund.toFixed(2)}`}
+            title={`Refund $${problem.refund.toFixed(2)} to ${other}?`}
+            points={["PayPal sends it back to the account they paid with.", "This can't be undone."]}
+            confirm="Yes, refund"
+            action={() => answerProblemAction(legId, true)}
+          />
+          <ConfirmAction
+            label="Decline"
+            variant="outline"
+            title="Decline the refund?"
+            points={[`${other} is told, and can still open a case with PayPal.`]}
+            confirm="Decline"
+            action={() => answerProblemAction(legId, false)}
+          />
         </div>
       </div>
     );
