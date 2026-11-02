@@ -20,7 +20,7 @@ type Props = {
   buyerId: string;
   sellerId: string;
   first: (id: string) => string;
-  leg: { id: string; kind: string; payerId: string; payeeId: string; amount: string; deposit: string | null; status: string; handoffCode: string | null; charged: string | null; problem: { note: string; refund: number; status: "open" | "refunded" | "declined" } | null; confirmed: Partial<Record<string, { eventId: string; at: string }>> } | null;
+  leg: { id: string; kind: string; payerId: string; payeeId: string; amount: string; deposit: string | null; status: string; charged: string | null; problem: { note: string; refund: number; status: "open" | "refunded" | "declined" } | null; confirmed: Partial<Record<string, { eventId: string; at: string }>> } | null;
   price: number;
   deposit: number;
   booking: { startsAt: Date; endsAt: Date } | null;

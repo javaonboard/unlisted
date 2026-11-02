@@ -1,0 +1,1 @@
+ALTER TABLE "deal_legs" ADD COLUMN "paid_to" text;

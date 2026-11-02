@@ -16,6 +16,7 @@ export async function myMoney(userId: string) {
     amount: Number(l.amount),
     deposit: l.deposit ? Number(l.deposit) : null,
     status: l.status,
+    waitingForPaypalEmail: l.payeeId === userId && l.status === "captured" && !l.payoutBatchId,
     orderId: l.orderId,
   }));
 }

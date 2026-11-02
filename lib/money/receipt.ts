@@ -31,7 +31,7 @@ export async function getReceipt(legId: string, viewerId: string) {
       { label: "Paid, held by PayPal", at: leg.heldAt, paypal: leg.confirmed.hold ?? null },
       { label: leg.kind === "rental" ? "Picked up" : "Handed off", at: leg.handoffAt, paypal: null },
       { label: "Charged by PayPal", at: leg.capturedAt, paypal: leg.confirmed.capture ?? null },
-      { label: leg.status === "payout_sent" ? "Payout sent, waiting for PayPal" : leg.status === "payout_failed" ? "Payout didn't go through" : "Paid out", at: leg.paidOutAt, paypal: leg.confirmed.payout ?? null },
+      { label: leg.status === "payout_sent" ? "Payout sent, waiting for PayPal" : leg.status === "payout_failed" ? "Payout didn't go through" : leg.status === "captured" && !leg.payoutBatchId ? `Waiting for ${names[leg.payeeId]?.split(" ")[0]}'s PayPal email` : "Paid out", at: leg.paidOutAt, paypal: leg.confirmed.payout ?? null },
       ...(leg.refundId ? [{ label: "Refunded", at: null, paypal: leg.confirmed.refund ?? null }] : []),
     ],
     status: leg.status,
@@ -41,6 +41,7 @@ export async function getReceipt(legId: string, viewerId: string) {
       { label: "Authorization (hold)", id: leg.authorizationId },
       { label: "Capture", id: leg.captureId },
       { label: "Payout batch", id: leg.payoutBatchId },
+      ...(viewerId === leg.payeeId ? [{ label: "Paid out to your PayPal account", id: leg.paidTo }] : []), // only the payee sees their email
     ],
     paypalStatus,
   };

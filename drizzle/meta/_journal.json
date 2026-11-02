@@ -267,6 +267,20 @@
       "when": 1793592651397,
       "tag": "0037_bent_demogoblin",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793634384096,
+      "tag": "0038_married_champions",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1793634392418,
+      "tag": "0039_short_sue_storm",
+      "breakpoints": true
     }
   ]
 }

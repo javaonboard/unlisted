@@ -1,4 +1,3 @@
-import { randomInt } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { logActivity } from "@/lib/db/activity";
@@ -53,7 +52,6 @@ export async function openLeg(roomId: string) {
       payerId: room.buyerId,
       payeeId: room.sellerId,
       amount: room.agreedPrice!,
-      handoffCode: String(randomInt(100000, 1000000)),
     })
     .returning();
   return leg;
@@ -126,13 +124,31 @@ export async function confirmHandoff(legId: string, payerId: string) {
   const w = await aboutLeg(leg);
   await notify(payerId, `You got ${w.what}`, `PayPal charged the $${Number(leg.amount).toFixed(0)} it was holding.`, leg.roomId);
 
+  await payOut(leg, Number(leg.amount));
+}
+
+// Pays the person who earned it: the deal's seller, owner or provider, to their own PayPal email.
+// No email yet: the money waits with Unlisted and they're asked to add one (then payWaiting sends it).
+async function payOut(leg: typeof schema.dealLegs.$inferSelect, charged: number) {
   const [payee] = await db.select().from(schema.users).where(eq(schema.users.id, leg.payeeId));
-  const payout = payoutOf(Number(leg.amount));
-  if (!payee.paypalEmail) return;
+  const payout = payoutOf(charged);
+  const w = await aboutLeg(leg);
+  if (!payee.paypalEmail) {
+    await notify(leg.payeeId, "Add your PayPal email to get paid", `$${payout.toFixed(2)} for ${w.what} is waiting for you. Add your PayPal email on “What my agent knows” and I'll send it.`, leg.roomId);
+    console.log("[payout] waiting for a PayPal email", leg.id);
+    return;
+  }
   const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`, leg.id);
-  await db.update(schema.dealLegs).set({ payoutBatchId: batchId, status: "payout_sent" }).where(eq(schema.dealLegs.id, legId)); // "paid out" once PayPal confirms
-  await say(leg.dealId, leg.payeeId, `Paid out $${payout.toFixed(2)} to ${payee.name.split(" ")[0]} (after Unlisted's ${FEE * 100}% fee).`, { legId, batchId });
-  await notify(leg.payeeId, `Payout sent for ${w.what}`, `$${payout.toFixed(2)} is on its way to your PayPal (after Unlisted's ${FEE * 100}% fee).`, leg.roomId);
+  await db.update(schema.dealLegs).set({ payoutBatchId: batchId, paidTo: payee.paypalEmail, status: "payout_sent" }).where(eq(schema.dealLegs.id, leg.id)); // "paid out" once PayPal confirms
+  await say(leg.dealId, leg.payeeId, `Paid out $${payout.toFixed(2)} to ${payee.name.split(" ")[0]} (after Unlisted's ${FEE * 100}% fee).`, { legId: leg.id, batchId });
+  await notify(leg.payeeId, `Payout sent for ${w.what}`, `$${payout.toFixed(2)} is on its way to your PayPal, ${payee.paypalEmail} (after Unlisted's ${FEE * 100}% fee).`, leg.roomId);
+}
+
+// Someone just added their PayPal email: send what was waiting for them. Safe to repeat (one payout id per deal).
+export async function payWaiting(userId: string) {
+  const waiting = await db.select().from(schema.dealLegs).where(and(eq(schema.dealLegs.payeeId, userId), eq(schema.dealLegs.status, "captured"), isNull(schema.dealLegs.payoutBatchId)));
+  for (const leg of waiting) await payOut(leg, Number(leg.charged ?? leg.amount));
+  return waiting.length;
 }
 
 // Goods handed over and paid: the item leaves the seller's things (to "Things I had") and the
@@ -179,12 +195,7 @@ export async function confirmReturn(legId: string, payeeId: string, goodShape: b
   await db.update(schema.dealLegs).set({ captureId, status: "captured", capturedAt: new Date(), charged: money(take) }).where(eq(schema.dealLegs.id, legId));
   await notify(leg.payerId, goodShape ? "Returned, deposit released" : "Returned with a problem", goodShape ? `PayPal charged the $${take.toFixed(0)} fee and released your deposit.` : `The owner kept the deposit. PayPal charged $${take.toFixed(0)}.`, leg.roomId);
 
-  const [payee] = await db.select().from(schema.users).where(eq(schema.users.id, leg.payeeId));
-  const payout = payoutOf(take);
-  if (!payee.paypalEmail) return;
-  const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`, leg.id);
-  await db.update(schema.dealLegs).set({ payoutBatchId: batchId, status: "payout_sent" }).where(eq(schema.dealLegs.id, legId)); // "paid out" once PayPal confirms
-  await notify(leg.payeeId, `Payout sent for ${(await aboutLeg(leg)).what}`, `$${payout.toFixed(2)} is on its way to your PayPal (after Unlisted's ${FEE * 100}% fee).`, leg.roomId);
+  await payOut(leg, take);
 }
 
 // Before the handoff, the payer can cancel: the hold is released and nothing is charged.

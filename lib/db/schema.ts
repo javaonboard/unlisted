@@ -186,12 +186,12 @@ export const dealLegs = pgTable("deal_legs", {
   authorizationId: text("authorization_id"),
   captureId: text("capture_id"),
   payoutBatchId: text("payout_batch_id"),
+  paidTo: text("paid_to"), // the payee's PayPal email the payout went to, for their receipt
   status: text("status", {
     enum: ["pending", "held", "in_use", "captured", "capture_failed", "voided", "payout_sent", "paid_out", "payout_failed", "refunded"],
   })
     .default("pending")
     .notNull(),
-  handoffCode: text("handoff_code"), // the payee shows it, the payer enters it to confirm
   heldAt: timestamp("held_at"), // when the PayPal hold was placed
   handoffAt: timestamp("handoff_at"),
   createdAt: createdAt(),

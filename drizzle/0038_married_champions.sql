@@ -1,0 +1,1 @@
+ALTER TABLE "deal_legs" DROP COLUMN "handoff_code";

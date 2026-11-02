@@ -4,7 +4,7 @@ import { currentUserId } from "@/lib/session";
 import { listFacts } from "@/lib/memory/queries";
 import { BackLink } from "@/components/anchors/BackLink";
 import { addFactAction, confirmFactAction, deleteFactAction, editFactAction } from "@/app/actions/memory";
-import { setAddressAction } from "@/app/actions/profile";
+import { setAddressAction, setPaypalEmailAction } from "@/app/actions/profile";
 import { getUser } from "@/lib/users/queries";
 
 async function Facts() {
@@ -37,11 +37,26 @@ async function Facts() {
 async function Address() {
   const user = await getUser(await currentUserId());
   return (
-    <form action={setAddressAction} className="mb-8 rounded-2xl border p-4 text-sm">
+    <form action={setAddressAction} className="mb-4 rounded-2xl border p-4 text-sm">
       <p className="font-medium">Your address</p>
       <p className="mt-1 text-muted-foreground">Private. Agents only see your neighborhood ({user?.area}). It&apos;s shown to the other person only after both of you accept and the payment is held.</p>
       <div className="mt-3 flex gap-2">
         <input name="address" defaultValue={user?.address ?? ""} placeholder="Street, unit, city" className="h-10 flex-1 rounded-full border bg-background px-4" />
+        <SubmitButton variant="outline">Save</SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+// Where their money goes when they sell, rent out or do a job.
+async function PaidTo() {
+  const user = await getUser(await currentUserId());
+  return (
+    <form action={setPaypalEmailAction} className="mb-8 rounded-2xl border p-4 text-sm">
+      <p className="font-medium">Get paid to</p>
+      <p className="mt-1 text-muted-foreground">The PayPal account your payouts go to, minus Unlisted&apos;s 8% fee. Private. {user?.paypalEmail ? "" : "Payouts wait until you add one."}</p>
+      <div className="mt-3 flex gap-2">
+        <input name="paypalEmail" type="email" defaultValue={user?.paypalEmail ?? ""} placeholder="you@example.com" className="h-10 flex-1 rounded-full border bg-background px-4" />
         <SubmitButton variant="outline">Save</SubmitButton>
       </div>
     </form>
@@ -61,6 +76,7 @@ export default function MemoryPage() {
       </div>
       <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <Address />
+        <PaidTo />
         <form action={addFactAction} className="mb-4 flex gap-2">
           <input name="fact" required maxLength={200} placeholder="Tell your agent something, e.g. “I can only do pickups after 5pm on weekdays”" className="h-10 flex-1 rounded-full border bg-background px-4 text-sm" />
           <SubmitButton>Add</SubmitButton>

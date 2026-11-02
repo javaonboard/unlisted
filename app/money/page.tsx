@@ -25,7 +25,7 @@ async function MyMoney() {
             <span className="shrink-0 text-right">
               {r.youPay ? money(r.amount) : `${money(payoutOf(r.amount))} after fees`}
               {r.deposit ? <span className="text-muted-foreground"> + {money(r.deposit)} deposit</span> : null}
-              <span className="block text-xs text-muted-foreground">{STATUS_TEXT[r.status] ?? r.status} · receipt</span>
+              <span className="block text-xs text-muted-foreground">{r.waitingForPaypalEmail ? "Add your PayPal email to get paid" : (STATUS_TEXT[r.status] ?? r.status)} · receipt</span>
             </span>
           </Link>
           </li>
