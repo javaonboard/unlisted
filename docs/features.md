@@ -55,7 +55,7 @@ Tags: [PayPal sandbox verified] run end to end against sandbox · [Live-tested w
 ### Money with PayPal
 - **Pay with PayPal (hold)**: PayPal's v6 one-time button; the server creates an AUTHORIZE order and places the hold on approve. One order per deal; paying counts as the buyer's approval; the paying account is recorded for the receipt. `components/payments/PayButton.tsx`, `lib/paypal/orders.ts` [PayPal sandbox verified]
 - **Capture at handoff**: the buyer confirms in a short pop-up; the claim is atomic, a failed capture lets them retry. Goods move to the buyer's things and to the seller's "Things I had". [PayPal sandbox verified]
-- **Payout minus 8%**: Payouts API to the seller's PayPal email after capture; "paid out" only once PayPal confirms. Fee defined in one place. `lib/paypal/payouts.ts`, `lib/payments/fees.ts` [PayPal sandbox verified] [Unit tested: tests/fees.test.ts]
+- **Payout minus 8%**: Payouts API to the payee's own PayPal email after capture; "paid out" only once PayPal confirms. No email yet: the money waits, they're asked to add one ("Get paid to" on What my agent knows), and saving it sends what was waiting. The payee's receipt shows which PayPal account was paid. Fee defined in one place. `lib/paypal/payouts.ts`, `lib/payments/fees.ts` [PayPal sandbox verified] [Unit tested: tests/fees.test.ts]
 - **Void / release**: cancel before handoff or back out releases the hold, nothing charged. `lib/paypal/payments.ts` [PayPal sandbox verified]
 - **Safe retries**: stable PayPal-Request-Id per step (authorize-, capture-<leg>, void-, refund-, payout-<leg>), so a retry can't hold, charge or pay twice. Errors are logged without credentials.
 - **Webhooks**: signature verified with PayPal on the raw body; 12 event types mapped to hold, capture, refund, payout and release (failures flagged and both people told); each event stored once. A 30-minute fallback asks PayPal about payouts whose webhook never came. `app/api/webhooks/paypal`, `lib/payments/confirm.ts`, `webhook.ts` [PayPal sandbox verified] [Unit tested: tests/webhook.test.ts]
@@ -94,7 +94,7 @@ Tags: [PayPal sandbox verified] run end to end against sandbox · [Live-tested w
 ## Use cases
 
 1. **Maya's moving day (hero).** Maya (East Austin, 2nd floor, no elevator, $350 max spend) wants a smaller sofa under $250 by Saturday, to sell her never-listed sectional only if she finds one, and a Saturday mover. Her agent suggests a "Moving day" plan; agents talk to Sam (loveseat) and Sara (beige sofa) for the purchase and Ben, Bella and Omar for the sectional. The sale waits for the purchase, then Marco or Dev (both busy Saturday morning) are booked around the handoffs with a stop list. Shows plans, dependency, plan review, helpers, best price wins, and one PayPal hold per deal.
-2. **PC upgrade.** Priya wants Leo's RTX 4070 (under $450) and to sell her RTX 2080 Super once she has it; Kai wants a used 2080 under $230. Her agent knows her PC has a 550W power supply, looks the card up on Channel3 and suggests adding a 650W+ PSU, which Leo also sells (750W). Ivan offers PC setup. Shows add-a-need, product lookup, a plan with two purchases and a sale. Note: Priya, Leo, Kai have no sandbox email, so payouts to them are skipped.
+2. **PC upgrade.** Priya wants Leo's RTX 4070 (under $450) and to sell her RTX 2080 Super once she has it; Kai wants a used 2080 under $230. Her agent knows her PC has a 550W power supply, looks the card up on Channel3 and suggests adding a 650W+ PSU, which Leo also sells (750W). Ivan offers PC setup. Shows add-a-need, product lookup, a plan with two purchases and a sale. Note: Priya, Leo and Kai have no sandbox email, so their payouts wait until they add one.
 3. **Kai's ladder, rented then sold.** Kai rents his 8 ft ladder at $10/day with a $30 deposit; Bella rents it for Saturday (seeded talk). PayPal holds $10 + $30, pickup starts the rental, the return captures $10 and releases the deposit. If Kai switches it to "both", a buyer can agree now but the handoff waits until the rental is back. Shows rentals, deposits, rent-and-sell.
 4. **Bella's weekend.** Bella's lawn mowing with Lily and her ladder rental with Kai are already negotiated by the seed; she's also one of three buyers for Maya's sectional. Shows the inbox with several deals in different steps.
 5. **Gutter cleaning.** Sara, Ben and Omar all need gutters cleaned; Gus (with a tall ladder) negotiates with Sara and Omar in parallel, since a service can take many jobs. Ben's request is left for the live demo; if nobody answers, wave 3 asks ladder owners like Kai whether they'd offer the service. Shows waves, services, parallel jobs.
@@ -123,12 +123,11 @@ Tags: [PayPal sandbox verified] run end to end against sandbox · [Live-tested w
 ## Known gaps
 
 - No login: anyone can switch persona (by design for the demo). The MCP connector is guarded only by the secret key in its URL; the A2A endpoint has no auth.
-- Payouts are skipped silently when the seller has no PayPal email; only Maya, Sam, Sara, Ben, Bella and Marco have sandbox accounts.
+- Only Maya, Sam, Sara, Ben, Bella and Marco have sandbox PayPal accounts; others get "add your PayPal email" and their payout waits until they do.
 - Refund after "Report a problem" is built but not confirmed against sandbox in the history. No PayPal dispute handling beyond pointing to PayPal.
 - Timeouts (owner defaults, payment and approval deadlines, stale holds) are off by default.
 - Places are 6 hard-coded Austin neighborhoods and 4 demo public spots; distance is straight-line between neighborhood centers.
 - A2A: outside agents can only buy open items (not sell or offer services), no streaming, task store in memory.
 - Single server assumed: per-IP AI limits, A2A handlers and plan "busy" flags live in memory.
-- `handoffCode` is still generated per deal but no longer used (handoff is a confirm pop-up).
 - Notifications are in-app only (no email or push). The README is still a stub.
 - Unit tests cover rules and pure logic (46 tests); there are no automated tests for rooms, plans or payment flows, which were checked by hand and with scripts.
