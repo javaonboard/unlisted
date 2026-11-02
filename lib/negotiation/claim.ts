@@ -1,5 +1,7 @@
 import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import { usesOf } from "@/lib/deals/usage";
+import { clashes } from "@/lib/deals/clash";
 
 type Room = typeof schema.negotiations.$inferSelect;
 type Db = Pick<typeof db, "select">;
@@ -14,7 +16,10 @@ const isGoods = async (room: Room, tx: Db = db) =>
 // Other talks about the same goods (a goods item can only be sold once) or the same need.
 async function rivalsOf(room: Room, goods: boolean, tx: Db = db) {
   const same = goods ? or(eq(schema.negotiations.itemId, room.itemId!), eq(schema.negotiations.intentId, room.intentId!)) : eq(schema.negotiations.intentId, room.intentId!);
-  const rooms = await tx.select().from(schema.negotiations).where(and(ne(schema.negotiations.id, room.id), inArray(schema.negotiations.status, ["open", "waiting_owner"]), same));
+  const found = await tx.select().from(schema.negotiations).where(and(ne(schema.negotiations.id, room.id), inArray(schema.negotiations.status, ["open", "waiting_owner"]), same));
+  // Two rentals of one thing can both happen on different days; only sales compete for the item itself.
+  const uses = await usesOf([room, ...found], tx);
+  const rooms = found.filter((r) => r.intentId === room.intentId || (uses.get(r.id)!.sale && uses.get(room.id)!.sale));
   if (!rooms.length) return [];
   const moves = await tx.select().from(schema.offers).where(inArray(schema.offers.negotiationId, rooms.map((r) => r.id)));
   return rooms.map((r) => {
@@ -48,8 +53,8 @@ export async function claimAgreement(roomId: string, round: number, price: strin
     if (goods) await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`item:${room.itemId}`}))`);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`need:${room.intentId}`}))`);
 
-    const taken = await tx
-      .select({ itemId: schema.negotiations.itemId })
+    const agreed = await tx
+      .select()
       .from(schema.negotiations)
       .where(
         and(
@@ -59,6 +64,10 @@ export async function claimAgreement(roomId: string, round: number, price: strin
         ),
       );
 
+    // The need is filled by any other deal; the item only if the two deals clash (see usage.ts).
+    const uses = await usesOf([room, ...agreed], tx);
+    const taken = agreed.filter((t) => t.intentId === room.intentId || clashes(uses.get(room.id)!, uses.get(t.id)!));
+
     // Another yes on the same thing at a better price: the seller gets the highest, the buyer pays the lowest.
     const mine = Number(price ?? 0);
     const better = (await rivalsOf(room, goods, tx)).find(
@@ -66,7 +75,10 @@ export async function claimAgreement(roomId: string, round: number, price: strin
     );
 
     const closedReason = taken.length
-      ? taken.some((t) => t.itemId === room.itemId) ? "sold to someone else" : "went with another option"
+      ? (() => {
+          const item = taken.find((t) => t.itemId === room.itemId && t.intentId !== room.intentId);
+          return !item ? "went with another option" : uses.get(item.id)!.sale ? "sold to someone else" : uses.get(room.id)!.sale ? "it's rented out then" : "already rented out those days";
+        })()
       : better ? (better.room.itemId === room.itemId ? "another buyer offered more" : "another seller was cheaper") : null;
     if (closedReason) {
       await tx.update(schema.negotiations).set({ round, status: "closed", closedReason }).where(eq(schema.negotiations.id, roomId));

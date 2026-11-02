@@ -4,6 +4,7 @@ import { counterpartySignals } from "./signals";
 import { busyTimes } from "@/lib/bookings";
 import { freeTimes } from "@/lib/availability";
 import { placesFor } from "@/lib/deals/meet";
+import { rentedOut } from "@/lib/deals/usage";
 import type { Limits } from "./guardrails";
 
 // Everything one side's agent needs for its next move, and nothing private
@@ -66,6 +67,8 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
 
   // Both people's busy times, like a free/busy calendar. No details.
   const busy = [...(await busyTimes(ownerId, roomId)), ...(await busyTimes(otherId, roomId))];
+  // When the item is out on a rental, so a sale hands off after it's back and another rental picks other days.
+  const out = item.kind === "goods" ? (await rentedOut(item.id, roomId)).filter((u) => u.from && u.to) : [];
   // Free hours, for whoever marked some. The time has to fall inside each such person's hours.
   const free = { you: await freeTimes(ownerId), them: await freeTimes(otherId) };
   // Where to meet without anyone driving past how far they said they'd go.
@@ -97,6 +100,7 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
     legTerms,
     plan: deal && deal.ownerId === ownerId ? plan : [],
     busy,
+    out,
     free,
     places,
     stops: room.stops,

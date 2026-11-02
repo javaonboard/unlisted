@@ -10,7 +10,7 @@ type Intent = typeof schema.intents.$inferSelect;
 // Requirements are generic: "minSeats: 3" needs the item's "seats" ≥ 3, "maxWidthIn: 80" needs
 // "widthIn" ≤ 80. The AI names the specs when it reads a photo or a message; this rule just compares them.
 function fits(item: Item, intent: Intent) {
-  if (item.category !== intent.category || item.ownerId === intent.ownerId) return false;
+  if (item.category !== intent.category || item.ownerId === intent.ownerId || item.soldAt) return false;
   if (intent.type === "buy" && item.kind === "goods" && !item.forSale) return false;
   if (intent.type === "rent" && !item.rentPerDay) return false;
   // Within 10% is still worth talking about; owners can stretch. A rental costs its daily price times the days.

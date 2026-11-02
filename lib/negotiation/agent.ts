@@ -56,7 +56,7 @@ ${c.free.them.length ? `\n${c.other.name}'s free hours (pick a time inside them)
 ${c.rental ? `\nThis is a rental for ${c.rental.days} day${c.rental.days > 1 ? "s" : ""}: the price is the whole fee (listed at $${c.rental.perDay}/day). A $${c.rental.deposit} deposit is held by PayPal and released when it comes back in good shape; it is not part of the price. slotStart is the pickup time.` : ""}
 ${c.stops.length ? `\nThe job, stop by stop (price it by stops and effort):\n${c.stops.map((s) => `- ${s}`).join("\n")}` : ""}
 ${c.places.length ? `\nPlaces that keep both of you within how far you'll travel (meetAt): ${c.places.join(", ")}.` : ""}
-${c.busy.length ? `\nBusy times (you or them):\n${c.busy.map((b) => `- ${b.startsAt.toISOString()} to ${b.endsAt.toISOString()}`).join("\n")}` : ""}
+${c.out.length ? `\nThe item is rented out ${c.out.map((u) => `${u.from!.toISOString()} to ${u.to!.toISOString()}`).join(", ")}. A sale hands it off only after ${new Date(Math.max(...c.out.map((u) => u.to!.getTime()))).toISOString()}, when every rental is back; a rental picks days outside those.` : ""}${c.busy.length ? `\nBusy times (you or them):\n${c.busy.map((b) => `- ${b.startsAt.toISOString()} to ${b.endsAt.toISOString()}`).join("\n")}` : ""}
 
 Signals about ${c.other.name}:
 ${c.signals.map((s) => `- ${s}`).join("\n") || "- none yet"}

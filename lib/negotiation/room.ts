@@ -6,6 +6,7 @@ import { loadTurnContext } from "./context";
 import { decideMove } from "./agent";
 import { toA2AMessage, type Move } from "./moves";
 import { claimAgreement, settleAgreement } from "./claim";
+import { usesOf } from "@/lib/deals/usage";
 
 type NewRoom = { id?: string; dealId?: string; dependsOn?: string[]; stops?: string[]; label?: string; buyerId: string; sellerId: string; itemId: string; intentId: string };
 
@@ -29,10 +30,12 @@ export async function playTurn(roomId: string): Promise<boolean> {
   if (!room || room.status !== "open") return false;
 
   // A parallel negotiation already won: the item is sold, or the need is filled.
-  // A service isn't used up: a provider can take many jobs.
+  // A service isn't used up: a provider can take many jobs. A rental only blocks its own days (checked when agreeing).
   const agreed = and(eq(schema.negotiations.status, "agreed"), ne(schema.negotiations.id, roomId));
   const [item] = await db.select({ kind: schema.vaultItems.kind }).from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!));
-  const [sold] = item?.kind === "goods" ? await db.select({ id: schema.negotiations.id }).from(schema.negotiations).where(and(eq(schema.negotiations.itemId, room.itemId!), agreed)) : [];
+  const others = item?.kind === "goods" ? await db.select().from(schema.negotiations).where(and(eq(schema.negotiations.itemId, room.itemId!), agreed)) : [];
+  const uses = await usesOf(others);
+  const sold = others.find((r) => uses.get(r.id)!.sale);
   const [filled] = await db.select({ id: schema.negotiations.id }).from(schema.negotiations).where(and(eq(schema.negotiations.intentId, room.intentId!), agreed));
   if (sold || filled) {
     const closedReason = sold ? "sold to someone else" : "went with another option";
