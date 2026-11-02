@@ -2,7 +2,6 @@ import { z } from "zod";
 import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { askForData } from "@/lib/ai/structured";
-import { MODELS } from "@/lib/ai/client";
 import { askForNewTime } from "@/lib/negotiation/owner";
 import { meetAtOf } from "@/lib/deals/meet";
 import { stopsFor } from "@/lib/deals/stops";
@@ -15,14 +14,20 @@ const Adjust = z.object({
 
 const running = new Set<string>(); // plans being adjusted right now
 
-// One part of a plan changed time or place. The plan agent looks at every part and decides what else has to
-// move so the plan still works for everyone (a mover serving that pickup, a handoff that must come first).
-// Code keeps it safe: only open, unpaid-or-pinned, not-yet-handed-off parts are touched, and a change the plan
-// agent made doesn't trigger another round. Returns the rooms to play.
+// One part of a plan changed time or place: the plan agent checks what else has to move.
+// A change the plan agent made itself doesn't trigger another round. Returns the rooms to play.
 export async function onPlanChanged(roomId: string) {
   const [changed] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
   if (!changed?.dealId || changed.reopenedBy === "plan") return [];
-  const [deal] = await db.select().from(schema.deals).where(eq(schema.deals.id, changed.dealId));
+  return reviewPlan(changed.dealId, changed);
+}
+
+// The plan agent looks at every part and decides what has to move so the plan works for everyone
+// (a mover serving a pickup, a handoff that must come first, the owner never left without something they need).
+// Code keeps it safe: only agreed, not-yet-handed-off parts are touched, and each part at most once by the plan agent.
+// With no changed part, it's a check of the whole plan, and the owner only hears if something moves.
+export async function reviewPlan(dealId: string, changed?: typeof schema.negotiations.$inferSelect) {
+  const [deal] = await db.select().from(schema.deals).where(eq(schema.deals.id, dealId));
   if (!deal?.isPlan || running.has(deal.id)) return [];
   running.add(deal.id);
   try {
@@ -55,22 +60,24 @@ export async function onPlanChanged(roomId: string) {
 
     const { adjust, tellOwner } = await askForData({
       schema: Adjust,
-      model: MODELS.small,
       content: `You coordinate ${first(deal.ownerId)}'s plan "${deal.title}" on Unlisted, a local marketplace.
-One part just changed: ${changed.label}, now ${when(changed.id)}.
-All parts of the plan:
+${changed ? `One part just changed: ${changed.label}, now ${when(changed.id)}.` : "Every sale and purchase in the plan is now agreed. Check the plan as a whole before helpers are booked."}
+${deal.saleWaitsForPurchase ? `${first(deal.ownerId)} sells only once their purchase works out, so each sale's handoff should come after the purchase's handoff: they need the new one in place first.\n` : ""}All parts of the plan:
 ${rooms.map(describe).join("\n")}
 
-Which other parts must change so the plan still works for everyone? For example a mover whose stops include a pickup that moved,
-or a handoff that has to happen before or after another one. Leave parts that still fit, and never change parts already handed off.
+Which parts must change so the plan works for everyone? For example a mover whose stops include a pickup that moved,
+a handoff that has to happen before or after another one, or ${first(deal.ownerId)} left without something they still need for days.
+Leave parts that still fit, and never change parts already handed off.
 Return the roomId and a short instruction for each part to adjust (empty if none), and a short note for ${first(deal.ownerId)}.`,
     });
 
-    const allowed = new Set(rooms.filter((r) => r.id !== changed.id && r.status === "agreed" && !done(r.id)).map((r) => r.id));
+    const allowed = new Set(rooms.filter((r) => r.id !== changed?.id && r.status === "agreed" && !done(r.id) && r.reopenedBy !== "plan").map((r) => r.id));
     const toAdjust = adjust.filter((a) => allowed.has(a.roomId));
     for (const a of toAdjust) await askForNewTime(a.roomId, deal.ownerId, a.note, "plan");
-    await db.insert(schema.notifications).values({ userId: deal.ownerId, title: `${deal.title}: plan updated`, body: tellOwner, link: `/deals/${deal.id}` });
-    console.log(`[plan] ${deal.title}: ${changed.label} changed, adjusting ${toAdjust.length} part(s)`);
+    if (changed || toAdjust.length) {
+      await db.insert(schema.notifications).values({ userId: deal.ownerId, title: `${deal.title}: plan updated`, body: tellOwner, link: `/deals/${deal.id}` });
+    }
+    console.log(`[plan] ${deal.title}: ${changed ? `${changed.label} changed` : "checked"}, adjusting ${toAdjust.length} part(s)`);
     return toAdjust.map((a) => ({ id: a.roomId }));
   } finally {
     running.delete(deal.id);

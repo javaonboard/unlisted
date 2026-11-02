@@ -43,6 +43,16 @@ export async function onLegFinished(dealId: string) {
 
   starting.add(dealId);
   try {
+    // Before booking help, the plan agent checks the goods' times fit together (say, a sale handing off before
+    // the new sofa arrives). Parts it moves reopen; once they're agreed again, this runs again.
+    const { reviewPlan } = await import("@/lib/plans/cascade");
+    const moved = await reviewPlan(dealId);
+    if (moved.length) {
+      starting.delete(dealId); // so the moved parts can call back in when they're agreed again
+      await Promise.all(moved.map((r) => playRoom(r.id)));
+      return;
+    }
+
     const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, deal.ownerId));
     const agreed = goods.filter((r) => r.status === "agreed");
     const stops = await stopsFor(deal.ownerId, agreed);
