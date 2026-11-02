@@ -27,3 +27,11 @@ test("without a webhook id nothing is trusted", async () => {
   await assert.rejects(verifyWebhook(headers, "{}"), /PAYPAL_WEBHOOK_ID/);
   if (saved) process.env.PAYPAL_WEBHOOK_ID = saved;
 });
+
+test("every payout event PayPal sends maps to a payout step", async () => {
+  const { PAYPAL_EVENTS } = await import("@/lib/payments/events");
+  for (const type of ["SUCCEEDED", "FAILED", "UNCLAIMED", "RETURNED", "BLOCKED", "CANCELED", "REFUNDED"]) {
+    assert.equal(PAYPAL_EVENTS[`PAYMENT.PAYOUTS-ITEM.${type}`]?.stage, "payout", type);
+  }
+  assert.equal(PAYPAL_EVENTS["PAYMENT.PAYOUTS-ITEM.SUCCEEDED"].ok, true);
+});

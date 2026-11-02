@@ -1,7 +1,8 @@
 import { eq, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { logActivity } from "@/lib/db/activity";
-import { applyPayPal, PAYPAL_EVENTS } from "./confirm";
+import { applyPayPal } from "./confirm";
+import { PAYPAL_EVENTS } from "./events";
 
 type PayPalEvent = { id: string; event_type: string; summary?: string; resource?: { id?: string; payout_batch_id?: string } };
 

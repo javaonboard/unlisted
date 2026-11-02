@@ -2,25 +2,9 @@ import { and, eq, lt } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { getPayoutItemStatus } from "@/lib/paypal/payouts";
+import type { Stage } from "./events";
 
-type Stage = "hold" | "capture" | "payout" | "refund" | "release";
 type Leg = typeof schema.dealLegs.$inferSelect;
-
-// Which signed PayPal event confirms (or fails) which money step.
-export const PAYPAL_EVENTS: Record<string, { stage: Stage; ok: boolean }> = {
-  "PAYMENT.AUTHORIZATION.CREATED": { stage: "hold", ok: true },
-  "PAYMENT.AUTHORIZATION.VOIDED": { stage: "release", ok: true },
-  "PAYMENT.CAPTURE.COMPLETED": { stage: "capture", ok: true },
-  "PAYMENT.CAPTURE.DENIED": { stage: "capture", ok: false },
-  "PAYMENT.CAPTURE.DECLINED": { stage: "capture", ok: false },
-  "PAYMENT.CAPTURE.REFUNDED": { stage: "refund", ok: true },
-  "PAYMENT.PAYOUTS-ITEM.SUCCEEDED": { stage: "payout", ok: true },
-  "PAYMENT.PAYOUTS-ITEM.FAILED": { stage: "payout", ok: false },
-  "PAYMENT.PAYOUTS-ITEM.UNCLAIMED": { stage: "payout", ok: false },
-  "PAYMENT.PAYOUTS-ITEM.RETURNED": { stage: "payout", ok: false },
-  "PAYMENT.PAYOUTS-ITEM.BLOCKED": { stage: "payout", ok: false },
-  "PAYMENT.PAYOUTS-ITEM.DENIED": { stage: "payout", ok: false },
-};
 
 // PayPal confirmed (or failed) one step of a payment. Safe to repeat: the same event changes nothing twice.
 // Only this moves a payout to "paid out"; a failed charge or payout is marked and both people hear about it.
