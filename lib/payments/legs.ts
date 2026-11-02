@@ -7,6 +7,7 @@ import { captureAuthorization, voidAuthorization } from "@/lib/paypal/payments";
 import { sendPayout } from "@/lib/paypal/payouts";
 import { approve, waitingFor } from "@/lib/deals/approval";
 import { notify } from "@/lib/notifications/notify";
+import { addVaultItem } from "@/lib/vault/mutations";
 import { inSentence } from "@/lib/text/words";
 import { FEE, payoutOf, rentalCapture } from "./fees";
 
@@ -143,6 +144,17 @@ async function markSold(leg: typeof schema.dealLegs.$inferSelect) {
   await db.update(schema.intents).set({ status: "done" }).where(eq(schema.intents.id, room.intentId!));
   const [item] = await db.select({ category: schema.vaultItems.category }).from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!));
   await db.update(schema.intents).set({ status: "done" }).where(and(eq(schema.intents.ownerId, room.sellerId), eq(schema.intents.type, "sell"), eq(schema.intents.category, item.category)));
+  await giveToBuyer(room);
+}
+
+// The buyer now owns it: it shows in their things, private, worth what they paid. Their agent takes a look
+// (price check, then ideas like renting it out between uses) through the usual "added" event.
+async function giveToBuyer(room: typeof schema.negotiations.$inferSelect) {
+  const [sold] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!));
+  const [already] = await db.select({ id: schema.vaultItems.id }).from(schema.vaultItems).where(and(eq(schema.vaultItems.ownerId, room.buyerId), eq(schema.vaultItems.title, sold.title), isNull(schema.vaultItems.soldAt)));
+  if (already) return; // a repeated confirm doesn't add it twice
+  const mine = await addVaultItem(room.buyerId, { kind: "goods", title: sold.title, category: sold.category, condition: sold.condition ?? undefined, estimatedValue: Number(room.agreedPrice ?? sold.estimatedValue ?? 0), details: sold.details });
+  await db.update(schema.vaultItems).set({ photos: sold.photos, inspection: sold.inspection }).where(eq(schema.vaultItems.id, mine.id));
 }
 
 // The rental came back. All good: PayPal captures just the fee and releases the deposit.

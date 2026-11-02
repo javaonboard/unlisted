@@ -17,7 +17,7 @@ const Plan = z.object({
   steps: z.array(z.string()).describe("2-4 short first-person lines on what you'll do"),
 });
 const Idea = z.object({
-  kind: z.enum(["go_public", "talk_to", "plan", "add_need", "set_price"]),
+  kind: z.enum(["go_public", "talk_to", "plan", "add_need", "set_price", "rent_out"]),
   title: z.string().describe("One short line, naming the thing and the people"),
   body: z.string().describe("One or two short sentences: why now, what you'll do"),
   button: z.string().describe("2-4 words, what tapping does, e.g. 'Make it public'"),
@@ -34,7 +34,7 @@ const Idea = z.object({
       requirements: z.array(z.object({ name: z.string(), value: z.number() })),
     })
     .nullable(),
-  price: z.number().nullable().describe("For set_price: the new asking price"),
+  price: z.number().nullable().describe("For set_price: the new asking price. For rent_out: a fair price per day"),
 });
 
 const QUIET = 2 * 60_000; // one look per person every couple of minutes at most
@@ -76,6 +76,7 @@ Kinds:
 - plan: things that depend on each other: a sale that funds a purchase, a sale or purchase that needs a helper (mover, delivery, installer).
 - add_need: something they'll clearly need but haven't asked for (e.g. a power supply for a new graphics card).
 - set_price: a thing that isn't moving because the price is above what nearby people will pay.
+- rent_out: a thing people borrow for a day or two (tools, gear, party or baby things) that they keep but don't rent out yet: earn from it between uses.
 Don't repeat recent suggestions, don't suggest what's already in progress, at most one of each kind, and use only the ids below.
 
 About them: ${me.bio ?? "-"}
@@ -140,6 +141,8 @@ Recent suggestions: ${recent.map((s) => `${s.kind}: ${s.title} (${s.status})`).j
       sent += Number(await suggest({ ...base, kind: "post_need", action: { type: n.type, text: n.text, category: n.category, maxPrice: n.maxPrice, ...(n.days ? { days: n.days } : {}), constraints: JSON.stringify(asRecord(n.requirements)), label } }));
     } else if (idea.kind === "set_price" && idea.itemId && idea.price && mine.get(idea.itemId) && !already(`${idea.itemId}","price`)) {
       sent += Number(await suggest({ ...base, kind: "set_price", action: { itemId: idea.itemId, price: Math.round(idea.price), label } }));
+    } else if (idea.kind === "rent_out" && idea.itemId && idea.price && mine.get(idea.itemId)?.kind === "goods" && !mine.get(idea.itemId)!.rentPerDay && !already(`${idea.itemId}","perDay`)) {
+      sent += Number(await suggest({ ...base, kind: "rent_out", action: { itemId: idea.itemId, perDay: Math.max(1, Math.round(idea.price)), label } }));
     }
   }
   console.log(`[checkin] ${userId} (${why}): ${sent} suggestion(s)`);

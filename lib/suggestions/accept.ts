@@ -71,6 +71,14 @@ export async function acceptSuggestion(id: string, userId: string, plan?: PlanPi
       await db.insert(schema.notifications).values({ userId, title: `${deal.title}: started`, body: "My agents are talking to the best matches. Each part shows up here as its own deal when it needs you.", link: `/deals/${deal.id}` });
       return "/";
     }
+    case "rent_out": {
+      // Rentable at the agent's day price (a deposit of half its value), and public so renters nearby can find it.
+      const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, String(a.itemId)), eq(schema.vaultItems.ownerId, userId)));
+      if (!item) return null;
+      await db.update(schema.vaultItems).set({ rentPerDay: Number(a.perDay).toFixed(2), deposit: item.deposit ?? Math.round(Number(item.estimatedValue ?? 0) * 0.5).toFixed(2) }).where(eq(schema.vaultItems.id, item.id));
+      playLater(await goPublic(userId, item.id));
+      return `/my-stuff/${item.id}`;
+    }
     case "set_price": {
       // A lower asking price; the lowest they'd take moves down with it if needed.
       const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, String(a.itemId)), eq(schema.vaultItems.ownerId, userId)));
