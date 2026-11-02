@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { currentUserId } from "@/lib/session";
-import { setAddress, setPaypalEmail } from "@/lib/users/mutations";
+import { newConnectorKey, setAddress, setPaypalEmail } from "@/lib/users/mutations";
 import { payWaiting } from "@/lib/payments/legs";
 
 export async function setAddressAction(form: FormData) {
@@ -16,4 +16,9 @@ export async function setPaypalEmailAction(form: FormData) {
   const error = await setPaypalEmail(userId, String(form.get("paypalEmail") ?? ""));
   if (!error) await payWaiting(userId);
   revalidatePath("/", "layout");
+}
+
+export async function newConnectorKeyAction() {
+  await newConnectorKey(await currentUserId());
+  revalidatePath("/connect");
 }

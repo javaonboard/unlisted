@@ -25,6 +25,7 @@ export const users = pgTable("users", {
   paypalEmail: text("paypal_email"),
   bio: text("bio"),
   connectorKey: text("connector_key").unique(), // secret part of the user's MCP connector link
+  connectorUsedAt: timestamp("connector_used_at"), // last time their AI app used it
   checkedInAt: timestamp("checked_in_at"), // the agent's last look at this person's situation
   createdAt: createdAt(),
 });

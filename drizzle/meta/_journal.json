@@ -288,6 +288,13 @@
       "when": 1793636630462,
       "tag": "0040_past_dragon_lord",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793638442292,
+      "tag": "0041_steady_madelyne_pryor",
+      "breakpoints": true
     }
   ]
 }

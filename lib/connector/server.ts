@@ -7,7 +7,7 @@ import { discoverFor } from "@/lib/matching/discover";
 import { getRoom, listRooms } from "@/lib/negotiation/queries";
 import { startNegotiation } from "@/lib/negotiation/start";
 import { listNotifications } from "@/lib/notifications/queries";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getRoomView } from "@/lib/views/queries";
 import { nextFor, roleOf } from "@/lib/views/next";
@@ -21,6 +21,15 @@ import { understandText } from "@/lib/items/understand";
 import { asRecord, missing } from "@/lib/items/card";
 import { categoryRule, knownCategories } from "@/lib/items/categories";
 import { after } from "next/server";
+import { myMoney, askAboutMoney } from "@/lib/money/ask";
+import { priceItem, priceNeed } from "@/lib/pricing/save";
+import { goPrivate, goPublic } from "@/lib/items/visibility";
+import { playLater } from "@/lib/negotiation/start";
+
+const INSTRUCTIONS = `Unlisted is the user's personal agent for a local marketplace. Their agent negotiates with other people's agents for them.
+- Nothing is binding until the user approves in the Unlisted app. Approving deals, saying yes to plans and suggestions, paying with PayPal and confirming handoffs always happen in the app: give the link from the tool result.
+- Money is paid through PayPal: held when the buyer pays, charged at the handoff, then paid out to the seller minus an 8% fee. Use check_payment to ask PayPal about a payment.
+- Ask the user before making something public, and never invent prices: use price_check.`;
 
 const json = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] });
 
@@ -29,7 +38,7 @@ const json = (value: unknown) => ({ content: [{ type: "text" as const, text: JSO
 export async function unlistedServer(userId: string, base: string) {
   const categories = categoryRule(await knownCategories());
   const inApp = (roomId: string) => `${base}/rooms/${roomId}`;
-  const server = new McpServer({ name: "unlisted", version: "1.0.0" });
+  const server = new McpServer({ name: "unlisted", version: "1.0.0" }, { instructions: INSTRUCTIONS });
 
   server.registerTool(
     "my_stuff",
@@ -255,6 +264,76 @@ export async function unlistedServer(userId: string, base: string) {
       return json({ nextStep: nextFor(view, userId).label, link: inApp(roomId) });
     },
   );
+
+  server.registerTool(
+    "my_suggestions",
+    { description: "What the user's agent suggests right now: a buyer nearby, a plan, something to rent out, a better price. Saying yes happens in the app." },
+    async () => {
+      const open = await db.select().from(schema.suggestions).where(and(eq(schema.suggestions.userId, userId), eq(schema.suggestions.status, "new")));
+      return json({ suggestions: open.map((s) => ({ title: s.title, why: s.body, button: s.action.label })), sayYesInApp: base });
+    },
+  );
+
+  server.registerTool(
+    "price_check",
+    {
+      description: "What one of the user's things or needs is worth, from a live web search, product prices and past local deals, with sources. Pass itemId (from my_stuff) or needId.",
+      inputSchema: { itemId: z.string().optional(), needId: z.string().optional() },
+    },
+    async ({ itemId, needId }) => {
+      if (itemId) {
+        const [item] = await db.select({ id: schema.items.id }).from(schema.items).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, userId)));
+        return json(item ? ((await priceItem(item.id)) ?? { error: "Couldn't check the price right now." }) : { error: "Not one of the user's things." });
+      }
+      const [need] = needId ? await db.select({ id: schema.intents.id }).from(schema.intents).where(and(eq(schema.intents.id, needId), eq(schema.intents.ownerId, userId))) : [];
+      return json(need ? ((await priceNeed(need.id)) ?? { error: "Couldn't check the price right now." }) : { error: "Pass one of the user's itemId or needId." });
+    },
+  );
+
+  server.registerTool(
+    "set_public",
+    {
+      description: "Make one of the user's things public (their agent starts talking to the best buyers nearby; nothing is binding) or private again. Ask the user first.",
+      inputSchema: { itemId: z.string(), public: z.boolean() },
+    },
+    async ({ itemId, public: open }) => {
+      const [item] = await db.select({ id: schema.items.id }).from(schema.items).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, userId)));
+      if (!item) return json({ error: "Not one of the user's things." });
+      if (!open) {
+        await goPrivate(userId, itemId);
+        return json({ ok: true, status: "Private. Talks already running carry on." });
+      }
+      const rooms = await goPublic(userId, itemId);
+      playLater(rooms);
+      return json({ ok: true, status: rooms.length ? `Public. Talking to ${rooms.length} buyer(s) nearby.` : "Public. Your agent will talk to buyers as they show up." });
+    },
+  );
+
+  server.registerTool(
+    "my_payments",
+    { description: "The user's payments: what they pay or get paid, the status, and a receipt link." },
+    async () => json((await myMoney(userId)).map(({ orderId: _orderId, ...p }) => ({ ...p, receipt: `${base}/money/${p.id}` }))),
+  );
+
+  server.registerTool(
+    "check_payment",
+    {
+      description: "Ask about the user's payments in plain words, e.g. 'Did my payment to Sam go through?'. Their agent checks the order live with PayPal (PayPal Agent Toolkit).",
+      inputSchema: { question: z.string() },
+    },
+    async ({ question }) => json({ answer: await askAboutMoney(userId, question).catch(() => "Couldn't check with PayPal right now. Try again in a minute.") }),
+  );
+
+  // Ready-made starts that show up in the user's AI app.
+  server.registerPrompt("weekly_check", { title: "What's new on Unlisted?", description: "Deals waiting on you, suggestions and payments" }, () => ({
+    messages: [{ role: "user", content: { type: "text", text: "Check Unlisted for me: what needs me, what my agent suggests, and whether my payments went through. Keep it short and give me the links." } }],
+  }));
+  server.registerPrompt("sell_something", { title: "Sell or rent something", description: "Tell your agent about something you own", argsSchema: { thing: z.string().describe("What it is") } }, ({ thing }) => ({
+    messages: [{ role: "user", content: { type: "text", text: `I want to sell or rent out my ${thing} on Unlisted. Ask me what you need (condition, lowest price), check what it's worth, then add it.` } }],
+  }));
+  server.registerPrompt("plan_a_move", { title: "Plan a move", description: "Sell, buy and book help for moving day", argsSchema: { when: z.string().describe("When you're moving") } }, ({ when }) => ({
+    messages: [{ role: "user", content: { type: "text", text: `I'm moving ${when}. Help me on Unlisted: what of my stuff should I sell, what do I need, and find me a mover. Ask before posting anything.` } }],
+  }));
 
   return server;
 }

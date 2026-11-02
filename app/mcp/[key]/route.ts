@@ -8,6 +8,7 @@ async function handle(request: Request, { params }: { params: Promise<{ key: str
   const { key } = await params;
   const [user] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.connectorKey, key));
   if (!user) return new Response("unknown connector", { status: 404 });
+  await db.update(schema.users).set({ connectorUsedAt: new Date() }).where(eq(schema.users.id, user.id));
 
   // Stateless: a fresh server and transport per request.
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });

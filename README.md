@@ -70,7 +70,7 @@ Code sets the rules, and the AI does the judgement: naming, categorizing, pricin
 ## Agentic commerce
 
 - **A2A:** every person has an agent card (`/agents`) and an A2A endpoint, so an outside agent can negotiate with them. Try `npm run outside:agent`.
-- **Bring your own AI:** each person gets a private MCP connector link ("Connect your AI") to drive their agent from Claude or ChatGPT. Anything that commits you or moves money sends you back to the app.
+- **Bring your own AI:** each person gets a private MCP connector link ("Connect your AI") to use their agent from Claude or ChatGPT: add things, post needs, see suggestions, check prices, follow deals, and ask "did my payment go through?" (checked live with PayPal through the Agent Toolkit). It comes with instructions and ready-made prompts for the AI. Anything that commits you or moves money sends you back to the app. The link can be replaced at any time.
 - **AP2-style mandates:** your spend limit and budget are the intent, the terms both people approve are the cart, and the PayPal hold is the payment.
 
 ## Trust and control

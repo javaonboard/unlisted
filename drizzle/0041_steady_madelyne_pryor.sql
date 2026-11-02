@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "connector_used_at" timestamp;

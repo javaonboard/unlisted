@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 
@@ -12,4 +13,9 @@ export async function setPaypalEmail(userId: string, email: string) {
   if (clean && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clean)) return "That doesn't look like an email.";
   await db.update(schema.users).set({ paypalEmail: clean || null }).where(eq(schema.users.id, userId));
   return null;
+}
+
+// A new connector link. The old one stops working at once.
+export async function newConnectorKey(userId: string) {
+  await db.update(schema.users).set({ connectorKey: randomBytes(12).toString("hex"), connectorUsedAt: null }).where(eq(schema.users.id, userId));
 }
