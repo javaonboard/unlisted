@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { and, desc, eq, or } from "drizzle-orm";
+import { inPlanOrder, planSteps } from "@/lib/deals/order";
 import { Bot, Check, CircleAlert } from "lucide-react";
 import { db, schema } from "@/lib/db";
 import { currentUserId } from "@/lib/session";
@@ -34,7 +35,8 @@ async function Inbox() {
         const view = await getRoomView(roomId, userId);
         if (!view) return null;
         const notes = notifications.filter((n) => n.roomId === roomId);
-        return { roomId, view, next: nextFor(view, userId), role: roleOf(view, userId), notes, at: notes[0].createdAt };
+        const planId = view.deal?.isPlan && view.deal.ownerId === userId ? view.deal.id : null; // only the owner's own plans
+        return { roomId, view, planId, next: nextFor(view, userId), role: roleOf(view, userId), notes, at: notes[0].createdAt };
       }),
     )
   ).filter((t) => t !== null);
@@ -56,16 +58,23 @@ async function Inbox() {
     ),
   );
 
+  // A plan's parts show together, in the order to approve them.
+  const steps = new Map<string, { step: number; total: number }>();
+  for (const t of threads.filter((t, i, all) => t.planId && all.findIndex((o) => o.planId === t.planId) === i)) {
+    const rooms = await db.select().from(schema.negotiations).where(eq(schema.negotiations.dealId, t.planId!));
+    for (const [id, s] of planSteps(rooms, t.view.deal!)) steps.set(id, s);
+  }
+
   const open = suggestions.filter((s) => s.status === "new");
   const answered = suggestions.filter((s) => s.status !== "new");
-  const needsYou = threads.filter((t) => t.next.state === "needs_you");
-  const going = threads.filter((t) => ["waiting", "upcoming", "talking"].includes(t.next.state));
+  const needsYou = inPlanOrder(threads.filter((t) => t.next.state === "needs_you"), steps);
+  const going = inPlanOrder(threads.filter((t) => ["waiting", "upcoming", "talking"].includes(t.next.state)), steps);
   const done = threads.filter((t) => t.next.state === "done");
   const updates = notifications.filter((n) => !n.roomId && !n.fromMe);
   const count = needsYou.length + open.length;
 
   const thread = (t: (typeof threads)[number], expanded: boolean) => (
-    <DealThread key={t.roomId} roomId={t.roomId} item={{ kind: t.view.item.kind, photos: t.view.item.photos }} viewerId={userId} role={t.role} next={t.next} distance={t.view.distance} plan={t.view.deal?.isPlan ? t.view.deal.title : null} notes={t.notes} open={expanded} />
+    <DealThread key={t.roomId} roomId={t.roomId} item={{ kind: t.view.item.kind, photos: t.view.item.photos }} viewerId={userId} role={t.role} next={t.next} distance={t.view.distance} plan={t.planId ? `${steps.has(t.roomId) ? `step ${steps.get(t.roomId)!.step} of ${steps.get(t.roomId)!.total} in ` : "part of "}your ${t.view.deal!.title} plan` : null} notes={t.notes} open={expanded} />
   );
 
   return (
@@ -85,13 +94,13 @@ async function Inbox() {
       </h2>
       <div className="flex flex-col gap-3">
         {open.map((s) => <SuggestionCard key={s.id} s={s} />)}
-        {needsYou.sort((a, b) => b.at.getTime() - a.at.getTime()).map((t) => thread(t, true))}
+        {needsYou.map((t) => thread(t, true))}
       </div>
 
       {going.length > 0 && (
         <>
           <h2 className="mt-6 mb-2 font-medium">In progress</h2>
-          <div className="flex flex-col gap-3">{going.sort((a, b) => b.at.getTime() - a.at.getTime()).map((t) => thread(t, false))}</div>
+          <div className="flex flex-col gap-3">{going.map((t) => thread(t, false))}</div>
         </>
       )}
 

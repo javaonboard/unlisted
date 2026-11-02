@@ -23,7 +23,7 @@ export function DealThread(p: { roomId: string; item: { kind: string; photos: st
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
             <RoleBadge role={p.role} />
             <StatusPill next={p.next} />
-            <span className="text-muted-foreground">{p.distance}{p.plan ? ` · part of your ${p.plan} plan` : ""}</span>
+            <span className="text-muted-foreground">{p.distance}{p.plan ? ` · ${p.plan}` : ""}</span>
           </div>
         </div>
       </div>

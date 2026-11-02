@@ -42,9 +42,12 @@ async function MyStuff() {
     .filter((p) => p.done < p.parts);
 
   // One card per item, with where its negotiations stand.
-  const itemGrid = (title: string, empty: string, list: typeof items) => (
+  const itemGrid = (title: string, empty: string, list: typeof items, aside?: React.ReactNode) => (
     <>
-      <h2 className="mt-8 mb-3 font-medium first:mt-0">{title}</h2>
+      <div className="mt-8 mb-3 flex items-baseline justify-between gap-3 first:mt-0">
+        <h2 className="font-medium">{title}</h2>
+        {aside}
+      </div>
       {list.length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
       <div className="grid gap-3 sm:grid-cols-2">
         {list.map((item) => (
@@ -83,7 +86,7 @@ async function MyStuff() {
       <div className="mb-6"><TellAgent /></div>
       <PhotoToVault />
 
-      {itemGrid("Things I have", "Nothing yet. Snap a photo of a room or garage.", items.filter((i) => i.kind === "goods"))}
+      {itemGrid("Things I have", "Nothing yet. Snap a photo of a room or garage.", items.filter((i) => i.kind === "goods"), <Link href="/my-stuff/past" className="text-sm text-primary hover:underline">Things I had</Link>)}
       {itemGrid("What I can do", "No services yet. Tell your agent, e.g. “I can clean gutters, I have a ladder”.", items.filter((i) => i.kind === "skill"))}
 
       <h2 className="mt-8 mb-3 font-medium">What I need</h2>
@@ -103,10 +106,7 @@ async function MyStuff() {
 export default function MyStuffPage() {
   return (
     <main className="mx-auto w-full max-w-3xl p-8">
-      <div className="flex items-baseline justify-between gap-3">
-        <h1 className="text-2xl font-semibold">My stuff</h1>
-        <Link href="/my-stuff/past" className="text-sm text-primary hover:underline">Things I had</Link>
-      </div>
+      <h1 className="text-2xl font-semibold">My stuff</h1>
       <p className="mt-1 mb-6 text-muted-foreground">What you own, what you can do, and what you need. Private until you say yes.</p>
       <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
         <MyStuff />
