@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { missing, type Card } from "@/lib/vault/card";
+import { missing, type Card } from "@/lib/items/card";
 
 const card = (c: Partial<Card>): Card =>
   ({ kind: "need", title: "Lawn mowing", category: "lawn", details: null, condition: null, value: null, minPrice: null, freeHours: [], specs: [], requirements: [], maxMiles: null, ways: ["sell"], rentPerDay: null, deposit: null, days: null, needType: "request_service", maxPrice: null, dueInDays: null, ...c }) as Card;

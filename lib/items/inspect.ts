@@ -19,7 +19,7 @@ export type Inspection = z.infer<typeof Check> & { at: string; photos: number };
 // The agent looks at the owner's photos (or frames from a short video): is it the item,
 // what wear shows, and is it shown working when that matters. Findings become verified evidence.
 export async function inspectItem(itemId: string, images: string[], fromVideo = false, ip?: string): Promise<Inspection> {
-  const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, itemId));
+  const [item] = await db.select().from(schema.items).where(eq(schema.items.id, itemId));
   const before = item.inspection?.matches ? item.inspection : null;
   const check = await askForData({
     schema: Check,
@@ -39,7 +39,7 @@ Check it like a careful buyer would. Only report what you can see; don't guess h
 
   const inspection: Inspection = { ...check, workingShown: check.workingShown || Boolean(before?.workingShown), at: new Date().toISOString(), photos: images.length + (before?.photos ?? 0) };
   if (!check.matches) return inspection; // a wrong photo changes nothing
-  await db.update(schema.vaultItems).set({ inspection }).where(eq(schema.vaultItems.id, itemId)); // the owner's own words stay as they are
+  await db.update(schema.items).set({ inspection }).where(eq(schema.items.id, itemId)); // the owner's own words stay as they are
 
   // What the agent saw replaces its earlier findings, so agents only cite the latest.
   await db.delete(schema.evidence).where(and(eq(schema.evidence.itemId, itemId), like(schema.evidence.summary, "Photo check:%")));

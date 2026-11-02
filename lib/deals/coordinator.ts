@@ -14,7 +14,7 @@ const MAX_TRIES = 5;
 const starting = new Set<string>(); // plans whose helpers are being booked right now
 const live = (r: Room) => r.status === "open" || r.status === "waiting_owner";
 const first = (name: string) => name.split(" ")[0];
-const itemTitle = async (id: string) => (await db.select({ title: schema.vaultItems.title }).from(schema.vaultItems).where(eq(schema.vaultItems.id, id)))[0]?.title ?? "item";
+const itemTitle = async (id: string) => (await db.select({ title: schema.items.title }).from(schema.items).where(eq(schema.items.id, id)))[0]?.title ?? "item";
 
 // The plan's goods talks, grouped per thing being sold or bought.
 function goodsGroups(deal: Deal, goods: Room[]) {

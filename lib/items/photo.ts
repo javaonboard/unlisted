@@ -25,9 +25,9 @@ const PhotoResult = z.object({
   ),
 });
 
-export type PhotoAnalysis = z.infer<typeof PhotoResult> & { matches: ProductMatch[] };
+type PhotoAnalysis = z.infer<typeof PhotoResult> & { matches: ProductMatch[] };
 
-// Turns one room or garage photo into vault cards: goods to keep or sell,
+// Turns one room or garage photo into item cards: goods to keep or sell,
 // and skills the owner's equipment suggests they could offer.
 export async function analyzePhoto(
   base64Image: string,

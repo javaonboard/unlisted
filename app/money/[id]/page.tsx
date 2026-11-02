@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Check } from "lucide-react";
 import { currentUserId } from "@/lib/session";
 import { getReceipt } from "@/lib/money/receipt";
-import { BackLink } from "@/components/anchors/BackLink";
+import { BackLink } from "@/components/shared/BackLink";
 import { STATUS_TEXT } from "@/lib/payments/states";
 
 const when = (d: Date) => d.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });

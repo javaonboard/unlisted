@@ -19,9 +19,9 @@ type NewItem = {
 };
 
 // New things start private. Nobody sees them until the owner says yes to a buyer.
-export async function addVaultItem(ownerId: string, item: NewItem) {
+export async function addItem(ownerId: string, item: NewItem) {
   const [row] = await db
-    .insert(schema.vaultItems)
+    .insert(schema.items)
     .values({
       ownerId,
       kind: item.kind,
@@ -39,24 +39,24 @@ export async function addVaultItem(ownerId: string, item: NewItem) {
       deposit: item.deposit?.toFixed(2),
     })
     .returning();
-  await publish("vault.added", { itemId: row.id });
+  await publish("item.added", { itemId: row.id });
   return row;
 }
 
 // A small thumbnail so the card shows the photo it came from.
 export async function setPhoto(itemId: string, dataUrl: string) {
-  await db.update(schema.vaultItems).set({ photos: [dataUrl] }).where(eq(schema.vaultItems.id, itemId));
+  await db.update(schema.items).set({ photos: [dataUrl] }).where(eq(schema.items.id, itemId));
 }
 
 // How far the owner will travel for this item or service. Only the owner can change it.
 export async function setItemRange(ownerId: string, itemId: string, miles: number) {
-  await db.update(schema.vaultItems).set({ maxMiles: Math.max(0, Math.round(miles)) }).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, ownerId)));
+  await db.update(schema.items).set({ maxMiles: Math.max(0, Math.round(miles)) }).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, ownerId)));
 }
 
 // The owner edits anything about their item or service. Prices stay theirs to set.
 export async function updateItem(ownerId: string, itemId: string, f: { title?: string; condition?: string; estimatedValue?: number; minPrice?: number; openToOffers?: boolean; forSale?: boolean; rentPerDay?: number | null; deposit?: number | null }) {
   await db
-    .update(schema.vaultItems)
+    .update(schema.items)
     .set({
       ...(f.title ? { title: f.title } : {}),
       condition: f.condition || null,
@@ -67,5 +67,5 @@ export async function updateItem(ownerId: string, itemId: string, f: { title?: s
       ...(f.rentPerDay !== undefined ? { rentPerDay: f.rentPerDay === null ? null : f.rentPerDay.toFixed(2) } : {}),
       ...(f.deposit !== undefined ? { deposit: f.deposit === null ? null : f.deposit.toFixed(2) } : {}),
     })
-    .where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, ownerId)));
+    .where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, ownerId)));
 }

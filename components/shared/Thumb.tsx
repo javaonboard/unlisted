@@ -1,5 +1,5 @@
 import { Package, Wrench } from "lucide-react";
-import type { Inspection } from "@/lib/vault/inspect";
+import type { Inspection } from "@/lib/items/inspect";
 
 type Item = { kind: string; photos: string[] };
 

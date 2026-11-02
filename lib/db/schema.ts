@@ -1,5 +1,5 @@
 import type { PriceCheck } from "@/lib/pricing/check";
-import type { Inspection } from "@/lib/vault/inspect";
+import type { Inspection } from "@/lib/items/inspect";
 import {
   boolean,
   integer,
@@ -38,7 +38,7 @@ export const mandates = pgTable("mandates", {
 });
 
 // Things a user owns (goods) or can do (skills). Private until they opt in.
-export const vaultItems = pgTable("vault_items", {
+export const items = pgTable("vault_items", {
   id: id(),
   ownerId: text("owner_id").notNull().references(() => users.id),
   kind: text("kind", { enum: ["goods", "skill"] }).notNull(),
@@ -64,7 +64,7 @@ export const vaultItems = pgTable("vault_items", {
 // Facts that back up a claim: a photo, a receipt, a price lookup.
 export const evidence = pgTable("evidence", {
   id: id(),
-  itemId: uuid("item_id").notNull().references(() => vaultItems.id),
+  itemId: uuid("item_id").notNull().references(() => items.id),
   type: text("type", { enum: ["photo", "receipt", "price", "note"] }).notNull(),
   summary: text("summary").notNull(),
   url: text("url"),
@@ -101,7 +101,7 @@ export const negotiations = pgTable("negotiations", {
   id: id(),
   buyerId: text("buyer_id").notNull().references(() => users.id),
   sellerId: text("seller_id").notNull().references(() => users.id),
-  itemId: uuid("item_id").references(() => vaultItems.id),
+  itemId: uuid("item_id").references(() => items.id),
   intentId: uuid("intent_id").references(() => intents.id),
   dealId: uuid("deal_id").references(() => deals.id), // the plan this is part of, if any
   dependsOn: jsonb("depends_on").$type<string[]>().default([]).notNull(), // negotiations this one serves, e.g. a mover for a sale
@@ -264,7 +264,7 @@ export const freeTimes = pgTable("free_times", {
 // Things that happened. Saved, then announced with Postgres NOTIFY so listeners react at once.
 export const events = pgTable("events", {
   id: id(),
-  type: text("type").notNull(), // "need.posted", "vault.added", ...
+  type: text("type").notNull(), // "need.posted", "item.added", ...
   payload: jsonb("payload").$type<Record<string, string>>().notNull(),
   processedAt: timestamp("processed_at"),
   createdAt: createdAt(),

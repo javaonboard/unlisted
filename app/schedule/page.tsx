@@ -4,13 +4,13 @@ import Link from "next/link";
 import { currentUserId } from "@/lib/session";
 import { getUser } from "@/lib/users/queries";
 import { myBookings, waitingOn } from "@/lib/bookings";
-import { BackLink } from "@/components/anchors/BackLink";
+import { BackLink } from "@/components/shared/BackLink";
 import { ScheduleView } from "@/components/bryntum/ScheduleView";
 import { freeTimes } from "@/lib/availability";
 import { clearFreeAction, markFreeAction, moveBookingAction } from "@/app/actions/schedule";
-import { getRoomView } from "@/lib/anchors/queries";
-import { nextFor, roleOf } from "@/lib/anchors/next";
-import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
+import { getRoomView } from "@/lib/views/queries";
+import { nextFor, roleOf } from "@/lib/views/next";
+import { RoleBadge, StatusPill } from "@/components/shared/Badges";
 import { AcceptDeal } from "@/components/rooms/AcceptDeal";
 
 // Local time as "YYYY-MM-DDTHH:mm", which Bryntum reads without shifting.

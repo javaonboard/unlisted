@@ -2,20 +2,20 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { currentUserId } from "@/lib/session";
-import { getNeedAnchor } from "@/lib/anchors/queries";
-import { BackLink } from "@/components/anchors/BackLink";
-import { Highlights } from "@/components/anchors/Highlights";
-import { NegotiationList } from "@/components/anchors/NegotiationList";
+import { getNeedView } from "@/lib/views/queries";
+import { BackLink } from "@/components/shared/BackLink";
+import { Highlights } from "@/components/shared/Highlights";
+import { NegotiationList } from "@/components/shared/NegotiationList";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
-import { RangeForm } from "@/components/anchors/RangeForm";
+import { RangeForm } from "@/components/shared/RangeForm";
 import { setNeedRangeAction } from "@/app/actions/range";
 import { rangeOfNeed } from "@/lib/places";
-import { PriceAdvice } from "@/components/anchors/PriceAdvice";
-import { EditNeed } from "@/components/anchors/EditForms";
+import { PriceAdvice } from "@/components/shared/PriceAdvice";
+import { EditNeed } from "@/components/shared/EditForms";
 import { checkNeedPriceAction, updateNeedAction, useNeedBudgetAction } from "@/app/actions/edit";
 
-async function NeedAnchor({ params }: { params: Promise<{ id: string }> }) {
-  const data = await getNeedAnchor((await params).id, await currentUserId());
+async function NeedView({ params }: { params: Promise<{ id: string }> }) {
+  const data = await getNeedView((await params).id, await currentUserId());
   if (!data) notFound();
   const { need, negotiations } = data;
 
@@ -47,7 +47,7 @@ export default function NeedPage({ params }: { params: Promise<{ id: string }> }
   return (
     <main className="mx-auto w-full max-w-3xl p-8">
       <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
-        <NeedAnchor params={params} />
+        <NeedView params={params} />
       </Suspense>
     </main>
   );

@@ -9,8 +9,8 @@ async function main() {
   const buyerId = process.argv[2] ?? "ben";
   const [sectional] = await db
     .select()
-    .from(schema.vaultItems)
-    .where(and(eq(schema.vaultItems.ownerId, "maya"), eq(schema.vaultItems.category, "sofa")));
+    .from(schema.items)
+    .where(and(eq(schema.items.ownerId, "maya"), eq(schema.items.category, "sofa")));
 
   const demand = await findDemandFor(sectional.id);
   console.log("demand:", demand.map((i) => `${i.ownerId} (max $${i.maxPrice})`).join(", "));

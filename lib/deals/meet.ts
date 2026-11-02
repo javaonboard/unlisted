@@ -38,7 +38,7 @@ const SAY: Record<MeetAt, string> = { seller_home: "at the seller's place", buye
 // Where this deal can happen without anyone driving past their range.
 export async function placesFor(room: { buyerId: string; sellerId: string; itemId: string | null; intentId: string | null }) {
   const [[item], [need], people] = await Promise.all([
-    db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!)),
+    db.select().from(schema.items).where(eq(schema.items.id, room.itemId!)),
     db.select().from(schema.intents).where(eq(schema.intents.id, room.intentId!)),
     db.select({ id: schema.users.id, area: schema.users.area }).from(schema.users).where(inArray(schema.users.id, [room.buyerId, room.sellerId])),
   ]);

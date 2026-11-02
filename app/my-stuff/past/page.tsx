@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { currentUserId } from "@/lib/session";
-import { pastFor } from "@/lib/vault/past";
+import { pastFor } from "@/lib/items/past";
 import { money } from "@/lib/payments/fees";
-import { BackLink } from "@/components/anchors/BackLink";
+import { BackLink } from "@/components/shared/BackLink";
 
 const when = (d: Date) => d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 

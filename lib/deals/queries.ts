@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
-import { getRoomView } from "@/lib/anchors/queries";
-import { nextFor, roleOf } from "@/lib/anchors/next";
+import { getRoomView } from "@/lib/views/queries";
+import { nextFor, roleOf } from "@/lib/views/next";
 
 // A plan at a glance: its parts grouped as selling, buying and helpers, each with where it stands.
 // The owner sees every part; anyone else only the parts they're in.

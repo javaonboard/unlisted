@@ -3,7 +3,7 @@ type Deal = { ownerId: string; helperIds: string[] };
 
 // The order a plan's parts should be approved in: the owner's purchase first (a sale can wait for it),
 // then the sale, then helpers, whose jobs are planned around those handoffs.
-export function planRank(room: Room, deal: Deal) {
+function planRank(room: Room, deal: Deal) {
   if (room.intentId && deal.helperIds.includes(room.intentId)) return 2;
   return room.sellerId === deal.ownerId ? 1 : 0;
 }

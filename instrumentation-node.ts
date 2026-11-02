@@ -1,20 +1,18 @@
 import { listen } from "./lib/events/bus";
-import { onNeedPosted, onVaultAdded, runDueWaves } from "./lib/suggestions/engine";
+import { onNeedPosted, onItemAdded, runDueWaves } from "./lib/suggestions/engine";
 import { runTimeouts } from "./lib/jobs/timeouts";
 import { resumeStuckRooms } from "./lib/negotiation/resume";
 import { remindToday } from "./lib/jobs/reminders";
 import { checkWaitingPayouts } from "./lib/payments/confirm";
 import { dailyCheckIns } from "./lib/agent/checkin";
 
-// React to new needs and vault items the moment they are saved.
+// React to new needs and items the moment they are saved.
 await listen(async (type, payload) => {
   if (type === "need.posted") await onNeedPosted(payload.needId);
-  if (type === "vault.added") await onVaultAdded(payload.itemId);
+  if (type === "item.added") await onItemAdded(payload.itemId);
 });
 
-// Every 10 minutes: needs nobody answered widen to the next wave, rooms a restart stopped carry on,
-// people with a handoff today get a reminder, payouts PayPal hasn't confirmed yet get checked,
-// and each person's agent takes its daily look.
+// Every 10 minutes: next need waves, resume stopped rooms, handoff reminders, payout checks, daily check-ins.
 setInterval(() => {
   remindToday().catch((e) => console.error("[reminders] failed", e?.message));
   checkWaitingPayouts().catch((e) => console.error("[payouts] check failed", e?.message));

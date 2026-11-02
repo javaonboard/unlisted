@@ -10,9 +10,9 @@ const AT_ONCE = 3; // talk to the best few, not everyone
 // Making something public: the Scout ranks who wants it, and the agent starts talking to the best few
 // right away. Both sides hear about it. Everyone else finds it later through their own suggestions.
 export async function goPublic(ownerId: string, itemId: string) {
-  const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, ownerId)));
+  const [item] = await db.select().from(schema.items).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, ownerId)));
   if (!item || item.openToOffers) return []; // already public: nothing to start again
-  await db.update(schema.vaultItems).set({ openToOffers: true }).where(eq(schema.vaultItems.id, itemId));
+  await db.update(schema.items).set({ openToOffers: true }).where(eq(schema.items.id, itemId));
 
   const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, ownerId));
   const talking = await db.select({ intentId: schema.negotiations.intentId }).from(schema.negotiations).where(and(eq(schema.negotiations.itemId, itemId), inArray(schema.negotiations.status, ["open", "waiting_owner", "agreed"])));
@@ -37,5 +37,5 @@ export async function goPublic(ownerId: string, itemId: string) {
 
 // Back to private: new people can't start talks. Talks already going carry on.
 export async function goPrivate(ownerId: string, itemId: string) {
-  await db.update(schema.vaultItems).set({ openToOffers: false }).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, ownerId)));
+  await db.update(schema.items).set({ openToOffers: false }).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, ownerId)));
 }

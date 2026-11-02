@@ -16,10 +16,8 @@ export const REASONS = {
 } as const;
 export type Reason = keyof typeof REASONS;
 
-// Saying no after the agents agreed, at any point before the handoff. No money moves:
-// an unpaid deal just closes, a paid one has its PayPal hold released. Both calendars free up,
-// the other side hears why, and that pair isn't matched again for this thing.
-// Returns the rooms to play next (the item or need back on the market), or an error to show.
+// Saying no before the handoff: the hold is released, calendars freed, the other side told why,
+// and the pair isn't matched again. Returns the rooms to play next, or an error.
 export async function backOut(roomId: string, userId: string, reason: Reason, note: string) {
   const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
   if (!room || (room.buyerId !== userId && room.sellerId !== userId)) return { error: "Not your deal." };
@@ -49,7 +47,7 @@ export async function backOut(roomId: string, userId: string, reason: Reason, no
 
   // The other side hears why, and their agent remembers it for next time (without naming anyone).
   const otherId = room.buyerId === userId ? room.sellerId : room.buyerId;
-  const [item] = await db.select({ title: schema.vaultItems.title }).from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!));
+  const [item] = await db.select({ title: schema.items.title }).from(schema.items).where(eq(schema.items.id, room.itemId!));
   const what = inSentence(item?.title ?? "it");
   await notify(otherId, `${first} backed out of the ${what} deal`, `Reason: ${REASONS[reason]}${note ? `, “${note}”` : ""}. ${leg?.status === "held" ? "The PayPal hold was released, nothing was charged. " : ""}I'll look for someone else.`, roomId);
   await db.insert(schema.memoryFacts).values({
@@ -65,9 +63,7 @@ export async function backOut(roomId: string, userId: string, reason: Reason, no
   return { error: null, room };
 }
 
-// After a back-out: in a plan, the plan finds the next candidate. Otherwise, if the buyer said no,
-// a public item goes to the next best buyer; if the seller said no, the buyer's need goes back out.
-// The pair that just failed is never picked again (see the matcher).
+// Back on the market: a plan finds its next candidate; otherwise the item or need goes to the next best match.
 export async function backOnTheMarket(room: typeof schema.negotiations.$inferSelect, userId: string) {
   if (room.dealId) {
     const [deal] = await db.select({ isPlan: schema.deals.isPlan }).from(schema.deals).where(eq(schema.deals.id, room.dealId));
@@ -78,7 +74,7 @@ export async function backOnTheMarket(room: typeof schema.negotiations.$inferSel
     }
   }
   if (userId === room.buyerId) {
-    const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!));
+    const [item] = await db.select().from(schema.items).where(eq(schema.items.id, room.itemId!));
     if (!item?.openToOffers) return;
     const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, item.ownerId));
     const { rankBuyers } = await import("@/lib/scout/rank");

@@ -9,8 +9,8 @@ const BryntumScheduler = dynamic(
   { ssr: false },
 );
 
-export type Row = { id: string; name: string };
-export type Slot = { id: string; resourceId: string; name: string; startDate: string; endDate: string; eventColor?: string; draggable?: boolean };
+type Row = { id: string; name: string };
+type Slot = { id: string; resourceId: string; name: string; startDate: string; endDate: string; eventColor?: string; draggable?: boolean };
 export type Free = { id: string; resourceId: string; startDate: string; endDate: string };
 
 type Props = {

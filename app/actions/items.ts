@@ -4,11 +4,11 @@ import { after } from "next/server";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { currentUserId } from "@/lib/session";
-import { analyzePhoto } from "@/lib/vault/photo";
-import { addVaultItem, setPhoto } from "@/lib/vault/mutations";
-import { skillDemand } from "@/lib/vault/demand";
-import { understandText } from "@/lib/vault/understand";
-import { asRecord, missing, type Card } from "@/lib/vault/card";
+import { analyzePhoto } from "@/lib/items/photo";
+import { addItem, setPhoto } from "@/lib/items/mutations";
+import { skillDemand } from "@/lib/items/demand";
+import { understandText } from "@/lib/items/understand";
+import { asRecord, missing, type Card } from "@/lib/items/card";
 import { addFreeTime } from "@/lib/availability";
 import { db, schema } from "@/lib/db";
 import { once } from "@/lib/db/once";
@@ -16,7 +16,7 @@ import { notify } from "@/lib/notifications/notify";
 import { postNeed } from "@/lib/intents/mutations";
 import { AiLimitError } from "@/lib/ai/limits";
 import { inSentence } from "@/lib/text/words";
-import { inspectItem } from "@/lib/vault/inspect";
+import { inspectItem } from "@/lib/items/inspect";
 
 export type Suggestion = {
   kind: "goods" | "skill";
@@ -31,7 +31,7 @@ export type Suggestion = {
   priceEdited?: boolean; // the owner typed their own price before saving
 };
 
-// Turns one photo into suggested vault cards. Nothing is saved yet.
+// Turns one photo into suggested item cards. Nothing is saved yet.
 export async function suggestFromPhoto(base64: string): Promise<{ suggestions: Suggestion[]; error: string | null }> {
   const userId = await currentUserId();
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0] ?? "local";
@@ -52,7 +52,7 @@ export async function addSuggestions(picked: Suggestion[], thumbnail: string, ph
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0] ?? "local";
   const goods: string[] = [];
   for (const s of picked) {
-    const item = await addVaultItem(userId, {
+    const item = await addItem(userId, {
       kind: s.kind,
       title: s.title,
       category: s.category,
@@ -98,7 +98,7 @@ export async function saveCards(cards: Card[], said: string, key: string) {
       const text = c.details ? `${c.title}. ${c.details}` : c.title;
       await postNeed(userId, { type: c.needType ?? "buy", text, category: c.category, maxPrice: c.maxPrice ?? undefined, dueInDays: c.dueInDays ?? undefined, maxMiles: c.maxMiles ?? undefined, constraints: asRecord(c.requirements), days: c.days ?? undefined });
     } else {
-      await addVaultItem(userId, {
+      await addItem(userId, {
         kind: c.kind,
         title: c.title,
         category: c.category,

@@ -2,7 +2,7 @@
 
 import { useOptimistic, useTransition } from "react";
 import { Loader2 } from "lucide-react";
-import type { Ways } from "@/lib/vault/ways";
+import type { Ways } from "@/lib/items/ways";
 
 const LABEL: Record<Ways, string> = { sell: "Sell", rent: "Rent", both: "Both" };
 

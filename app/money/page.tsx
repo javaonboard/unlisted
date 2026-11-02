@@ -3,7 +3,7 @@ import Link from "next/link";
 import { currentUserId } from "@/lib/session";
 import { myMoney } from "@/lib/money/ask";
 import { money, payoutOf } from "@/lib/payments/fees";
-import { BackLink } from "@/components/anchors/BackLink";
+import { BackLink } from "@/components/shared/BackLink";
 import { AskMoney } from "@/components/money/AskMoney";
 import { STATUS_TEXT } from "@/lib/payments/states";
 

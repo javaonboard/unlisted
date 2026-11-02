@@ -47,10 +47,8 @@ If the reply allows or sets a price, give it as newLimit. "Yes" means the sugges
   console.log(`[room] ${roomId.slice(0, 8)} owner replied: "${words}" → limit ${newLimit ?? "unchanged"}`);
 }
 
-// After a deal, one side wants another time. The room reopens for the time only:
-// the price is pinned, the asker counts as confirmed, and the asker's agent moves first.
-// `by: "plan"` is the plan agent adjusting this part after another part changed. Unpaid parts may then
-// renegotiate the price too (a split trip costs more); paid parts keep their price, so nobody is charged twice.
+// After a deal, one side wants another time: the room reopens for the time only and the asker's agent moves first.
+// `by: "plan"` is the plan agent; unpaid parts may then renegotiate the price, paid parts keep it.
 export async function askForNewTime(roomId: string, ownerId: string, words: string, by: "owner" | "plan" = "owner") {
   const [current] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
   if (!current || (current.buyerId !== ownerId && current.sellerId !== ownerId)) return;

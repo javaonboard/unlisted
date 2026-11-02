@@ -4,12 +4,12 @@ import { notFound } from "next/navigation";
 import { ChevronRight, Compass } from "lucide-react";
 import { currentUserId } from "@/lib/session";
 import { getPlan } from "@/lib/deals/queries";
-import { BackLink } from "@/components/anchors/BackLink";
-import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
+import { BackLink } from "@/components/shared/BackLink";
+import { RoleBadge, StatusPill } from "@/components/shared/Badges";
 import { FormattedText } from "@/components/FormattedText";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { ConfirmAction } from "@/components/ConfirmAction";
-import { Thumb } from "@/components/anchors/Thumb";
+import { Thumb } from "@/components/shared/Thumb";
 import { dropPartAction } from "@/app/actions/deals";
 
 const GROUPS = [

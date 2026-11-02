@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { FormattedText } from "@/components/FormattedText";
-import { getRoomView } from "@/lib/anchors/queries";
-import { nextFor, roleOf } from "@/lib/anchors/next";
-import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
+import { getRoomView } from "@/lib/views/queries";
+import { nextFor, roleOf } from "@/lib/views/next";
+import { RoleBadge, StatusPill } from "@/components/shared/Badges";
 import { OwnerQuestion } from "@/components/deals/OwnerQuestion";
 import { RoomNextSteps } from "@/components/rooms/RoomNextSteps";
 

@@ -82,7 +82,7 @@ Code sets the rules, and the AI does the judgement: naming, categorizing, pricin
 
 ## Sponsor tools
 
-- **Channel3:** finds products in a photo, and gives new prices and specs for the pricing and planning agents (`lib/vault/products.ts`).
+- **Channel3:** finds products in a photo, and gives new prices and specs for the pricing and planning agents (`lib/items/products.ts`).
 - **Bryntum Scheduler:** the Schedule page. Bookings and free hours over three days; drag to mark free time or to ask for another time (`components/bryntum/ScheduleView.tsx`).
 - **Render:** web service and Postgres from `render.yaml`, with migrations before each deploy and a health check.
 - **APIMatic:** the APIMatic Context Plugin was used while building the PayPal integration, and PayPal's Server SDK is generated with APIMatic.
@@ -105,7 +105,7 @@ Open http://localhost:3000. For webhooks, point a sandbox webhook at `/api/webho
 - `npm run paypal:check -- create 10`: step through a hold, charge, release, refund and payout by hand in the sandbox.
 - `npm run lint`, `npm run build`.
 
-**Code layout:** `app/` holds pages and thin server actions; `components/` holds the UI; `lib/` has one folder per concern (`paypal`, `payments`, `negotiation`, `deals`, `plans`, `agent`, `vault`, `pricing`, `matching`, `memory`, `a2a`, `connector`). The UI never calls PayPal or Claude directly. The full feature list is in [docs/features.md](docs/features.md).
+**Code layout:** `app/` holds pages and thin server actions; `components/` holds the UI; `lib/` has one folder per concern (`paypal`, `payments`, `negotiation`, `deals`, `plans`, `agent`, `items`, `pricing`, `matching`, `memory`, `a2a`, `connector`). The UI never calls PayPal or Claude directly. The full feature list is in [docs/features.md](docs/features.md).
 
 ## Money and taxes
 

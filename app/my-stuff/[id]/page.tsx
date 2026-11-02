@@ -3,21 +3,21 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { currentUserId } from "@/lib/session";
-import { getItemAnchor } from "@/lib/anchors/queries";
-import { BackLink } from "@/components/anchors/BackLink";
-import { Highlights } from "@/components/anchors/Highlights";
-import { NegotiationList } from "@/components/anchors/NegotiationList";
+import { getItemView } from "@/lib/views/queries";
+import { BackLink } from "@/components/shared/BackLink";
+import { Highlights } from "@/components/shared/Highlights";
+import { NegotiationList } from "@/components/shared/NegotiationList";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
-import { RangeForm } from "@/components/anchors/RangeForm";
+import { RangeForm } from "@/components/shared/RangeForm";
 import { setItemRangeAction } from "@/app/actions/range";
 import { rangeOfOffer } from "@/lib/places";
-import { PriceAdvice } from "@/components/anchors/PriceAdvice";
-import { EditItem } from "@/components/anchors/EditForms";
-import { ItemPhotos } from "@/components/vault/ItemPhotos";
+import { PriceAdvice } from "@/components/shared/PriceAdvice";
+import { EditItem } from "@/components/shared/EditForms";
+import { ItemPhotos } from "@/components/items/ItemPhotos";
 import { checkItemPriceAction, updateItemAction, useItemPriceAction } from "@/app/actions/edit";
 
-async function ItemAnchor({ params }: { params: Promise<{ id: string }> }) {
-  const data = await getItemAnchor((await params).id, await currentUserId());
+async function ItemView({ params }: { params: Promise<{ id: string }> }) {
+  const data = await getItemView((await params).id, await currentUserId());
   if (!data) notFound();
   const { item, evidence, negotiations } = data;
   const notes = evidence.filter((e) => !e.summary.startsWith("Photo check:")); // the photo check shows with the photos
@@ -67,7 +67,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   return (
     <main className="mx-auto w-full max-w-3xl p-8">
       <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
-        <ItemAnchor params={params} />
+        <ItemView params={params} />
       </Suspense>
     </main>
   );

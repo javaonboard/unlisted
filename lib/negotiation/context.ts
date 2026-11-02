@@ -17,7 +17,7 @@ export async function loadTurnContext(roomId: string, side: "buyer" | "seller") 
   const otherId = side === "buyer" ? room.sellerId : room.buyerId;
 
   const [[item], evidence, [intent], [owner], [other], [mandate], facts, allMoves] = await Promise.all([
-    db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId)),
+    db.select().from(schema.items).where(eq(schema.items.id, room.itemId)),
     db.select().from(schema.evidence).where(eq(schema.evidence.itemId, room.itemId)),
     db.select().from(schema.intents).where(eq(schema.intents.id, room.intentId)),
     db.select().from(schema.users).where(eq(schema.users.id, ownerId)),

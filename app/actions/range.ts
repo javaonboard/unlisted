@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { currentUserId } from "@/lib/session";
-import { setItemRange } from "@/lib/vault/mutations";
+import { setItemRange } from "@/lib/items/mutations";
 import { setNeedRange } from "@/lib/intents/mutations";
 
 export async function setItemRangeAction(itemId: string, form: FormData) {

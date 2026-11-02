@@ -1,8 +1,8 @@
-import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
+import { RoleBadge, StatusPill } from "@/components/shared/Badges";
 import { RoomActions } from "@/components/inbox/RoomActions";
 import { FormattedText } from "@/components/FormattedText";
-import { Thumb } from "@/components/anchors/Thumb";
-import type { Next, Role } from "@/lib/anchors/next";
+import { Thumb } from "@/components/shared/Thumb";
+import type { Next, Role } from "@/lib/views/next";
 
 type Note = { id: string; title: string; body: string; createdAt: Date };
 const time = (d: Date) => d.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" });

@@ -4,10 +4,10 @@ import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { currentUserId } from "@/lib/session";
-import { updateItem } from "@/lib/vault/mutations";
+import { updateItem } from "@/lib/items/mutations";
 import { updateNeed } from "@/lib/intents/mutations";
 import { priceItem, priceNeed } from "@/lib/pricing/save";
-import { goPrivate, goPublic } from "@/lib/vault/visibility";
+import { goPrivate, goPublic } from "@/lib/items/visibility";
 import { playLater } from "@/lib/negotiation/start";
 
 const num = (v: FormDataEntryValue | null) => (v === null || v === "" ? undefined : Number(v));
@@ -15,7 +15,7 @@ const refresh = () => revalidatePath("/", "layout");
 
 export async function updateItemAction(itemId: string, form: FormData) {
   const userId = await currentUserId();
-  const [before] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, userId)));
+  const [before] = await db.select().from(schema.items).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, userId)));
   await updateItem(userId, itemId, {
     title: String(form.get("title") ?? "").trim(),
     condition: String(form.get("condition") ?? "").trim(),
@@ -38,7 +38,7 @@ export async function updateNeedAction(needId: string, form: FormData) {
 
 // Only the owner can ask for a price check on their own things.
 export async function checkItemPriceAction(itemId: string) {
-  const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, await currentUserId())));
+  const [item] = await db.select().from(schema.items).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, await currentUserId())));
   if (item) await priceItem(itemId);
   refresh();
 }
@@ -52,7 +52,7 @@ export async function checkNeedPriceAction(needId: string) {
 // "Use it": the advice becomes the owner's price or budget.
 export async function useItemPriceAction(itemId: string) {
   const userId = await currentUserId();
-  const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, userId)));
+  const [item] = await db.select().from(schema.items).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, userId)));
   if (item?.priceCheck) await updateItem(userId, itemId, { condition: item.condition ?? "", estimatedValue: item.priceCheck.suggested });
   refresh();
 }
@@ -67,7 +67,7 @@ export async function useNeedBudgetAction(needId: string) {
 // Sell, rent out, or both. Renting needs a day price and a deposit: a starting point from its value, editable on the item page.
 export async function setWaysAction(itemId: string, ways: "sell" | "rent" | "both") {
   const userId = await currentUserId();
-  const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, userId)));
+  const [item] = await db.select().from(schema.items).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, userId)));
   if (!item || item.kind !== "goods") return;
   const value = Number(item.estimatedValue ?? 0);
   const renting = ways !== "sell";

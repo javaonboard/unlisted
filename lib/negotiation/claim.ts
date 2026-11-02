@@ -11,7 +11,7 @@ const STEP = 3_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const isGoods = async (room: Room, tx: Db = db) =>
-  (await tx.select({ kind: schema.vaultItems.kind }).from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!)))[0]?.kind === "goods";
+  (await tx.select({ kind: schema.items.kind }).from(schema.items).where(eq(schema.items.id, room.itemId!)))[0]?.kind === "goods";
 
 // Other talks about the same goods (a goods item can only be sold once) or the same need.
 async function rivalsOf(room: Room, goods: boolean, tx: Db = db) {
@@ -42,9 +42,8 @@ export async function settleAgreement(roomId: string, round: number, price: stri
   return claimAgreement(roomId, round, price);
 }
 
-// Marks a room agreed, unless another room already took the same goods or need, or a better yes is waiting.
-// Parallel rooms can say yes at the same moment, so the check and the update happen inside one
-// transaction holding a lock per item and per need; the second room waits, sees the first, and closes.
+// Marks a room agreed unless another deal took the same thing or a better yes is waiting.
+// Locks per item and need, so two rooms saying yes at once can't both win.
 export async function claimAgreement(roomId: string, round: number, price: string | undefined) {
   return db.transaction(async (tx) => {
     const [room] = await tx.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));

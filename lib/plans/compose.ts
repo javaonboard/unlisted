@@ -4,8 +4,8 @@ import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { db, schema } from "@/lib/db";
 import { claude, FALLBACK, MODELS } from "@/lib/ai/client";
 import { checkAiLimits, recordAiUsage } from "@/lib/ai/limits";
-import { lookUpProduct } from "@/lib/vault/products";
-import { categoryRule, knownCategories } from "@/lib/vault/categories";
+import { lookUpProduct } from "@/lib/items/products";
+import { categoryRule, knownCategories } from "@/lib/items/categories";
 
 const Plan = z.object({
   worthIt: z.boolean().describe("True only if some of these needs really depend on each other"),
@@ -27,7 +27,7 @@ const Plan = z.object({
     }))
     .describe("At most 2 things they'll clearly need to get this done but haven't asked for. Empty if none"),
 });
-export type ComposedPlan = z.infer<typeof Plan>;
+type ComposedPlan = z.infer<typeof Plan>;
 
 // The planning agent: looks at someone's open needs, their things and what it knows about them,
 // checks real products when specs matter, and proposes one plan. Code checks the ids it returns.
@@ -35,7 +35,7 @@ export async function composePlan(userId: string, change?: string): Promise<Comp
   const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId));
   const [needs, items, facts] = await Promise.all([
     db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, userId), eq(schema.intents.status, "open"))),
-    db.select().from(schema.vaultItems).where(eq(schema.vaultItems.ownerId, userId)),
+    db.select().from(schema.items).where(eq(schema.items.ownerId, userId)),
     db.select().from(schema.memoryFacts).where(eq(schema.memoryFacts.userId, userId)).orderBy(desc(schema.memoryFacts.confidence)).limit(6),
   ]);
   if (needs.length < 2 || !needs.some((n) => n.type === "sell" || n.type === "buy")) return null;

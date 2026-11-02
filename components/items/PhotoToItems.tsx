@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { Camera } from "lucide-react";
-import { IconCircle } from "@/components/anchors/Badges";
+import { IconCircle } from "@/components/shared/Badges";
 import { Button } from "@/components/ui/button";
-import { addSuggestions, suggestFromPhoto, type Suggestion } from "@/app/actions/vault";
+import { addSuggestions, suggestFromPhoto, type Suggestion } from "@/app/actions/items";
 import { WaysSwitch } from "./WaysSwitch";
 
 // Shrinks a photo in the browser so uploads stay small.
@@ -18,7 +18,7 @@ async function shrink(file: File, max: number, quality = 0.8) {
   return canvas.toDataURL("image/jpeg", quality);
 }
 
-export function PhotoToVault() {
+export function PhotoToItems() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [thumb, setThumb] = useState("");

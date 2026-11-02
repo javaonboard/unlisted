@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { nextFor, roleOf } from "@/lib/anchors/next";
+import { nextFor, roleOf } from "@/lib/views/next";
 
 type View = Parameters<typeof nextFor>[0];
 

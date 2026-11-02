@@ -3,8 +3,8 @@
 import { useState, useTransition } from "react";
 import { FormattedText } from "@/components/FormattedText";
 import { Button } from "@/components/ui/button";
-import { saveCards, understandAction } from "@/app/actions/vault";
-import { missing, type Card } from "@/lib/vault/card";
+import { saveCards, understandAction } from "@/app/actions/items";
+import { missing, type Card } from "@/lib/items/card";
 
 const label = { goods: "Item", skill: "Service you offer", need: "Need" };
 

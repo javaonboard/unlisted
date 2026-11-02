@@ -41,7 +41,7 @@ type Item = {
   deposit?: string;
 };
 
-export const vaultItems: Item[] = [
+export const items: Item[] = [
   // Maya: never listed anything.
   { key: "sectional", ownerId: "maya", kind: "goods", title: "Grey 3-seat sectional", category: "sofa", condition: "Good. Small stain on left cushion.", estimatedValue: "240.00", minPrice: "150.00", details: { seats: 3, widthIn: 104, bought: "2022" } },
   { key: "lamp", ownerId: "maya", kind: "goods", title: "Brass floor lamp", category: "lighting", condition: "Like new", estimatedValue: "45.00" },

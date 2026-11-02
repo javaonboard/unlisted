@@ -4,8 +4,8 @@ import { useRef, useState, useTransition } from "react";
 import { Camera, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { addPhotosAction } from "@/app/actions/photos";
-import { seenText } from "@/components/anchors/Thumb";
-import type { Inspection } from "@/lib/vault/inspect";
+import { seenText } from "@/components/shared/Thumb";
+import type { Inspection } from "@/lib/items/inspect";
 
 const draw = (source: CanvasImageSource, w: number, h: number, max: number) => {
   const scale = Math.min(1, max / Math.max(w, h));

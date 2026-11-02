@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { currentUserId } from "@/lib/session";
-import { cancelHold, confirmHandoff, confirmReturn, createPayerOrder, holdPayment } from "@/lib/payments/legs";
+import { confirmHandoff, confirmReturn, createPayerOrder, holdPayment } from "@/lib/payments/legs";
 
 const refresh = () => revalidatePath("/", "layout");
 
@@ -24,11 +24,6 @@ export async function confirmHandoffAction(legId: string) {
   }
   refresh();
   return { error: null };
-}
-
-export async function cancelHoldAction(legId: string) {
-  await cancelHold(legId, await currentUserId());
-  refresh();
 }
 
 export async function confirmReturnAction(legId: string, goodShape: boolean) {

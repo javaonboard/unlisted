@@ -1,5 +1,5 @@
 import { NextSteps } from "@/components/rooms/NextSteps";
-import type { getRoomView } from "@/lib/anchors/queries";
+import type { getRoomView } from "@/lib/views/queries";
 
 type RoomView = NonNullable<Awaited<ReturnType<typeof getRoomView>>>;
 

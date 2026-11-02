@@ -70,7 +70,7 @@ export class UnlistedAgent implements AgentExecutor {
 
     if (!room) {
       const [item] = move.itemId
-        ? await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, move.itemId), eq(schema.vaultItems.ownerId, this.ownerId)))
+        ? await db.select().from(schema.items).where(and(eq(schema.items.id, move.itemId), eq(schema.items.ownerId, this.ownerId)))
         : [];
       if (!item?.openToOffers) {
         return reply(TaskState.TASK_STATE_REJECTED, [text("That item is not open to offers. See my agent card for what is.")]);

@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { currentUserId } from "@/lib/session";
 import { listFacts } from "@/lib/memory/queries";
-import { BackLink } from "@/components/anchors/BackLink";
+import { BackLink } from "@/components/shared/BackLink";
 import { addFactAction, confirmFactAction, deleteFactAction, editFactAction } from "@/app/actions/memory";
 import { setAddressAction, setPaypalEmailAction } from "@/app/actions/profile";
 import { getUser } from "@/lib/users/queries";

@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { addVaultItem } from "@/lib/vault/mutations";
-import { listVault } from "@/lib/vault/queries";
+import { addItem } from "@/lib/items/mutations";
+import { listItems } from "@/lib/items/queries";
 import { postNeed } from "@/lib/intents/mutations";
 import { discoverFor } from "@/lib/matching/discover";
 import { getRoom, listRooms } from "@/lib/negotiation/queries";
@@ -9,26 +9,23 @@ import { startNegotiation } from "@/lib/negotiation/start";
 import { listNotifications } from "@/lib/notifications/queries";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
-import { getRoomView } from "@/lib/anchors/queries";
-import { nextFor, roleOf } from "@/lib/anchors/next";
+import { getRoomView } from "@/lib/views/queries";
+import { nextFor, roleOf } from "@/lib/views/next";
 import { needsYou } from "@/lib/inbox/needs";
 import { myBookings } from "@/lib/bookings";
 import { addFreeTime } from "@/lib/availability";
 import { askForNewTime } from "@/lib/negotiation/owner";
 import { playRoom } from "@/lib/negotiation/room";
 import { changeMeetAt } from "@/lib/deals/meet";
-import { understandText } from "@/lib/vault/understand";
-import { asRecord, missing } from "@/lib/vault/card";
-import { categoryRule, knownCategories } from "@/lib/vault/categories";
+import { understandText } from "@/lib/items/understand";
+import { asRecord, missing } from "@/lib/items/card";
+import { categoryRule, knownCategories } from "@/lib/items/categories";
 import { after } from "next/server";
 
 const json = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] });
 
-// Unlisted as tools inside the user's own AI app (Claude, ChatGPT, ...).
-// Every tool acts only for the user who owns this connector link.
-// It can read, prepare and propose. Anything that commits the user or moves money
-// (accepting a deal, approving a plan, raising a limit, the PayPal hold, the handoff)
-// is done by the user in the app, so those tools return a link instead.
+// Unlisted as tools in the user's own AI app, acting only for the owner of this link.
+// Anything that commits them or moves money returns a link to the app instead.
 export async function unlistedServer(userId: string, base: string) {
   const categories = categoryRule(await knownCategories());
   const inApp = (roomId: string) => `${base}/rooms/${roomId}`;
@@ -37,7 +34,7 @@ export async function unlistedServer(userId: string, base: string) {
   server.registerTool(
     "my_stuff",
     { description: "List what the user owns and what they can do. Private items stay private until the user agrees to a buyer." },
-    async () => json(await listVault(userId)),
+    async () => json(await listItems(userId)),
   );
 
   server.registerTool(
@@ -57,7 +54,7 @@ export async function unlistedServer(userId: string, base: string) {
     async (item) => {
       if (item.kind === "goods" && (item.minPrice === undefined || !item.condition)) return json({ error: "Ask the user for the condition and the lowest price they'd take first." });
       if (item.kind === "skill" && item.estimatedValue === undefined) return json({ error: "Ask the user for their price per job first." });
-      return json(await addVaultItem(userId, { ...item, minPrice: item.minPrice ?? item.estimatedValue }));
+      return json(await addItem(userId, { ...item, minPrice: item.minPrice ?? item.estimatedValue }));
     },
   );
 
@@ -101,7 +98,7 @@ export async function unlistedServer(userId: string, base: string) {
     },
     async (input) => {
       if (input.buyerId !== userId && input.sellerId !== userId) return json({ error: "The user must be the buyer or the seller." });
-      const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, input.itemId));
+      const [item] = await db.select().from(schema.items).where(eq(schema.items.id, input.itemId));
       const [need] = await db.select().from(schema.intents).where(eq(schema.intents.id, input.intentId));
       if (!item || !need || item.ownerId !== input.sellerId || need.ownerId !== input.buyerId) return json({ error: "Those ids don't belong together." });
       if (item.ownerId !== userId && !item.openToOffers) return json({ error: "That item isn't open to offers." }); // private items stay private
@@ -238,7 +235,7 @@ export async function unlistedServer(userId: string, base: string) {
         if (c.kind === "need") {
           await postNeed(userId, { type: c.needType ?? "buy", text: c.details ? `${c.title}. ${c.details}` : c.title, category: c.category, maxPrice: c.maxPrice!, dueInDays: c.dueInDays!, maxMiles: c.maxMiles ?? undefined, constraints: asRecord(c.requirements), days: c.days ?? undefined });
         } else {
-          await addVaultItem(userId, { kind: c.kind, title: c.title, category: c.category, condition: c.condition ?? undefined, estimatedValue: c.value ?? undefined, minPrice: c.kind === "goods" ? (c.minPrice ?? undefined) : c.value!, details: { ...(c.details ? { notes: c.details } : {}), ...asRecord(c.specs) }, maxMiles: c.maxMiles ?? undefined, forSale: c.kind === "goods" ? !c.ways?.length || c.ways.includes("sell") : undefined, rentPerDay: c.ways?.includes("rent") ? (c.rentPerDay ?? undefined) : undefined, deposit: c.ways?.includes("rent") ? (c.deposit ?? undefined) : undefined });
+          await addItem(userId, { kind: c.kind, title: c.title, category: c.category, condition: c.condition ?? undefined, estimatedValue: c.value ?? undefined, minPrice: c.kind === "goods" ? (c.minPrice ?? undefined) : c.value!, details: { ...(c.details ? { notes: c.details } : {}), ...asRecord(c.specs) }, maxMiles: c.maxMiles ?? undefined, forSale: c.kind === "goods" ? !c.ways?.length || c.ways.includes("sell") : undefined, rentPerDay: c.ways?.includes("rent") ? (c.rentPerDay ?? undefined) : undefined, deposit: c.ways?.includes("rent") ? (c.deposit ?? undefined) : undefined });
           for (const h of c.freeHours) await addFreeTime(userId, new Date(h.start), new Date(h.end));
         }
       }

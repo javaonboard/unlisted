@@ -8,9 +8,9 @@ import { MODELS } from "@/lib/ai/client";
 // a truck could mean moving help. The agent judges; code keeps only real item ids.
 export async function toolOwnersFor(need: { id: string; ownerId: string; text: string; category: string }) {
   const items = await db
-    .select({ id: schema.vaultItems.id, ownerId: schema.vaultItems.ownerId, title: schema.vaultItems.title })
-    .from(schema.vaultItems)
-    .where(and(eq(schema.vaultItems.kind, "goods"), ne(schema.vaultItems.ownerId, need.ownerId)))
+    .select({ id: schema.items.id, ownerId: schema.items.ownerId, title: schema.items.title })
+    .from(schema.items)
+    .where(and(eq(schema.items.kind, "goods"), ne(schema.items.ownerId, need.ownerId)))
     .limit(80);
   if (!items.length) return [];
 

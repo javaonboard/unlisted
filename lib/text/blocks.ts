@@ -1,4 +1,4 @@
-export type Block = { type: "p" | "ul" | "ol"; lines: string[] };
+type Block = { type: "p" | "ul" | "ol"; lines: string[] };
 
 // AI text often runs points together ("Here's the plan: 1. ... 2. ..."). Put each point on its
 // own line, then group lines into paragraphs and lists.

@@ -6,7 +6,7 @@ import { MODELS } from "@/lib/ai/client";
 import { findDemandFor, findSupplyFor } from "@/lib/matching/matcher";
 import { distanceText } from "@/lib/places";
 import { suggest } from "@/lib/suggestions/suggest";
-import { asRecord } from "@/lib/vault/card";
+import { asRecord } from "@/lib/items/card";
 
 const Plan = z.object({
   title: z.string().describe("Short name people use, e.g. 'Moving day', 'PC upgrade'"),
@@ -39,9 +39,8 @@ const Idea = z.object({
 
 const QUIET = 2 * 60_000; // one look per person every couple of minutes at most
 
-// The agent's look at one person's situation: their things, needs, deals and the market around them.
-// It picks up to 3 suggestions worth their attention right now (a buyer for something private, a plan,
-// a missing piece, a better price). Code checks every id, skips repeats, and keeps private things private.
+// One person's agent looks at their things, needs, deals and the market, and suggests up to 3 things.
+// Code checks every id, skips repeats and keeps private things private.
 export async function checkIn(userId: string, why: string) {
   const [me] = await db
     .update(schema.users)
@@ -51,7 +50,7 @@ export async function checkIn(userId: string, why: string) {
   if (!me) return 0;
 
   const [things, needs, facts, recent, plans, users] = await Promise.all([
-    db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.ownerId, userId), isNull(schema.vaultItems.soldAt))),
+    db.select().from(schema.items).where(and(eq(schema.items.ownerId, userId), isNull(schema.items.soldAt))),
     db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, userId), eq(schema.intents.status, "open"))),
     db.select().from(schema.memoryFacts).where(eq(schema.memoryFacts.userId, userId)).orderBy(desc(schema.memoryFacts.confidence)).limit(6),
     db.select().from(schema.suggestions).where(and(eq(schema.suggestions.userId, userId), gte(schema.suggestions.createdAt, new Date(Date.now() - 14 * 86_400_000)))),

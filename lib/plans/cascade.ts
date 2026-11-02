@@ -22,10 +22,8 @@ export async function onPlanChanged(roomId: string) {
   return reviewPlan(changed.dealId, changed);
 }
 
-// The plan agent looks at every part and decides what has to move so the plan works for everyone
-// (a mover serving a pickup, a handoff that must come first, the owner never left without something they need).
-// Code keeps it safe: only agreed, not-yet-handed-off parts are touched, and each part at most once by the plan agent.
-// With no changed part, it's a check of the whole plan, and the owner only hears if something moves.
+// The plan agent decides which parts must move so the plan works for everyone (a mover's stops, handoff order).
+// Only agreed parts not yet handed off can move, each at most once. With no changed part it checks the whole plan.
 export async function reviewPlan(dealId: string, changed?: typeof schema.negotiations.$inferSelect) {
   const [deal] = await db.select().from(schema.deals).where(eq(schema.deals.id, dealId));
   if (!deal?.isPlan || running.has(deal.id)) return [];

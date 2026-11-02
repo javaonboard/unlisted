@@ -4,23 +4,23 @@ import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { currentUserId } from "@/lib/session";
 import { findDemandFor } from "@/lib/matching/matcher";
-import { statusLine } from "@/lib/anchors/status";
+import { statusLine } from "@/lib/views/status";
 import { AFTER_HANDOFF } from "@/lib/payments/states";
 import { setVisibilityAction, setWaysAction } from "@/app/actions/edit";
-import { WaysSwitch } from "@/components/vault/WaysSwitch";
-import { waysOf } from "@/lib/vault/ways";
-import { VisibilitySwitch } from "@/components/anchors/VisibilitySwitch";
+import { WaysSwitch } from "@/components/items/WaysSwitch";
+import { waysOf } from "@/lib/items/ways";
+import { VisibilitySwitch } from "@/components/shared/VisibilitySwitch";
 import { rangeOfNeed, rangeOfOffer, rangeText } from "@/lib/places";
 import { ChevronRight, ClipboardList } from "lucide-react";
-import { CategoryIcon } from "@/components/anchors/Badges";
+import { CategoryIcon } from "@/components/shared/Badges";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
-import { PhotoToVault } from "@/components/vault/PhotoToVault";
-import { TellAgent } from "@/components/vault/TellAgent";
+import { PhotoToItems } from "@/components/items/PhotoToItems";
+import { TellAgent } from "@/components/items/TellAgent";
 
 async function MyStuff() {
   const userId = await currentUserId();
   const [items, needs, users, plans] = await Promise.all([
-    db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.ownerId, userId), isNull(schema.vaultItems.soldAt))).orderBy(asc(schema.vaultItems.createdAt)),
+    db.select().from(schema.items).where(and(eq(schema.items.ownerId, userId), isNull(schema.items.soldAt))).orderBy(asc(schema.items.createdAt)),
     db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, userId), eq(schema.intents.status, "open"))),
     db.select().from(schema.users),
     db.select().from(schema.deals).where(eq(schema.deals.ownerId, userId)),
@@ -87,7 +87,7 @@ async function MyStuff() {
       ))}
 
       <div className="mb-6"><TellAgent /></div>
-      <PhotoToVault />
+      <PhotoToItems />
 
       {itemGrid("Things I have", "Nothing yet. Snap a photo of a room or garage.", items.filter((i) => i.kind === "goods"), <Link href="/my-stuff/past" className="text-sm text-primary hover:underline">Things I had</Link>)}
       {itemGrid("What I can do", "No services yet. Tell your agent, e.g. “I can clean gutters, I have a ladder”.", items.filter((i) => i.kind === "skill"))}

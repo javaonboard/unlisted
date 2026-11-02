@@ -8,7 +8,7 @@ export async function listRooms(userId: string) {
     .where(or(eq(schema.negotiations.buyerId, userId), eq(schema.negotiations.sellerId, userId)))
     .orderBy(desc(schema.negotiations.createdAt));
 
-  const items = await db.select().from(schema.vaultItems);
+  const items = await db.select().from(schema.items);
   const users = await publicUsers();
   return rooms.map((room) => ({
     ...room,
@@ -23,7 +23,7 @@ export async function getRoom(roomId: string) {
   if (!room) return null;
 
   const [[item], [intent], users, moves] = await Promise.all([
-    db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!)),
+    db.select().from(schema.items).where(eq(schema.items.id, room.itemId!)),
     db.select().from(schema.intents).where(eq(schema.intents.id, room.intentId!)),
     publicUsers(),
     db.select().from(schema.offers).where(eq(schema.offers.negotiationId, roomId)).orderBy(asc(schema.offers.round)),

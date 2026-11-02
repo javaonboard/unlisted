@@ -1,9 +1,7 @@
 type Room = { id: string; status: string; buyerId: string; sellerId: string; intentId: string | null; label: string | null; dependsOn: string[] };
 type Deal = { ownerId: string; isPlan: boolean; saleWaitsForPurchase: boolean; helperIds: string[] };
 
-// What a deal in a plan is still waiting for, in plain words, or null if it can go ahead.
-// - The owner's sale waits until every purchase in the plan is agreed (if they chose that).
-// - A helper's job (mover, installer) is opened only after the goods are agreed, so it never waits here.
+// What a plan's deal still waits for, or null. The owner's sale can wait for their purchases to be agreed.
 export function blockedBy(room: Room, deal: Deal | null | undefined, planRooms: Room[]): string | null {
   if (!deal?.isPlan || !deal.saleWaitsForPurchase || room.sellerId !== deal.ownerId) return null;
   const purchases = new Map<string, Room[]>();

@@ -4,7 +4,7 @@ import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { db, schema } from "@/lib/db";
 import { claude, FALLBACK, MODELS } from "@/lib/ai/client";
 import { checkAiLimits, recordAiUsage } from "@/lib/ai/limits";
-import { lookUpProduct } from "@/lib/vault/products";
+import { lookUpProduct } from "@/lib/items/products";
 
 const Price = z.object({
   newPrice: z.number().nullable().describe("Typical price new, USD, if it applies"),
@@ -19,10 +19,10 @@ export type PriceCheck = z.infer<typeof Price> & { checkedAt: string };
 // What it sold for on Unlisted: agreed deals in the same category. Our own market, and the most local data.
 async function soldHere(category: string) {
   const rows = await db
-    .select({ price: schema.negotiations.agreedPrice, title: schema.vaultItems.title, condition: schema.vaultItems.condition })
+    .select({ price: schema.negotiations.agreedPrice, title: schema.items.title, condition: schema.items.condition })
     .from(schema.negotiations)
-    .innerJoin(schema.vaultItems, eq(schema.vaultItems.id, schema.negotiations.itemId))
-    .where(and(eq(schema.negotiations.status, "agreed"), eq(schema.vaultItems.category, category)))
+    .innerJoin(schema.items, eq(schema.items.id, schema.negotiations.itemId))
+    .where(and(eq(schema.negotiations.status, "agreed"), eq(schema.items.category, category)))
     .limit(8);
   return rows.map((r) => `$${Number(r.price).toFixed(0)}: ${r.title}${r.condition ? ` (${r.condition})` : ""}`);
 }

@@ -1,7 +1,7 @@
 import { and, eq, inArray, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
-import { getRoomView } from "@/lib/anchors/queries";
-import { nextFor } from "@/lib/anchors/next";
+import { getRoomView } from "@/lib/views/queries";
+import { nextFor } from "@/lib/views/next";
 
 // Everything waiting on this person: deal steps and unanswered suggestions.
 export async function needsYou(userId: string) {

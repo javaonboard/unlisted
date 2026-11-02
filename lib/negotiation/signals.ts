@@ -1,5 +1,5 @@
 // Behavioral signals about the other side. Only from what they did in this
-// room, never from their profile, private vault or memory.
+// room, never from their profile, private things or memory.
 
 type PastMove = { fromUserId: string; price: string | null; kind: string };
 

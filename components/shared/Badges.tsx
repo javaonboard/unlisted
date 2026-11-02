@@ -2,7 +2,7 @@ import {
   CalendarDays, Car, Repeat, Check, CircleAlert, ClipboardList, Clock, Cpu, Droplets, Glasses, Hammer, House,
   Lamp, MessageCircle, Package, ShoppingBag, Sofa, Sprout, Tag, Truck, UserCheck, Wifi, Wrench, type LucideIcon,
 } from "lucide-react";
-import type { Next, Role } from "@/lib/anchors/next";
+import type { Next, Role } from "@/lib/views/next";
 
 const ROLE: Record<Role["kind"], LucideIcon> = { provider: Wrench, hiring: UserCheck, seller: Tag, buyer: ShoppingBag, plan: ClipboardList, lender: Repeat, renter: Repeat };
 

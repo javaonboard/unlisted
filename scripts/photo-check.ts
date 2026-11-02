@@ -1,7 +1,7 @@
-// Day-1 check: one photo becomes vault cards.
+// Day-1 check: one photo becomes item cards.
 //   npm run photo:check -- <path-to-photo.jpg>
 import { readFileSync } from "node:fs";
-import { analyzePhoto } from "@/lib/vault/photo";
+import { analyzePhoto } from "@/lib/items/photo";
 
 async function main() {
   const path = process.argv[2];

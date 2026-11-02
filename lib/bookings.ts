@@ -17,7 +17,7 @@ export async function bookAgreedDeal(roomId: string) {
   const start = new Date(slot ?? "");
   if (Number.isNaN(start.getTime())) return;
 
-  const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!));
+  const [item] = await db.select().from(schema.items).where(eq(schema.items.id, room.itemId!));
   const users = await db.select().from(schema.users);
   const first = (id: string) => users.find((u) => u.id === id)?.name.split(" ")[0] ?? id;
   const service = item.kind === "skill";

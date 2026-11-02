@@ -4,7 +4,7 @@ import { db, schema } from "@/lib/db";
 // It can still make a new one when nothing fits.
 export async function knownCategories() {
   const [items, needs] = await Promise.all([
-    db.selectDistinct({ c: schema.vaultItems.category }).from(schema.vaultItems),
+    db.selectDistinct({ c: schema.items.category }).from(schema.items),
     db.selectDistinct({ c: schema.intents.category }).from(schema.intents),
   ]);
   return [...new Set([...items, ...needs].map((r) => r.c))].sort();

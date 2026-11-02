@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { seenText } from "@/components/anchors/Thumb";
+import { seenText } from "@/components/shared/Thumb";
 
 const base = { matches: true, mismatch: null, grade: "good" as const, wear: [], condition: "", needsWorking: false, workingShown: false, ask: null, at: "", photos: 1 };
 

@@ -6,7 +6,7 @@ import { nextSaturday } from "@/lib/dates";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
 import { checkIn } from "@/lib/agent/checkin";
 import { priceItem } from "@/lib/pricing/save";
-import { inspectItem } from "@/lib/vault/inspect";
+import { inspectItem } from "@/lib/items/inspect";
 import { existsSync, readFileSync } from "node:fs";
 import * as data from "./seed-data";
 
@@ -18,16 +18,16 @@ async function main() {
   await db.insert(schema.mandates).values(data.mandates);
 
   const items = await db
-    .insert(schema.vaultItems)
-    .values(data.vaultItems.map(({ key: _key, ...item }) => item))
-    .returning({ id: schema.vaultItems.id });
-  const itemId = Object.fromEntries(data.vaultItems.map((item, i) => [item.key, items[i].id]));
+    .insert(schema.items)
+    .values(data.items.map(({ key: _key, ...item }) => item))
+    .returning({ id: schema.items.id });
+  const itemId = Object.fromEntries(data.items.map((item, i) => [item.key, items[i].id]));
 
   // Demo photos live in public/seed (credits.txt there).
   const photoOf = (key: string) => (existsSync(`public/seed/${key}.jpg`) ? `/seed/${key}.jpg` : null);
-  for (const item of data.vaultItems) {
+  for (const item of data.items) {
     const photo = photoOf(item.key);
-    if (photo) await db.update(schema.vaultItems).set({ photos: [photo] }).where(sql`${schema.vaultItems.id} = ${itemId[item.key]}`);
+    if (photo) await db.update(schema.items).set({ photos: [photo] }).where(sql`${schema.items.id} = ${itemId[item.key]}`);
   }
 
   await db.insert(schema.evidence).values(
@@ -60,14 +60,14 @@ async function main() {
   await db.insert(schema.memoryFacts).values(data.memoryFacts);
   await db.insert(schema.notifications).values(data.notifications);
 
-  console.log(`seeded ${data.users.length} users, ${items.length} vault items, ${rows.length} intents`);
+  console.log(`seeded ${data.users.length} users, ${items.length} items, ${rows.length} intents`);
 
   // Real agents, one room at a time so calendars don't clash. Skip with --quiet.
   if (!process.argv.includes("--quiet")) {
-    const owners = Object.fromEntries(data.vaultItems.map((item) => [item.key, item.ownerId]));
+    const owners = Object.fromEntries(data.items.map((item) => [item.key, item.ownerId]));
     const buyers = Object.fromEntries(data.intents.map((intent) => [intent.key, intent.ownerId]));
     // The agents look at each photo first, so what they saw is evidence in the talks.
-    for (const item of data.vaultItems.filter((i) => photoOf(i.key))) {
+    for (const item of data.items.filter((i) => photoOf(i.key))) {
       const image = `data:image/jpeg;base64,${readFileSync(`public/seed/${item.key}.jpg`).toString("base64")}`;
       await inspectItem(itemId[item.key], [image]).catch((e) => console.error("[inspect] skipped:", e.message));
     }

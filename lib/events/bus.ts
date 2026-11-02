@@ -1,7 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { db, pg, schema } from "@/lib/db";
 
-export type EventType = "need.posted" | "vault.added";
+type EventType = "need.posted" | "item.added";
 const CHANNEL = "unlisted_events";
 
 // Saves the event, then tells every listener about it right away.

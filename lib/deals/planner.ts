@@ -10,7 +10,7 @@ import { postNeed } from "@/lib/intents/mutations";
 const SELL_AT_ONCE = 3;
 const BUY_AT_ONCE = 2;
 
-export type PlanChoice = {
+type PlanChoice = {
   title: string;
   sells: { needId?: string; itemId: string }[]; // a thing to sell, with its "sell" need if there is one
   buyIds: string[];
@@ -18,13 +18,11 @@ export type PlanChoice = {
   sellOnlyIfBought: boolean;
 };
 
-// Starts a plan from the owner's chosen needs: any number of sales and purchases, then helpers
-// (a mover, an installer…) booked around the agreed handoffs. Nothing binds until the owner approves.
-// With sellOnlyIfBought on, the sales can't be accepted until the purchases are agreed.
+// Starts a plan: sales and purchases first, helpers booked around the agreed handoffs.
 export async function startLinkedDeal(ownerId: string, choice: PlanChoice) {
   const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, ownerId));
   const mine = await db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, ownerId), eq(schema.intents.status, "open")));
-  const things = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.ownerId, ownerId));
+  const things = await db.select().from(schema.items).where(eq(schema.items.ownerId, ownerId));
   // A thing can be sold in a plan even if they never wrote a "sell" need: one is added for it.
   const sells = [];
   for (const s of choice.sells) {
@@ -38,7 +36,7 @@ export async function startLinkedDeal(ownerId: string, choice: PlanChoice) {
   if (!sells.length && !buys.length) throw new Error("A plan needs something to sell or to buy.");
 
   // The owner starting the plan is their yes: the items can now be offered.
-  for (const s of sells) await db.update(schema.vaultItems).set({ openToOffers: true }).where(eq(schema.vaultItems.id, s.item.id));
+  for (const s of sells) await db.update(schema.items).set({ openToOffers: true }).where(eq(schema.items.id, s.item.id));
 
   // The Scout ranks everyone by public facts, then we talk to the best few.
   const buyers = await Promise.all(sells.map((s) => rankBuyers(s.item.id, owner.area)));
@@ -53,7 +51,7 @@ export async function startLinkedDeal(ownerId: string, choice: PlanChoice) {
   const [deal] = await db.insert(schema.deals).values({ ownerId, title: choice.title, scoutNote: note, helperIds: helpers.map((h) => h.id), isPlan: true, saleWaitsForPurchase: choice.sellOnlyIfBought && buys.length > 0 }).returning();
 
   const first = (name: string) => name.split(" ")[0];
-  const itemTitles = Object.fromEntries((await db.select({ id: schema.vaultItems.id, title: schema.vaultItems.title }).from(schema.vaultItems)).map((i) => [i.id, i.title]));
+  const itemTitles = Object.fromEntries((await db.select({ id: schema.items.id, title: schema.items.title }).from(schema.items)).map((i) => [i.id, i.title]));
   const rooms = await Promise.all([
     ...sells.flatMap((s, i) =>
       buyers[i].slice(0, SELL_AT_ONCE).map((b) =>

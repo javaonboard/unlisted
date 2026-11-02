@@ -12,7 +12,7 @@ export async function stopsFor(ownerId: string, agreed: Room[]) {
   if (!agreed.length) return [];
   const [people, items, moves] = await Promise.all([
     db.select({ id: schema.users.id, name: schema.users.name, area: schema.users.area }).from(schema.users),
-    db.select().from(schema.vaultItems).where(inArray(schema.vaultItems.id, agreed.map((r) => r.itemId!))),
+    db.select().from(schema.items).where(inArray(schema.items.id, agreed.map((r) => r.itemId!))),
     db.select().from(schema.offers).where(inArray(schema.offers.negotiationId, agreed.map((r) => r.id))),
   ]);
   const person = (id: string) => people.find((p) => p.id === id);

@@ -1,15 +1,15 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Thumb, seenText } from "@/components/anchors/Thumb";
+import { Thumb, seenText } from "@/components/shared/Thumb";
 import { currentUserId } from "@/lib/session";
-import { getRoomView } from "@/lib/anchors/queries";
-import { BackLink } from "@/components/anchors/BackLink";
+import { getRoomView } from "@/lib/views/queries";
+import { BackLink } from "@/components/shared/BackLink";
 import { ChatMessage } from "@/components/deals/ChatMessage";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { RoomNextSteps } from "@/components/rooms/RoomNextSteps";
-import { nextFor, roleOf } from "@/lib/anchors/next";
-import { RoleBadge, StatusPill } from "@/components/anchors/Badges";
+import { nextFor, roleOf } from "@/lib/views/next";
+import { RoleBadge, StatusPill } from "@/components/shared/Badges";
 
 async function Room({ params }: { params: Promise<{ id: string }> }) {
   const viewerId = await currentUserId();

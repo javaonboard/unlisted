@@ -15,9 +15,9 @@ export async function cardFor(userId: string, base: string) {
   const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId));
   if (!user) return null;
   const items = await db
-    .select({ id: schema.vaultItems.id, title: schema.vaultItems.title, kind: schema.vaultItems.kind })
-    .from(schema.vaultItems)
-    .where(and(eq(schema.vaultItems.ownerId, userId), eq(schema.vaultItems.openToOffers, true)));
+    .select({ id: schema.items.id, title: schema.items.title, kind: schema.items.kind })
+    .from(schema.items)
+    .where(and(eq(schema.items.ownerId, userId), eq(schema.items.openToOffers, true)));
   return agentCard(user, items, base);
 }
 

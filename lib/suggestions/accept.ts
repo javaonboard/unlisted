@@ -1,11 +1,11 @@
 import { and, eq, isNotNull } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
-import { addVaultItem } from "@/lib/vault/mutations";
+import { addItem } from "@/lib/items/mutations";
 import { postNeed } from "@/lib/intents/mutations";
 import { startNegotiation } from "@/lib/negotiation/start";
 import { onDismissed, runWave } from "./engine";
 import { startLinkedDeal } from "@/lib/deals/planner";
-import { goPublic } from "@/lib/vault/visibility";
+import { goPublic } from "@/lib/items/visibility";
 import { playLater } from "@/lib/negotiation/start";
 import { retryPurchase } from "@/lib/deals/coordinator";
 
@@ -25,7 +25,7 @@ export async function acceptSuggestion(id: string, userId: string, plan?: PlanPi
 
   const talk = async (itemId: string, needId: string) => {
     const [need] = await db.select().from(schema.intents).where(eq(schema.intents.id, needId));
-    const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, itemId));
+    const [item] = await db.select().from(schema.items).where(eq(schema.items.id, itemId));
     // The person with the need buys; the item or skill owner sells or serves.
     const room = await startNegotiation({ buyerId: need.ownerId, sellerId: item.ownerId, itemId, intentId: needId });
     return `/rooms/${room.id}`;
@@ -33,13 +33,13 @@ export async function acceptSuggestion(id: string, userId: string, plan?: PlanPi
 
   switch (s.kind) {
     case "open_item":
-      await db.update(schema.vaultItems).set({ openToOffers: true }).where(eq(schema.vaultItems.id, String(a.itemId)));
+      await db.update(schema.items).set({ openToOffers: true }).where(eq(schema.items.id, String(a.itemId)));
       return talk(String(a.itemId), String(a.needId));
     case "offer_skill":
-      await db.update(schema.vaultItems).set({ openToOffers: true }).where(eq(schema.vaultItems.id, String(a.itemId)));
+      await db.update(schema.items).set({ openToOffers: true }).where(eq(schema.items.id, String(a.itemId)));
       return talk(String(a.itemId), String(a.needId));
     case "add_skill": {
-      const skill = await addVaultItem(userId, { kind: "skill", title: String(a.skill), category: String(a.category), estimatedValue: Number(a.value) || undefined, openToOffers: true });
+      const skill = await addItem(userId, { kind: "skill", title: String(a.skill), category: String(a.category), estimatedValue: Number(a.value) || undefined, openToOffers: true });
       return talk(skill.id, String(a.needId));
     }
     case "raise_offer": {
@@ -73,18 +73,18 @@ export async function acceptSuggestion(id: string, userId: string, plan?: PlanPi
     }
     case "rent_out": {
       // Rentable at the agent's day price (a deposit of half its value), and public so renters nearby can find it.
-      const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, String(a.itemId)), eq(schema.vaultItems.ownerId, userId)));
+      const [item] = await db.select().from(schema.items).where(and(eq(schema.items.id, String(a.itemId)), eq(schema.items.ownerId, userId)));
       if (!item) return null;
-      await db.update(schema.vaultItems).set({ rentPerDay: Number(a.perDay).toFixed(2), deposit: item.deposit ?? Math.round(Number(item.estimatedValue ?? 0) * 0.5).toFixed(2) }).where(eq(schema.vaultItems.id, item.id));
+      await db.update(schema.items).set({ rentPerDay: Number(a.perDay).toFixed(2), deposit: item.deposit ?? Math.round(Number(item.estimatedValue ?? 0) * 0.5).toFixed(2) }).where(eq(schema.items.id, item.id));
       playLater(await goPublic(userId, item.id));
       return `/my-stuff/${item.id}`;
     }
     case "set_price": {
       // A lower asking price; the lowest they'd take moves down with it if needed.
-      const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, String(a.itemId)), eq(schema.vaultItems.ownerId, userId)));
+      const [item] = await db.select().from(schema.items).where(and(eq(schema.items.id, String(a.itemId)), eq(schema.items.ownerId, userId)));
       if (!item) return null;
       const price = Number(a.price);
-      await db.update(schema.vaultItems).set({ estimatedValue: price.toFixed(2), minPrice: (Math.min(Number(item.minPrice ?? price), Math.round(price * 0.9))).toFixed(2) }).where(eq(schema.vaultItems.id, item.id));
+      await db.update(schema.items).set({ estimatedValue: price.toFixed(2), minPrice: (Math.min(Number(item.minPrice ?? price), Math.round(price * 0.9))).toFixed(2) }).where(eq(schema.items.id, item.id));
       return `/my-stuff/${item.id}`;
     }
     case "post_need": {

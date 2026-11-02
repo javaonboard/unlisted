@@ -2,7 +2,7 @@ import { and, eq, inArray, ne } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { composePlan } from "@/lib/plans/compose";
 import { suggest } from "./suggest";
-import { asRecord } from "@/lib/vault/card";
+import { asRecord } from "@/lib/items/card";
 
 // Asks the planning agent whether someone's needs belong together. If so, the Inbox gets
 // one plan suggestion in the agent's own words, plus a "you'll also need…" suggestion per gap.

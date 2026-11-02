@@ -7,12 +7,12 @@ import { db, schema } from "@/lib/db";
 import { currentUserId } from "@/lib/session";
 import { getUser } from "@/lib/users/queries";
 import { listNotifications } from "@/lib/notifications/queries";
-import { getRoomView } from "@/lib/anchors/queries";
-import { nextFor, roleOf } from "@/lib/anchors/next";
+import { getRoomView } from "@/lib/views/queries";
+import { nextFor, roleOf } from "@/lib/views/next";
 import { SuggestionCard } from "@/components/inbox/SuggestionCard";
 import { DealThread } from "@/components/inbox/DealThread";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
-import { TellAgent } from "@/components/vault/TellAgent";
+import { TellAgent } from "@/components/items/TellAgent";
 import { FormattedText } from "@/components/FormattedText";
 
 const time = (d: Date) => d.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" });

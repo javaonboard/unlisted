@@ -33,8 +33,8 @@ async function summarize(rooms: Room[], viewerId: string) {
 }
 
 // An item someone owns, with every agent that reached out about it.
-export async function getItemAnchor(itemId: string, viewerId: string) {
-  const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, itemId));
+export async function getItemView(itemId: string, viewerId: string) {
+  const [item] = await db.select().from(schema.items).where(eq(schema.items.id, itemId));
   if (!item || item.ownerId !== viewerId) return null;
   const [evidence, rooms] = await Promise.all([
     db.select().from(schema.evidence).where(eq(schema.evidence.itemId, itemId)),
@@ -44,7 +44,7 @@ export async function getItemAnchor(itemId: string, viewerId: string) {
 }
 
 // A need someone posted, with every agent that offered to fill it.
-export async function getNeedAnchor(intentId: string, viewerId: string) {
+export async function getNeedView(intentId: string, viewerId: string) {
   const [need] = await db.select().from(schema.intents).where(eq(schema.intents.id, intentId));
   if (!need || need.ownerId !== viewerId) return null;
   const rooms = await db.select().from(schema.negotiations).where(eq(schema.negotiations.intentId, intentId)).orderBy(asc(schema.negotiations.createdAt));
@@ -60,7 +60,7 @@ export async function getRoomView(roomId: string, viewerId: string) {
   if (!isParty) return null;
 
   const [[item], [need], moves, all, who] = await Promise.all([
-    db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!)),
+    db.select().from(schema.items).where(eq(schema.items.id, room.itemId!)),
     db.select().from(schema.intents).where(eq(schema.intents.id, room.intentId!)),
     db.select().from(schema.offers).where(eq(schema.offers.negotiationId, roomId)).orderBy(asc(schema.offers.createdAt)),
     room.dealId ? db.select().from(schema.negotiations).where(eq(schema.negotiations.dealId, room.dealId)) : Promise.resolve([] as Room[]),

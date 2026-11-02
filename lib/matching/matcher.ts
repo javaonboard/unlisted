@@ -3,12 +3,10 @@ import { db, schema } from "@/lib/db";
 import { placesInReach, rangeOfNeed, rangeOfOffer } from "@/lib/places";
 import { meetsRequirements } from "./rules";
 
-type Item = typeof schema.vaultItems.$inferSelect;
+type Item = typeof schema.items.$inferSelect;
 type Intent = typeof schema.intents.$inferSelect;
 
-// Hard rules first: same category, prices overlap, and the need's requirements hold.
-// Requirements are generic: "minSeats: 3" needs the item's "seats" ≥ 3, "maxWidthIn: 80" needs
-// "widthIn" ≤ 80. The AI names the specs when it reads a photo or a message; this rule just compares them.
+// Hard rules: same category, prices within reach, and requirements met ("minSeats: 3" needs seats ≥ 3).
 function fits(item: Item, intent: Intent) {
   if (item.category !== intent.category || item.ownerId === intent.ownerId || item.soldAt) return false;
   if (intent.type === "buy" && item.kind === "goods" && !item.forSale) return false;
@@ -39,7 +37,7 @@ async function backedOutWith(by: { itemId?: string; intentId?: string }) {
 
 // Open buy or service requests that this item or skill could fill.
 export async function findDemandFor(itemId: string) {
-  const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, itemId));
+  const [item] = await db.select().from(schema.items).where(eq(schema.items.id, itemId));
   // A service answers service requests; goods answer people buying or renting.
   const types = item.kind === "skill" ? ["request_service" as const] : ["buy" as const, "rent" as const];
   const intents = await db
@@ -56,7 +54,7 @@ export async function findDemandFor(itemId: string) {
 export async function findSupplyFor(intentId: string) {
   const [intent] = await db.select().from(schema.intents).where(eq(schema.intents.id, intentId));
   const kind = intent.type === "request_service" ? "skill" : "goods";
-  const items = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.kind, kind));
+  const items = await db.select().from(schema.items).where(eq(schema.items.kind, kind));
   const reach = await inReach();
   const blocked = await backedOutWith({ intentId });
   return items.filter((item) => fits(item, intent) && reach(item, intent) && !blocked.has(item.id));

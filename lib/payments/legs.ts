@@ -2,11 +2,11 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { logActivity } from "@/lib/db/activity";
 import { createAuthorizeOrder, authorizeOrder } from "@/lib/paypal/orders";
-import { captureAuthorization, voidAuthorization } from "@/lib/paypal/payments";
+import { captureAuthorization } from "@/lib/paypal/payments";
 import { sendPayout } from "@/lib/paypal/payouts";
 import { approve, waitingFor } from "@/lib/deals/approval";
 import { notify } from "@/lib/notifications/notify";
-import { addVaultItem } from "@/lib/vault/mutations";
+import { addItem } from "@/lib/items/mutations";
 import { inSentence } from "@/lib/text/words";
 import { FEE, payoutOf, rentalCapture } from "./fees";
 
@@ -15,7 +15,7 @@ const money = (n: number) => n.toFixed(2);
 // The words for a payment message: what it's for and who's who. "the grey 3-seat sectional", "Ben", "Maya".
 async function aboutLeg(leg: { roomId: string | null; payerId: string; payeeId: string; description: string }) {
   const [room] = leg.roomId ? await db.select({ itemId: schema.negotiations.itemId }).from(schema.negotiations).where(eq(schema.negotiations.id, leg.roomId)) : [];
-  const [item] = room?.itemId ? await db.select({ title: schema.vaultItems.title }).from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId)) : [];
+  const [item] = room?.itemId ? await db.select({ title: schema.items.title }).from(schema.items).where(eq(schema.items.id, room.itemId)) : [];
   const people = await db.select({ id: schema.users.id, name: schema.users.name }).from(schema.users);
   const first = (id: string) => people.find((p) => p.id === id)?.name.split(" ")[0] ?? "them";
   return { what: `the ${inSentence(item?.title ?? leg.description)}`, payer: first(leg.payerId), payee: first(leg.payeeId) };
@@ -38,7 +38,7 @@ export async function openLeg(roomId: string) {
     [{ id: dealId }] = await db.insert(schema.deals).values({ ownerId: room.buyerId, title: room.label ?? "Deal" }).returning({ id: schema.deals.id });
     await db.update(schema.negotiations).set({ dealId }).where(eq(schema.negotiations.id, roomId));
   }
-  const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!));
+  const [item] = await db.select().from(schema.items).where(eq(schema.items.id, room.itemId!));
   const [need] = await db.select().from(schema.intents).where(eq(schema.intents.id, room.intentId!));
   const kind = need?.type === "rent" ? ("rental" as const) : item?.kind === "skill" ? ("service" as const) : ("goods" as const);
   const [leg] = await db
@@ -156,9 +156,9 @@ export async function payWaiting(userId: string) {
 async function markSold(leg: typeof schema.dealLegs.$inferSelect) {
   const [room] = leg.roomId ? await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, leg.roomId)) : [];
   if (!room) return;
-  await db.update(schema.vaultItems).set({ soldAt: new Date(), openToOffers: false }).where(eq(schema.vaultItems.id, room.itemId!));
+  await db.update(schema.items).set({ soldAt: new Date(), openToOffers: false }).where(eq(schema.items.id, room.itemId!));
   await db.update(schema.intents).set({ status: "done" }).where(eq(schema.intents.id, room.intentId!));
-  const [item] = await db.select({ category: schema.vaultItems.category }).from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!));
+  const [item] = await db.select({ category: schema.items.category }).from(schema.items).where(eq(schema.items.id, room.itemId!));
   await db.update(schema.intents).set({ status: "done" }).where(and(eq(schema.intents.ownerId, room.sellerId), eq(schema.intents.type, "sell"), eq(schema.intents.category, item.category)));
   await giveToBuyer(room);
 }
@@ -166,11 +166,11 @@ async function markSold(leg: typeof schema.dealLegs.$inferSelect) {
 // The buyer now owns it: it shows in their things, private, worth what they paid. Their agent takes a look
 // (price check, then ideas like renting it out between uses) through the usual "added" event.
 async function giveToBuyer(room: typeof schema.negotiations.$inferSelect) {
-  const [sold] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, room.itemId!));
-  const [already] = await db.select({ id: schema.vaultItems.id }).from(schema.vaultItems).where(and(eq(schema.vaultItems.ownerId, room.buyerId), eq(schema.vaultItems.title, sold.title), isNull(schema.vaultItems.soldAt)));
+  const [sold] = await db.select().from(schema.items).where(eq(schema.items.id, room.itemId!));
+  const [already] = await db.select({ id: schema.items.id }).from(schema.items).where(and(eq(schema.items.ownerId, room.buyerId), eq(schema.items.title, sold.title), isNull(schema.items.soldAt)));
   if (already) return; // a repeated confirm doesn't add it twice
-  const mine = await addVaultItem(room.buyerId, { kind: "goods", title: sold.title, category: sold.category, condition: sold.condition ?? undefined, estimatedValue: Number(room.agreedPrice ?? sold.estimatedValue ?? 0), details: sold.details });
-  await db.update(schema.vaultItems).set({ photos: sold.photos, inspection: sold.inspection }).where(eq(schema.vaultItems.id, mine.id));
+  const mine = await addItem(room.buyerId, { kind: "goods", title: sold.title, category: sold.category, condition: sold.condition ?? undefined, estimatedValue: Number(room.agreedPrice ?? sold.estimatedValue ?? 0), details: sold.details });
+  await db.update(schema.items).set({ photos: sold.photos, inspection: sold.inspection }).where(eq(schema.items.id, mine.id));
 }
 
 // The rental came back. All good: PayPal captures just the fee and releases the deposit.
@@ -198,18 +198,3 @@ export async function confirmReturn(legId: string, payeeId: string, goodShape: b
   await payOut(leg, take);
 }
 
-// Before the handoff, the payer can cancel: the hold is released and nothing is charged.
-export async function cancelHold(legId: string, payerId: string) {
-  const [leg] = await db.select().from(schema.dealLegs).where(eq(schema.dealLegs.id, legId));
-  if (!leg || leg.payerId !== payerId) throw new Error("Only an untouched hold can be released.");
-  const [claimed] = await db.update(schema.dealLegs).set({ status: "voided" }).where(and(eq(schema.dealLegs.id, legId), eq(schema.dealLegs.status, "held"), isNull(schema.dealLegs.handoffAt))).returning();
-  if (!claimed) return; // already released, or the handoff happened
-  await voidAuthorization(leg.authorizationId!).catch(async (error) => {
-    await db.update(schema.dealLegs).set({ status: "held" }).where(eq(schema.dealLegs.id, legId));
-    throw error;
-  });
-  await say(leg.dealId, payerId, "Hold released. Nothing was charged.");
-  const w = await aboutLeg(leg);
-  await notify(payerId, `Payment for ${w.what} released`, "Nothing was charged.", leg.roomId);
-  await notify(leg.payeeId, `${w.payer} cancelled the payment for ${w.what}`, "Nothing was charged.", leg.roomId);
-}

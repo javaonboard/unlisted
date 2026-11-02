@@ -1,7 +1,7 @@
 import { SubmitButton } from "@/components/ui/submit-button";
 import { FormattedText } from "@/components/FormattedText";
 import { Lightbulb } from "lucide-react";
-import { IconCircle } from "@/components/anchors/Badges";
+import { IconCircle } from "@/components/shared/Badges";
 import { acceptSuggestionAction, dismissSuggestionAction } from "@/app/actions/suggestions";
 import { PlanChoices } from "@/components/inbox/PlanChoices";
 

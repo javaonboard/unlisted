@@ -5,7 +5,7 @@ import { findDemandFor, findSupplyFor } from "./matcher";
 // Matches for one person: buyers for their things, and things for their needs.
 export async function discoverFor(userId: string) {
   const [items, intents, users] = await Promise.all([
-    db.select().from(schema.vaultItems).where(eq(schema.vaultItems.ownerId, userId)),
+    db.select().from(schema.items).where(eq(schema.items.ownerId, userId)),
     db.select().from(schema.intents).where(eq(schema.intents.ownerId, userId)),
     db.select().from(schema.users),
   ]);

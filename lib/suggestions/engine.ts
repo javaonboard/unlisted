@@ -2,7 +2,7 @@ import { and, eq, lte } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { findDemandFor, findSupplyFor } from "@/lib/matching/matcher";
-import { skillDemand } from "@/lib/vault/demand";
+import { skillDemand } from "@/lib/items/demand";
 import { milesBetween } from "@/lib/places";
 import { suggest } from "./suggest";
 import { toolOwnersFor } from "./tools";
@@ -115,8 +115,8 @@ export async function onNeedPosted(needId: string) {
 
 // Something new in someone's things: price advice first, then their agent takes a look.
 // People who need it only hear if it's public; a private thing stays private.
-export async function onVaultAdded(itemId: string) {
-  const [item] = await db.select().from(schema.vaultItems).where(eq(schema.vaultItems.id, itemId));
+export async function onItemAdded(itemId: string) {
+  const [item] = await db.select().from(schema.items).where(eq(schema.items.id, itemId));
   if (!item) return;
   await priceItem(itemId).catch((e) => console.error("[price] failed", e?.message)); // web, Channel3 and our own sales
   await checkIn(item.ownerId, `they added ${item.title}`);
