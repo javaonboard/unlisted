@@ -10,8 +10,8 @@ type Props = {
   points: string[]; // what happens if they say yes, in 1-3 short lines
   confirm: string; // the yes button
   action: () => Promise<unknown>;
-  variant?: "default" | "outline" | "destructive" | "secondary";
-  size?: "sm" | "default";
+  variant?: "default" | "outline" | "destructive" | "secondary" | "link";
+  size?: "xs" | "sm" | "default";
 };
 
 // For steps that can't be undone: say plainly what will happen, then Yes or Not yet.

@@ -3,6 +3,8 @@ import { currentUserId } from "@/lib/session";
 import { listPersonas } from "@/lib/users/queries";
 import { needsYou } from "@/lib/inbox/needs";
 import { PersonaSwitcher } from "./PersonaSwitcher";
+import { ConfirmAction } from "@/components/ConfirmAction";
+import { resetDemoAction } from "@/app/actions/demo";
 
 const links = [
   { href: "/", label: "Inbox" },
@@ -29,7 +31,18 @@ export async function Header() {
       {/* The demo has no login: anyone can switch people to try both sides of a deal. */}
       <div className="flex flex-col items-end gap-0.5">
         <PersonaSwitcher personas={personas} current={current} />
-        <span className="text-[11px] text-muted-foreground">Demo mode: no login, switch people to try both sides</span>
+        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          Shared demo: no login, switch people to try both sides ·
+          <ConfirmAction
+            variant="link"
+            size="xs"
+            label="Reset demo"
+            title="Reset the demo?"
+            points={["Everything goes back to the start: people, things, deals and chats.", "Changes anyone made are cleared, for everyone using the demo.", "PayPal sandbox payments already made stay in PayPal."]}
+            confirm="Reset"
+            action={resetDemoAction}
+          />
+        </span>
       </div>
     </header>
   );

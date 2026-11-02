@@ -89,7 +89,8 @@ Tags: [PayPal sandbox verified] run end to end against sandbox · [Live-tested w
 - **Resume after restart**: open rooms quiet for 5 minutes carry on from the last saved move; a yes that wasn't settled gets settled. `lib/negotiation/resume.ts` [Live-tested with agents]
 - **AI limits**: 20 calls per IP per hour and 1000 per day on the public site, none locally; tokens counted per day. Structured calls on the main model fall back to another model if refused. `lib/ai/` 
 - **Deploy**: Render web service plus Postgres (`render.yaml`), migrations before deploy, health check with the running commit, webpack build to fit 512 MB.
-- **Demo reset**: `npm run db:seed` loads 14 people, 14 things, 17 needs, facts, bookings, then runs real photo checks, 4 negotiations, 2 price checks and a first check-in for everyone (`--quiet` skips the AI part).
+- **Reset demo**: a button in the header (behind a confirm pop-up) and a nightly reset at 3am Austin time put the shared demo back to its starting point in seconds, with no AI calls. Dates move forward by whole weeks so Saturday plans stay ahead. AI usage isn't reset. `lib/demo/snapshot.ts`
+- **Demo seed**: `npm run db:seed` loads 14 people, 14 things, 17 needs, facts, bookings, then runs real photo checks, 4 negotiations, 2 price checks and a first check-in for everyone (`--quiet` skips the AI part), then saves the starting point for Reset demo.
 
 ## Use cases
 

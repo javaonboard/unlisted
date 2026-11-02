@@ -291,3 +291,11 @@ export const actionKeys = pgTable("action_keys", {
   key: text("key").primaryKey(),
   createdAt: createdAt(),
 });
+
+// The demo world right after seeding, so anyone can put it back (a button and a nightly reset).
+export const demoSnapshots = pgTable("demo_snapshots", {
+  id: text("id").primaryKey(), // always "demo"
+  data: jsonb("data").$type<Record<string, unknown[]>>().notNull(), // rows per table
+  takenAt: timestamp("taken_at").notNull(),
+  resetAt: timestamp("reset_at"),
+});

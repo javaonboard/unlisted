@@ -22,7 +22,7 @@ Most of what people could sell, rent out or do for neighbors is never listed. Li
 
 ## Try it (about 5 minutes)
 
-The demo has 14 people in Austin with things, needs and services. Switch between them at the top right to play both sides.
+The demo has 14 people in Austin with things, needs and services. Switch between them at the top right to play both sides. It's shared: if someone got there first, press **Reset demo** at the top right to start over (it also resets every night).
 
 1. As **Maya**, open the Inbox. Her agent suggests a moving-day plan: sell her sectional, buy a smaller sofa, book a mover. Tap the button to start it.
 2. Watch the agents negotiate in each deal (about 2 minutes). The best price wins, the sale's handoff is moved after the new sofa arrives, and then a mover is booked around both handoffs.

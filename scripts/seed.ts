@@ -7,6 +7,7 @@ import { openRoom, playRoom } from "@/lib/negotiation/room";
 import { checkIn } from "@/lib/agent/checkin";
 import { priceItem } from "@/lib/pricing/save";
 import { inspectItem } from "@/lib/items/inspect";
+import { saveSnapshot } from "@/lib/demo/snapshot";
 import { existsSync, readFileSync } from "node:fs";
 import * as data from "./seed-data";
 
@@ -80,6 +81,7 @@ async function main() {
     for (const key of ["sectional", "gpu2080"]) await priceItem(itemId[key]).catch((e) => console.error("[price] skipped:", e.message));
     // Then each person's agent takes its first look: buyers for private things, plans, missing pieces.
     for (const u of data.users) await checkIn(u.id, "a first look at their situation").catch((e) => console.error("[checkin] skipped:", e.message));
+    await saveSnapshot(); // the starting point for "Reset demo" and the nightly reset
   }
   process.exit(0);
 }
