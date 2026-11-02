@@ -6,7 +6,9 @@ import { currentUserId } from "@/lib/session";
 import { findDemandFor } from "@/lib/matching/matcher";
 import { statusLine } from "@/lib/anchors/status";
 import { AFTER_HANDOFF } from "@/lib/payments/states";
-import { setVisibilityAction } from "@/app/actions/edit";
+import { setVisibilityAction, setWaysAction } from "@/app/actions/edit";
+import { WaysSwitch } from "@/components/vault/WaysSwitch";
+import { waysOf } from "@/lib/vault/ways";
 import { VisibilitySwitch } from "@/components/anchors/VisibilitySwitch";
 import { rangeOfNeed, rangeOfOffer, rangeText } from "@/lib/places";
 import { ChevronRight, ClipboardList } from "lucide-react";
@@ -65,8 +67,9 @@ async function MyStuff() {
               <p className="mt-1 text-sm">{statusLine(rooms.filter((r) => r.itemId === item.id), names, userId, interested[item.id])}</p>
             </div>
           </Link>
-          <div className="px-3 pb-3 pl-20">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3 pb-3 pl-20">
             <VisibilitySwitch action={setVisibilityAction.bind(null, item.id, !item.openToOffers)} open={item.openToOffers} />
+            {item.kind === "goods" && <WaysSwitch ways={waysOf(item)} onChange={setWaysAction.bind(null, item.id)} />}
           </div>
           </div>
         ))}

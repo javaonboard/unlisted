@@ -64,6 +64,22 @@ export async function useNeedBudgetAction(needId: string) {
   refresh();
 }
 
+// Sell, rent out, or both. Renting needs a day price and a deposit: a starting point from its value, editable on the item page.
+export async function setWaysAction(itemId: string, ways: "sell" | "rent" | "both") {
+  const userId = await currentUserId();
+  const [item] = await db.select().from(schema.vaultItems).where(and(eq(schema.vaultItems.id, itemId), eq(schema.vaultItems.ownerId, userId)));
+  if (!item || item.kind !== "goods") return;
+  const value = Number(item.estimatedValue ?? 0);
+  const renting = ways !== "sell";
+  await updateItem(userId, itemId, {
+    condition: item.condition ?? "",
+    forSale: ways !== "rent",
+    rentPerDay: renting ? Number(item.rentPerDay ?? Math.max(5, Math.round(value * 0.04))) : null,
+    deposit: renting ? Number(item.deposit ?? Math.round(value * 0.5)) : null,
+  });
+  refresh();
+}
+
 // One click on My stuff: public starts talks with the best matches, private stops new ones.
 // It says which state it wants, so a double click can't flip it back.
 export async function setVisibilityAction(itemId: string, open: boolean) {

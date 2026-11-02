@@ -5,6 +5,7 @@ import { Camera } from "lucide-react";
 import { IconCircle } from "@/components/anchors/Badges";
 import { Button } from "@/components/ui/button";
 import { addSuggestions, suggestFromPhoto, type Suggestion } from "@/app/actions/vault";
+import { WaysSwitch } from "./WaysSwitch";
 
 // Shrinks a photo in the browser so uploads stay small.
 async function shrink(file: File, max: number, quality = 0.8) {
@@ -40,6 +41,7 @@ export function PhotoToVault() {
     });
   };
 
+  const change = (i: number, next: Partial<Suggestion>) => setSuggestions((list) => list.map((s, j) => (j === i ? { ...s, ...next } : s)));
   const toggle = (i: number) => setPicked((p) => { const n = new Set(p); if (n.has(i)) n.delete(i); else n.add(i); return n; });
 
   return (
@@ -56,20 +58,34 @@ export function PhotoToVault() {
       {suggestions.length > 0 && (
         <div className="mt-4 flex flex-col gap-2">
           {suggestions.map((s, i) => (
-            <label key={i} className="flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm hover:bg-muted/40">
-              <input type="checkbox" checked={picked.has(i)} onChange={() => toggle(i)} className="mt-1" />
-              <span className="flex-1">
-                <span className="font-medium">{s.title}{s.kind === "skill" ? " (service)" : ""}</span>
-                {s.value ? <span className="text-muted-foreground"> · ~${s.value}</span> : null}
-                {s.kind === "goods" && <span className="text-muted-foreground"> · {s.ways?.includes("rent") ? (s.ways.includes("sell") ? `sell or rent ($${s.rentPerDay}/day)` : `rent out ($${s.rentPerDay}/day)`) : "sell"}</span>}
-                <span className="block text-muted-foreground">{s.kind === "skill" ? `Because: ${s.note}` : s.note}</span>
+            <div key={i} className="flex items-start gap-3 rounded-xl border p-3 text-sm">
+              <input type="checkbox" checked={picked.has(i)} onChange={() => toggle(i)} className="mt-2" aria-label={`Add ${s.title}`} />
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input value={s.title} onChange={(e) => change(i, { title: e.target.value })} className="min-w-0 flex-1 rounded-lg border px-2 py-1 font-medium" aria-label="Name" />
+                  <label className="flex items-center gap-1 text-muted-foreground">
+                    $<input type="number" min={0} value={s.value ?? s.demand?.perJob ?? ""} onChange={(e) => change(i, { value: e.target.value ? Number(e.target.value) : null, priceEdited: true })} className="w-20 rounded-lg border px-2 py-1" aria-label={s.kind === "skill" ? "Price per job" : "Price"} />
+                    {s.kind === "skill" ? "/job" : ""}
+                  </label>
+                </div>
+                {s.kind === "goods" && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <WaysSwitch ways={s.ways?.includes("rent") ? (s.ways.includes("sell") ? "both" : "rent") : "sell"} onChange={(w) => change(i, { ways: w === "both" ? ["sell", "rent"] : [w], rentPerDay: w === "sell" ? null : (s.rentPerDay ?? Math.max(5, Math.round((s.value ?? 0) * 0.04))) })} />
+                    {s.ways?.includes("rent") && (
+                      <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                        $<input type="number" min={0} value={s.rentPerDay ?? ""} onChange={(e) => change(i, { rentPerDay: e.target.value ? Number(e.target.value) : null })} className="w-14 rounded-lg border px-1.5 py-0.5" aria-label="Rent per day" />/day
+                      </label>
+                    )}
+                  </div>
+                )}
+                <span className="text-muted-foreground">{s.kind === "skill" ? `A service you could offer, because: ${s.note}` : s.note}</span>
                 {s.demand && s.demand.requests > 0 && (
-                  <span className="block text-primary">
+                  <span className="text-primary">
                     {s.demand.requests} {s.demand.requests === 1 ? "neighbor asked" : "neighbors asked"} for this{s.demand.perJob ? ` · ~$${s.demand.perJob} per job` : ""}
                   </span>
                 )}
-              </span>
-            </label>
+              </div>
+            </div>
           ))}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setSuggestions([])}>Cancel</Button>
@@ -84,7 +100,7 @@ export function PhotoToVault() {
               Add {picked.size} to my stuff
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Everything stays private until you say yes to a real buyer.</p>
+          <p className="text-xs text-muted-foreground">Prices from a photo are a first guess: your agent checks the market next. Missed something? Tell your agent above, like “I can also mount TVs”. Everything stays private until you say yes to a real buyer.</p>
         </div>
       )}
     </div>

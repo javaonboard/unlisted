@@ -1,0 +1,1 @@
+ALTER TABLE "vault_items" ADD COLUMN "price_is_guess" boolean DEFAULT false NOT NULL;

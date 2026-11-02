@@ -48,6 +48,7 @@ export const vaultItems = pgTable("vault_items", {
   condition: text("condition"),
   photos: jsonb("photos").$type<string[]>().default([]).notNull(),
   estimatedValue: money("estimated_value"),
+  priceIsGuess: boolean("price_is_guess").default(false).notNull(), // a first guess from a photo; the market check replaces it
   minPrice: money("min_price"), // never shown to other users
   openToOffers: boolean("open_to_offers").default(false).notNull(),
   maxMiles: integer("max_miles"), // how far the owner will travel; 0 = pickup only. Empty = the default

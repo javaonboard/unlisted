@@ -8,6 +8,7 @@ type NewItem = {
   category: string;
   condition?: string;
   estimatedValue?: number;
+  priceIsGuess?: boolean;
   minPrice?: number;
   openToOffers?: boolean;
   details?: Record<string, unknown>;
@@ -28,6 +29,7 @@ export async function addVaultItem(ownerId: string, item: NewItem) {
       category: item.category,
       condition: item.condition,
       estimatedValue: item.estimatedValue?.toFixed(2),
+      priceIsGuess: item.priceIsGuess ?? false,
       minPrice: item.minPrice?.toFixed(2),
       openToOffers: item.openToOffers ?? false,
       details: item.details ?? {},
@@ -58,7 +60,7 @@ export async function updateItem(ownerId: string, itemId: string, f: { title?: s
     .set({
       ...(f.title ? { title: f.title } : {}),
       condition: f.condition || null,
-      ...(f.estimatedValue !== undefined ? { estimatedValue: f.estimatedValue.toFixed(2) } : {}),
+      ...(f.estimatedValue !== undefined ? { estimatedValue: f.estimatedValue.toFixed(2), priceIsGuess: false } : {}),
       ...(f.minPrice !== undefined ? { minPrice: f.minPrice.toFixed(2) } : {}),
       ...(f.openToOffers !== undefined ? { openToOffers: f.openToOffers } : {}),
       ...(f.forSale !== undefined ? { forSale: f.forSale } : {}),

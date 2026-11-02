@@ -28,6 +28,7 @@ export type Suggestion = {
   specs?: Record<string, number>;
   ways?: ("sell" | "rent")[];
   rentPerDay?: number | null;
+  priceEdited?: boolean; // the owner typed their own price before saving
 };
 
 // Turns one photo into suggested vault cards. Nothing is saved yet.
@@ -57,6 +58,7 @@ export async function addSuggestions(picked: Suggestion[], thumbnail: string, ph
       category: s.category,
       condition: s.kind === "goods" ? s.note : undefined,
       estimatedValue: s.value ?? s.demand?.perJob ?? undefined,
+      priceIsGuess: s.kind === "goods" && !s.priceEdited,
       details: s.specs ?? {},
       forSale: s.kind === "goods" ? !s.ways?.length || s.ways.includes("sell") : undefined,
       rentPerDay: s.ways?.includes("rent") ? (s.rentPerDay ?? undefined) : undefined,
