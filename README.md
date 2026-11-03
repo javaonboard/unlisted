@@ -55,6 +55,11 @@ The demo has 14 people in Austin with things, needs and services. Switch between
 
 Everything runs in the PayPal sandbox. The platform account is the payee on each order, so it can hold, charge, release and refund. Sellers are paid with Payouts.
 
+**PayPal Agent Toolkit over MCP.** "Did my payment go through?" is answered by Claude using PayPal's own tools. The app starts the Agent Toolkit's MCP server inside the app for each question, with a fresh sandbox token, and connects to it in memory; Claude gets the tools through the Anthropic SDK's MCP helper. The same question works from the user's own AI through the connector.
+- Live answers straight from PayPal, not from our database.
+- One read-only tool (`get_order`), so the AI can look but never move money.
+- It only opens the asker's own order ids; anything else is refused before it reaches PayPal.
+
 ## How AI is used
 
 Claude (Anthropic SDK) runs every agent. `claude-sonnet-5-5` handles negotiation, vision, planning, check-ins and pricing; `claude-haiku-4-5` handles small tasks like turning typed text into cards and reading an owner's reply.
