@@ -144,6 +144,7 @@ export function NextSteps(p: Props) {
                   : [`PayPal charges the ${money(p.price)} it's holding and pays ${other}.`, "This can't be undone. If something turns out wrong, use Report a problem."]}
                 confirm={rental ? "Yes, picked up" : "Yes, I have it"}
                 action={confirmHandoffAction.bind(null, leg.id)}
+                done={rental ? "Picked up. PayPal keeps holding it until it's back." : `Done. PayPal charged ${money(p.price)} and is paying ${other}.`}
               />
             </div>
           )}
@@ -155,6 +156,7 @@ export function NextSteps(p: Props) {
                 points={[`PayPal charges ${other} the ${money(p.price)} fee and pays you.`, `${other}'s ${money(p.deposit)} deposit is released.`]}
                 confirm="Yes, all good"
                 action={confirmReturnAction.bind(null, leg.id, true)}
+                done="Back. PayPal charged the fee, released the deposit and is paying you."
               />
               <ConfirmAction
                 label="Something's wrong"
@@ -163,6 +165,7 @@ export function NextSteps(p: Props) {
                 points={[`PayPal charges ${other} the fee plus the ${money(p.deposit)} deposit.`, "Only if it came back damaged or late. Tell them why in the chat."]}
                 confirm="Keep the deposit"
                 action={confirmReturnAction.bind(null, leg.id, false)}
+                done="Deposit kept. PayPal is paying you."
               />
             </div>
           )}

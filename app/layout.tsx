@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import { Header } from "@/components/layout/Header";
+import { Toaster } from "@/components/shared/Toaster";
 import "./globals.css";
 
 const inter = Inter({
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Header />
         </Suspense>
         {children}
+        <Toaster />
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { showDone } from "@/components/shared/Toaster";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 type Props = {
@@ -12,10 +13,11 @@ type Props = {
   action: () => Promise<unknown>;
   variant?: "default" | "outline" | "destructive" | "secondary" | "link";
   size?: "xs" | "sm" | "default";
+  done?: string; // a short confirmation once it went through
 };
 
 // For steps that can't be undone: say plainly what will happen, then Yes or Not yet.
-export function ConfirmAction({ label, title, points, confirm, action, variant = "default", size = "sm" }: Props) {
+export function ConfirmAction({ label, title, points, confirm, action, variant = "default", size = "sm", done }: Props) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   return (
@@ -30,7 +32,12 @@ export function ConfirmAction({ label, title, points, confirm, action, variant =
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" disabled={pending} onClick={() => setOpen(false)}>Not yet</Button>
-          <Button variant={variant === "destructive" ? "destructive" : "default"} loading={pending} onClick={() => start(async () => { await action(); setOpen(false); })}>{confirm}</Button>
+          <Button variant={variant === "destructive" ? "destructive" : "default"} loading={pending} onClick={() => start(async () => {
+            const result = (await action()) as { error?: string | null } | undefined;
+            setOpen(false);
+            if (result?.error) showDone(result.error, true);
+            else if (done) showDone(done);
+          })}>{confirm}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

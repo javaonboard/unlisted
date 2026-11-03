@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PayPalProvider, PayPalOneTimePaymentButton } from "@paypal/react-paypal-js/sdk-v6";
 import { createOrderAction, holdPaymentAction } from "@/app/actions/payments";
+import { showDone } from "@/components/shared/Toaster";
 
 // PayPal's own v6 button: one click opens PayPal, approving places a hold. Nothing is charged until the handoff.
 export function PayButton({ legId, clientId, total, deposit }: { legId: string; clientId: string; total: number; deposit: number }) {
@@ -21,6 +22,7 @@ export function PayButton({ legId, clientId, total, deposit }: { legId: string; 
             setStatus("holding");
             try {
               await holdPaymentAction(orderId);
+              showDone(`Paid with PayPal. $${(total + deposit).toFixed(0)} is held until the handoff.`);
             } catch {
               setStatus("error");
             }
