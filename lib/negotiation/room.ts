@@ -1,4 +1,4 @@
-import { and, desc, eq, ne } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { logActivity } from "@/lib/db/activity";
@@ -12,6 +12,11 @@ type NewRoom = { id?: string; dealId?: string; dependsOn?: string[]; stops?: str
 
 export async function openRoom(input: NewRoom) {
   const [room] = await db.insert(schema.negotiations).values(input).returning();
+  // A suggestion to talk about this same thing and need is now underway: clear it.
+  await db
+    .update(schema.suggestions)
+    .set({ status: "dismissed" })
+    .where(and(eq(schema.suggestions.status, "new"), eq(schema.suggestions.needId, input.intentId), sql`${schema.suggestions.action}->>'itemId' = ${input.itemId}`));
   for (const userId of [input.buyerId, input.sellerId]) {
     await logActivity({ userId, type: "agent", message: "Your agent opened a negotiation.", data: { roomId: room.id } });
   }

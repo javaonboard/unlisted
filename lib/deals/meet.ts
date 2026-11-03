@@ -29,7 +29,7 @@ export async function meetingPoint(room: { buyerId: string; sellerId: string }, 
   const hostId = meetAt === "seller_home" ? room.sellerId : room.buyerId;
   const guestId = hostId === room.sellerId ? room.buyerId : room.sellerId;
   const trip = distanceText(person(hostId)?.area ?? "", person(guestId)?.area ?? "");
-  const label = hostId === viewerId ? `Your place: ${first(guestId)} comes to you (${trip})` : `${first(hostId)}'s place (${trip} away)`;
+  const label = hostId === viewerId ? `Your place: ${first(guestId)} comes to you (${trip})` : `${first(hostId)}'s place (${trip === "same neighborhood" ? trip : `${trip} away`})`;
   return { meetAt, label, address: reveal ? (person(hostId)?.address ?? null) : null };
 }
 
