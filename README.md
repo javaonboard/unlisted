@@ -49,7 +49,7 @@ The demo has 14 people in Austin with things, needs and services. Switch between
 | Hold, charge, release | Server SDK: Orders with `AUTHORIZE` intent, authorize on approve, capture at handoff, void if someone backs out, refund after a reported problem | `lib/paypal/orders.ts`, `lib/paypal/payments.ts`, `lib/payments/legs.ts` |
 | Rentals | Hold the fee plus a deposit; at return, capture the fee and release the deposit (or keep it if something's wrong) | `lib/payments/legs.ts`, `lib/payments/fees.ts` |
 | Paying sellers | Payouts API to the seller's own PayPal email, minus 8%. No email yet: the money waits and they're asked to add one | `lib/paypal/payouts.ts` |
-| Proof | Webhook signatures verified with PayPal; 12 event types mapped to hold, charge, payout, refund and release. A payout shows "paid out" only after PayPal confirms it | `app/api/webhooks/paypal`, `lib/payments/confirm.ts` |
+| Proof | Webhook signatures verified with PayPal; 14 event types mapped to hold, charge, payout, refund and release. A payout shows "paid out" only after PayPal confirms it | `app/api/webhooks/paypal`, `lib/payments/confirm.ts` |
 | Safe retries | A stable `PayPal-Request-Id` per step, so a double click or a retry can't hold, charge or pay twice | `lib/payments/legs.ts` |
 | Ask about my money | PayPal Agent Toolkit (`get_order`) through MCP, used by Claude, and limited to the asker's own orders | `lib/money/ask.ts`, `lib/paypal/toolkit.ts` |
 
