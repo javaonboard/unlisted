@@ -35,6 +35,7 @@ export async function checkPrice(thing: { title: string; condition?: string | nu
   let result: z.infer<typeof Price> | null = null;
 
   const final = await claude().beta.messages.toolRunner({
+    cache_control: { type: "ephemeral" }, // each step of the tool loop re-reads the conversation so far from cache
     model: MODELS.main,
     max_tokens: 3000,
     output_config: { effort: "low" },

@@ -32,7 +32,7 @@ export async function checkAiLimits(ip?: string) {
 }
 
 // Adds one call and its tokens to today's total.
-export async function recordAiUsage(usage: { input_tokens: number; output_tokens: number }) {
+export async function recordAiUsage(usage: { input_tokens: number; output_tokens: number; cache_read_input_tokens?: number | null; cache_creation_input_tokens?: number | null }) {
   await db
     .insert(schema.aiUsage)
     .values({ day: today(), calls: 1, inputTokens: usage.input_tokens, outputTokens: usage.output_tokens })
@@ -44,5 +44,5 @@ export async function recordAiUsage(usage: { input_tokens: number; output_tokens
         outputTokens: sql`${schema.aiUsage.outputTokens} + ${usage.output_tokens}`,
       },
     });
-  console.log("[ai] usage", usage.input_tokens, "in /", usage.output_tokens, "out");
+  console.log("[ai] usage", usage.input_tokens, "in /", usage.output_tokens, "out", `/ cache ${usage.cache_read_input_tokens ?? 0} read, ${usage.cache_creation_input_tokens ?? 0} written`);
 }

@@ -25,7 +25,8 @@ export async function askForData<T extends z.ZodType>(options: Options<T>): Prom
     ...(model === MODELS.small
       ? { output_config: { format: betaZodOutputFormat(options.schema) } }
       : { output_config: { effort: "low" as const, format: betaZodOutputFormat(options.schema) }, ...FALLBACK }),
-    system: options.system,
+    // A system prompt is our fixed instructions: cached so repeated calls (every negotiation turn) read it cheaply.
+    system: options.system ? [{ type: "text" as const, text: options.system, cache_control: { type: "ephemeral" as const } }] : undefined,
     messages: [{ role: "user", content: options.content }],
   });
 

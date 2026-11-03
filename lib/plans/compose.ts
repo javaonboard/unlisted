@@ -43,6 +43,7 @@ export async function composePlan(userId: string, change?: string): Promise<Comp
   await checkAiLimits();
   let plan: ComposedPlan | null = null;
   const runner = claude().beta.messages.toolRunner({
+    cache_control: { type: "ephemeral" }, // each step of the tool loop re-reads the conversation so far from cache
     model: MODELS.main,
     max_tokens: 3000,
     output_config: { effort: "low" },

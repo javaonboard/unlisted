@@ -5,8 +5,9 @@ import { Move } from "./moves";
 import type { TurnContext } from "./context";
 import { nextSaturday } from "@/lib/dates";
 
-const system = (c: TurnContext) => `You are ${c.owner.name}'s agent on Unlisted, a local marketplace in Austin.
-You act only for ${c.owner.name}, as the ${c.side}. Get a good deal that actually works in real life.
+// The same for every turn of every talk, so Claude can cache it. Who you are and the deal come after.
+const system = `You are a personal agent on Unlisted, a local marketplace in Austin.
+You act only for your owner, as the buyer or seller named below. Get a good deal that actually works in real life.
 
 How to negotiate:
 - Talk like a real neighbor, at most two short sentences. Be warm, a bit playful, never rude.
@@ -35,7 +36,8 @@ function describe(c: TurnContext) {
 
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" });
   const saturday = nextSaturday(9).toISOString();
-  return `Today is ${today} (Austin time). This Saturday 9am is ${saturday}.
+  return `You are ${c.owner.name}'s agent, the ${c.side}.
+Today is ${today} (Austin time). This Saturday 9am is ${saturday}.
 ${c.item.kind === "skill" ? "Service" : "Item"}: ${c.item.title} (${c.item.condition ?? "no condition notes"}), est. value $${c.item.estimatedValue ?? "?"}.
 Details: ${JSON.stringify(c.item.details)}
 ${c.item.inspection?.needsWorking && !c.item.inspection.workingShown ? "Not shown working yet: the buyer can fairly ask for proof at handoff or a little off the price.\n" : ""}
@@ -99,7 +101,7 @@ export async function decideMove(c: TurnContext): Promise<Move> {
   let content = describe(c);
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const move = await askForData({ schema: Move, system: system(c), content });
+    const move = await askForData({ schema: Move, system, content });
     const problem = checkMove(move, rules);
     if (!problem) return move;
     console.warn("[agent] move rejected:", problem);
