@@ -28,11 +28,11 @@ export async function bookAgreedDeal(roomId: string) {
   const what = inSentence(item.title);
   const when = start.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" });
 
-  // The time was changed: move both rows and ask whoever hasn't said yes yet.
+  // The time was changed: move both rows, tell both people, and ask whoever hasn't said yes yet.
   if (existing.length) {
     await db.update(schema.bookings).set({ startsAt: start, endsAt: end }).where(eq(schema.bookings.roomId, roomId));
-    for (const row of existing.filter((b) => !b.confirmedAt)) {
-      await notify(row.userId, "New time to confirm", `${row.title}, ${when}.`, roomId);
+    for (const row of existing) {
+      await notify(row.userId, row.confirmedAt ? "New time" : "New time to confirm", `${row.title}, ${when}.`, roomId);
     }
     console.log("[booking] moved", start.toISOString());
     // In a plan, a new time can affect the other parts: the plan agent adjusts them, and they play on.
