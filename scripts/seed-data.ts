@@ -7,15 +7,15 @@ export const users = [
   { id: "sara", name: "Sara Kim", area: "Hyde Park", address: "4312 Oakmont Example Ave, Austin, TX", paypalEmail: "unlisted-seller2@personal.example.com", bio: "Selling a beige sofa. Needs gutters cleaned." },
   { id: "ben", name: "Ben Carter", area: "Cherrywood", address: "3105 Pecan Example St, Unit 4, Austin, TX", paypalEmail: "unlisted-buyer@personal.example.com", bio: "First apartment: wants a sectional and gutter help." },
   { id: "bella", name: "Bella Diaz", area: "Windsor Park", address: "6021 Cedar Example Dr, Austin, TX", paypalEmail: "unlisted-buyer2@personal.example.com", bio: "Wants a big sofa, lawn mowing, and a ladder for one day." },
-  { id: "omar", name: "Omar Haddad", area: "Holly", address: "1904 Riverbend Example Rd, Austin, TX", paypalEmail: null, bio: "Wants a sectional. Gutters overflowing." },
+  { id: "omar", name: "Omar Haddad", area: "Holly", address: "1904 Riverbend Example Rd, Austin, TX", paypalEmail: "unlisted-omar@personal.example.com", bio: "Wants a sectional. Gutters overflowing." },
   { id: "marco", name: "Marco Ruiz", area: "East Austin", address: "1120 Mesquite Example St, Austin, TX", paypalEmail: "unlisted-mover@business.example.com", bio: "Mover with a pickup truck. Weekends." },
-  { id: "dev", name: "Dev Kapoor", area: "Windsor Park", address: "5815 Juniper Example Way, Austin, TX", paypalEmail: null, bio: "Mover with a cargo van. Afternoons." },
-  { id: "gus", name: "Gus Patel", area: "Mueller", address: "2410 Sage Example Ln, Austin, TX", paypalEmail: null, bio: "Cleans gutters. Has a tall ladder." },
-  { id: "lily", name: "Lily Nguyen", area: "Cherrywood", address: "3300 Willow Example St, Austin, TX", paypalEmail: null, bio: "Mows lawns around the neighborhood." },
+  { id: "dev", name: "Dev Kapoor", area: "Windsor Park", address: "5815 Juniper Example Way, Austin, TX", paypalEmail: "unlisted-dev@business.example.com", bio: "Mover with a cargo van. Afternoons." },
+  { id: "gus", name: "Gus Patel", area: "Mueller", address: "2410 Sage Example Ln, Austin, TX", paypalEmail: "unlisted-gus@personal.example.com", bio: "Cleans gutters. Has a tall ladder." },
+  { id: "lily", name: "Lily Nguyen", area: "Cherrywood", address: "3300 Willow Example St, Austin, TX", paypalEmail: "unlisted-lily@personal.example.com", bio: "Mows lawns around the neighborhood." },
   { id: "ivan", name: "Ivan Petrov", area: "Hyde Park", address: "4708 Elm Example Ave, Austin, TX", paypalEmail: null, bio: "IT help: Wi-Fi, TV mounting, PC builds." },
-  { id: "kai", name: "Kai Johnson", area: "Holly", address: "2001 Magnolia Example Ct, Austin, TX", paypalEmail: null, bio: "Wants a Quest 3. Rents out his old wooden ladder." },
-  { id: "priya", name: "Priya Shah", area: "Mueller", address: "2650 Aspen Example Dr, Austin, TX", paypalEmail: null, bio: "Upgrading her graphics card. Needs an oil change." },
-  { id: "leo", name: "Leo Park", area: "Windsor Park", address: "6110 Birch Example Ln, Austin, TX", paypalEmail: null, bio: "Upgraded his PC. Selling an RTX 4070 and a 750W power supply." },
+  { id: "kai", name: "Kai Johnson", area: "Holly", address: "2001 Magnolia Example Ct, Austin, TX", paypalEmail: "unlisted-kai@personal.example.com", bio: "Wants a Quest 3. Rents out his old wooden ladder." },
+  { id: "priya", name: "Priya Shah", area: "Mueller", address: "2650 Aspen Example Dr, Austin, TX", paypalEmail: "unlisted-priya@personal.example.com", bio: "Upgrading her graphics card. Needs an oil change." },
+  { id: "leo", name: "Leo Park", area: "Windsor Park", address: "6110 Birch Example Ln, Austin, TX", paypalEmail: "unlisted-leo@personal.example.com", bio: "Upgraded his PC. Selling an RTX 4070 and a 750W power supply." },
 ];
 
 export const mandates = users.map((u) => ({

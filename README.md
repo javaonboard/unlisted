@@ -35,11 +35,14 @@ The demo has 14 people in Austin with things, needs and services. Switch between
 
 | Person in the demo | Sandbox account | Use it to |
 |---|---|---|
-| Maya | unlisted-maya@personal.example.com | pay for her plan |
-| Ben | unlisted-buyer@personal.example.com | buy |
-| Bella | unlisted-buyer2@personal.example.com | buy or rent |
-| Sam, Sara | unlisted-seller@ / unlisted-seller2@personal.example.com | get paid out |
-| Marco (mover) | unlisted-mover@business.example.com | get paid out |
+| Maya | unlisted-maya@personal.example.com | pay for her plan, get paid for her sectional |
+| Omar | unlisted-omar@personal.example.com | buy Maya's sectional |
+| Ben, Bella | unlisted-buyer@ / unlisted-buyer2@personal.example.com | buy or rent |
+| Kai, Gus, Priya | unlisted-kai@ / unlisted-gus@ / unlisted-priya@personal.example.com | rent out or buy the ladder, buy a graphics card |
+| Sam, Sara, Leo, Lily | unlisted-seller@ / unlisted-seller2@ / unlisted-leo@ / unlisted-lily@personal.example.com | get paid out |
+| Marco, Dev (movers) | unlisted-mover@ / unlisted-dev@business.example.com | get paid out |
+
+Each person pays from their own account; payouts go to the seller's own account.
 
 ## How PayPal is used
 
