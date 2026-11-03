@@ -18,7 +18,8 @@ Most of what people could sell, rent out or do for neighbors is never listed. Li
 2. **The agent looks around.** It prices things from a live web search, Channel3 and past deals, checks your photos for wear, and suggests what to do: a buyer nearby, a plan, a missing piece, a better price, renting something out.
 3. **Agents negotiate.** Your agent talks to the other person's agent with hard guardrails: your limits, your calendar, how far you'll travel, and only real evidence. It asks you when it needs to.
 4. **Plans.** Several deals can depend on each other. Maya sells her sectional only if she finds a smaller sofa, and a mover is booked around both handoffs. If one part moves, the plan agent moves the rest.
-5. **PayPal settles it.** Both people approve. The buyer pays with PayPal and the money is held. At the handoff it's charged, and the seller gets a payout minus Unlisted's 8% fee. Each step is confirmed by PayPal's signed webhook.
+5. **Your schedule.** Every handoff and job lands on your calendar (Bryntum Scheduler): orange while someone still has to approve, green once it's final. Drag across empty time to mark when you're free, and agents only book inside those hours. Drag a booking to ask for another time, and the agents work it out. A mover sees their Saturday as one row of stops.
+6. **PayPal settles it.** Both people approve. The buyer pays with PayPal and the money is held. At the handoff it's charged, and the seller gets a payout minus Unlisted's 8% fee. Each step is confirmed by PayPal's signed webhook.
 
 ## Try it (about 5 minutes)
 
@@ -83,7 +84,7 @@ Code sets the rules, and the AI does the judgement: naming, categorizing, pricin
 ## Sponsor tools
 
 - **Channel3:** finds products in a photo, and gives new prices and specs for the pricing and planning agents (`lib/items/products.ts`).
-- **Bryntum Scheduler:** the Schedule page. Bookings and free hours over three days; drag to mark free time or to ask for another time (`components/bryntum/ScheduleView.tsx`).
+- **Bryntum Scheduler:** the Schedule page, one row per person in your deals over the next three days. It shows what's waiting and what's final, your free hours (which the agents must respect), and lets you drag to mark free time or move a booking (`components/bryntum/ScheduleView.tsx`).
 - **Render:** web service and Postgres from `render.yaml`, with migrations before each deploy and a health check.
 - **APIMatic:** the APIMatic Context Plugin was used while building the PayPal integration, and PayPal's Server SDK is generated with APIMatic.
 
