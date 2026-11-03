@@ -69,7 +69,7 @@ async function MyStuff() {
           </Link>
           <div className="flex flex-wrap items-center justify-between gap-2 px-3 pb-3 pl-20">
             <VisibilitySwitch action={setVisibilityAction.bind(null, item.id, !item.openToOffers)} open={item.openToOffers} />
-            {item.kind === "goods" && <WaysSwitch ways={waysOf(item)} onChange={setWaysAction.bind(null, item.id)} />}
+            {item.kind === "goods" && !rooms.some((r) => r.itemId === item.id && r.status === "agreed") && <WaysSwitch ways={waysOf(item)} onChange={setWaysAction.bind(null, item.id)} />}
           </div>
           </div>
         ))}

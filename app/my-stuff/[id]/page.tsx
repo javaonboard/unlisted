@@ -14,7 +14,9 @@ import { rangeOfOffer } from "@/lib/places";
 import { PriceAdvice } from "@/components/shared/PriceAdvice";
 import { EditItem } from "@/components/shared/EditForms";
 import { ItemPhotos } from "@/components/items/ItemPhotos";
-import { checkItemPriceAction, updateItemAction, useItemPriceAction } from "@/app/actions/edit";
+import { checkItemPriceAction, setWaysAction, updateItemAction, useItemPriceAction } from "@/app/actions/edit";
+import { WaysSwitch } from "@/components/items/WaysSwitch";
+import { waysOf } from "@/lib/items/ways";
 
 async function ItemView({ params }: { params: Promise<{ id: string }> }) {
   const data = await getItemView((await params).id, await currentUserId());
@@ -37,7 +39,11 @@ async function ItemView({ params }: { params: Promise<{ id: string }> }) {
         </CardHeader>
         <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
-            <p>{item.kind === "skill" ? "Price per job" : "Asking price"}: ${Number(item.estimatedValue ?? 0).toFixed(0)}</p>
+            <p>{item.kind === "skill" ? "Price per job" : "Asking price"}: ${Number(item.estimatedValue ?? 0).toFixed(0)}{item.rentPerDay ? ` · rent $${Number(item.rentPerDay).toFixed(0)}/day, $${Number(item.deposit ?? 0).toFixed(0)} deposit` : ""}</p>
+            {/* Sell, rent out or both. Hidden while a deal on it is agreed, so the deal stays as agreed. */}
+            {item.kind === "goods" && !item.soldAt && !negotiations.some((n) => n.room.status === "agreed") && (
+              <div className="my-2"><WaysSwitch ways={waysOf(item)} onChange={setWaysAction.bind(null, item.id)} /></div>
+            )}
             {item.minPrice && <p>Your minimum: ${Number(item.minPrice).toFixed(0)} <span className="text-muted-foreground">(only you see this)</span></p>}
             <RangeForm action={setItemRangeAction.bind(null, item.id)} miles={rangeOfOffer(item.maxMiles)} label={item.kind === "skill" ? "I travel up to" : "I'll deliver up to (0 = pickup only)"} />
             {Object.keys(item.details).length > 0 && <p className="text-muted-foreground">{Object.entries(item.details).map(([k, v]) => `${k}: ${v}`).join(" · ")}</p>}
