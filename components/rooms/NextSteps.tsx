@@ -29,6 +29,7 @@ type Props = {
   places: MeetAt[];
   stops: string[];
   rentalDays: number | null;
+  links?: boolean; // receipt and plan links (the Inbox card shows its own)
   blockedBy: string | null;
   overLimit: string | null;
   clientId: string;
@@ -189,8 +190,8 @@ export function NextSteps(p: Props) {
 
       {!handedOff && !cancelled && status !== "in_use" && <div className="mt-2"><BackOut roomId={p.roomId} paid={paid} /></div>}
       <div className="mt-3 flex gap-4 text-xs">
-        {leg && <Link href={`/money/${leg.id}`} className="text-primary hover:underline">Receipt</Link>}
-        {p.isPlan && p.dealId && <Link href={`/deals/${p.dealId}`} className="text-muted-foreground hover:text-foreground">See the whole plan</Link>}
+        {p.links !== false && leg && <Link href={`/money/${leg.id}`} className="text-primary hover:underline">Receipt</Link>}
+        {p.links !== false && p.isPlan && p.dealId && <Link href={`/deals/${p.dealId}`} className="text-muted-foreground hover:text-foreground">See the whole plan</Link>}
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import { OwnerQuestion } from "@/components/deals/OwnerQuestion";
 import { RoomNextSteps } from "@/components/rooms/RoomNextSteps";
 
 // Under the latest message about a deal: who you are in it, where it stands, and what you can do now.
-export async function RoomActions({ roomId, viewerId, header = true }: { roomId: string; viewerId: string; header?: boolean }) {
+export async function RoomActions({ roomId, viewerId, header = true, links = true }: { roomId: string; viewerId: string; header?: boolean; links?: boolean }) {
   const data = await getRoomView(roomId, viewerId);
   if (!data) return null;
   const { room } = data;
@@ -28,8 +28,8 @@ export async function RoomActions({ roomId, viewerId, header = true }: { roomId:
           <OwnerQuestion roomId={room.id} suggestedPrice={question.price ? Number(question.price) : null} />
         </>
       )}
-      {room.status === "agreed" && <RoomNextSteps data={data} viewerId={viewerId} />}
-      <Link href={`/rooms/${room.id}`} className="mt-2 inline-block text-xs text-primary hover:underline">See the chat</Link>
+      {room.status === "agreed" && <RoomNextSteps data={data} viewerId={viewerId} links={links} />}
+      {links && <Link href={`/rooms/${room.id}`} className="mt-2 inline-block text-xs text-primary hover:underline">See the chat</Link>}
     </div>
   );
 }

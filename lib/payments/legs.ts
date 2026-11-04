@@ -122,6 +122,7 @@ export async function confirmHandoff(legId: string, payerId: string) {
   });
   await db.update(schema.dealLegs).set({ captureId, status: "captured", capturedAt: new Date(), charged: leg.amount }).where(eq(schema.dealLegs.id, legId));
   if (leg.kind === "goods") await markSold(leg); // it now belongs to the buyer
+  else await needDone(leg);
   await say(leg, payerId, `${(await aboutLeg(leg)).payer} confirmed the ${leg.kind === "service" ? "job" : "handoff"}. PayPal charged $${Number(leg.amount).toFixed(0)}`, { captureId });
   const w = await aboutLeg(leg);
   await notify(payerId, leg.kind === "service" ? `${w.payee} did ${w.what}` : `You got ${w.what}`, `PayPal charged the $${Number(leg.amount).toFixed(0)} it was holding.`, leg.roomId);
@@ -165,6 +166,12 @@ async function markSold(leg: typeof schema.dealLegs.$inferSelect) {
   await giveToBuyer(room);
 }
 
+// The deal that filled a need is done: it leaves "What I need".
+async function needDone(leg: typeof schema.dealLegs.$inferSelect) {
+  const [room] = leg.roomId ? await db.select({ intentId: schema.negotiations.intentId }).from(schema.negotiations).where(eq(schema.negotiations.id, leg.roomId)) : [];
+  if (room?.intentId) await db.update(schema.intents).set({ status: "done" }).where(eq(schema.intents.id, room.intentId));
+}
+
 // The buyer now owns it: it shows in their things, private, worth what they paid. Their agent takes a look
 // (price check, then ideas like renting it out between uses) through the usual "added" event.
 async function giveToBuyer(room: typeof schema.negotiations.$inferSelect) {
@@ -198,6 +205,7 @@ export async function confirmReturn(legId: string, payeeId: string, goodShape: b
   await say(leg, payeeId, goodShape ? `${(await aboutLeg(leg)).payee} confirmed the return. PayPal charged the $${take.toFixed(0)} fee and released the deposit` : `${(await aboutLeg(leg)).payee} kept the deposit. PayPal charged $${take.toFixed(0)}`, { captureId });
   await notify(leg.payerId, goodShape ? "Returned, deposit released" : "Returned with a problem", goodShape ? `PayPal charged the $${take.toFixed(0)} fee and released your deposit.` : `The owner kept the deposit. PayPal charged $${take.toFixed(0)}.`, leg.roomId);
 
+  await needDone(leg);
   await payOut(leg, take);
 }
 

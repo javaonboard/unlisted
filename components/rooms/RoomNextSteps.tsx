@@ -4,7 +4,7 @@ import type { getRoomView } from "@/lib/views/queries";
 type RoomView = NonNullable<Awaited<ReturnType<typeof getRoomView>>>;
 
 // The steps of an agreed deal, for the room page and the inbox.
-export function RoomNextSteps({ data, viewerId }: { data: RoomView; viewerId: string }) {
+export function RoomNextSteps({ data, viewerId, links = true }: { data: RoomView; viewerId: string; links?: boolean }) {
   const { room, deal, names } = data;
   return (
     <NextSteps
@@ -27,6 +27,7 @@ export function RoomNextSteps({ data, viewerId }: { data: RoomView; viewerId: st
       blockedBy={data.blockedBy}
       overLimit={data.overLimit}
       clientId={process.env.PAYPAL_CLIENT_ID ?? ""}
+      links={links}
     />
   );
 }

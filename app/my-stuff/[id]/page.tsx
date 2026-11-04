@@ -5,8 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { currentUserId } from "@/lib/session";
 import { getItemView } from "@/lib/views/queries";
 import { BackLink } from "@/components/shared/BackLink";
-import { Highlights } from "@/components/shared/Highlights";
-import { NegotiationList } from "@/components/shared/NegotiationList";
+import { Talks } from "@/components/shared/Talks";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { RangeForm } from "@/components/shared/RangeForm";
 import { setItemRangeAction } from "@/app/actions/range";
@@ -62,9 +61,7 @@ async function ItemView({ params }: { params: Promise<{ id: string }> }) {
         </div>
       </Card>
 
-      <h2 className="mt-6 mb-3 font-medium">Agents interested</h2>
-      <Highlights entries={negotiations} buying={false} />
-      <NegotiationList entries={negotiations} />
+      <Talks entries={negotiations} buying={false} />
     </>
   );
 }

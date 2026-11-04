@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { RoleBadge, StatusPill } from "@/components/shared/Badges";
 import { RoomActions } from "@/components/inbox/RoomActions";
 import { FormattedText } from "@/components/FormattedText";
@@ -8,7 +9,7 @@ type Note = { id: string; title: string; body: string; createdAt: Date };
 const time = (d: Date) => d.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" });
 
 // One deal in the inbox: what it is, where it stands, what you can do now, and its history folded away.
-export function DealThread(p: { roomId: string; item: { kind: string; photos: string[] }; viewerId: string; role: Role; next: Next; distance: string; plan: string | null; notes: Note[]; open: boolean }) {
+export function DealThread(p: { roomId: string; legId: string | null; planId: string | null; item: { kind: string; photos: string[] }; viewerId: string; role: Role; next: Next; distance: string; plan: string | null; notes: Note[]; open: boolean }) {
   const latest = p.notes[0];
   const history = [...p.notes].reverse();
   return (
@@ -30,13 +31,19 @@ export function DealThread(p: { roomId: string; item: { kind: string; photos: st
       {latest && <p className="mt-2 text-muted-foreground"><span className="text-foreground">{latest.title}.</span> {latest.body}</p>}
 
       {p.open ? (
-        <RoomActions roomId={p.roomId} viewerId={p.viewerId} header={false} />
+        <RoomActions roomId={p.roomId} viewerId={p.viewerId} header={false} links={false} />
       ) : (
         <details className="mt-2">
-          <summary className="cursor-pointer text-xs text-primary">Open</summary>
-          <RoomActions roomId={p.roomId} viewerId={p.viewerId} header={false} />
+          <summary className="cursor-pointer text-xs text-primary">Steps</summary>
+          <RoomActions roomId={p.roomId} viewerId={p.viewerId} header={false} links={false} />
         </details>
       )}
+
+      <div className="mt-2 flex flex-wrap gap-4 text-xs">
+        <Link href={`/rooms/${p.roomId}`} className="text-primary hover:underline">See the chat</Link>
+        {p.legId && <Link href={`/money/${p.legId}`} className="text-primary hover:underline">Receipt</Link>}
+        {p.planId && <Link href={`/deals/${p.planId}`} className="text-muted-foreground hover:text-foreground">See the whole plan</Link>}
+      </div>
 
       {history.length > 1 && (
         <details className="mt-2">

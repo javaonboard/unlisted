@@ -26,7 +26,7 @@ async function Room({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <LiveRefresh active={room.status === "open" || childSummaries.some((c) => c.room.status === "open")} />
-      <BackLink {...back} />
+      <BackLink href={back.href} label="Back" />
       <div className="mb-2 flex items-center gap-3">
         <Thumb item={item} />
         <div className="min-w-0">
