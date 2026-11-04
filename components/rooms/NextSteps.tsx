@@ -61,6 +61,7 @@ export function NextSteps(p: Props) {
   const leg = p.leg;
   const iPay = p.buyerId === p.viewerId;
   const rental = !!p.rentalDays;
+  const service = leg?.kind === "service";
   const time = (d: Date) => d.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" });
   const status = leg?.status ?? "pending";
 
@@ -124,7 +125,7 @@ export function NextSteps(p: Props) {
           {cancelled && <p className="mt-1">Hold released. Nothing was charged.</p>}
         </Step>
 
-        <Step n={4} title={rental ? (status === "in_use" ? "Picked up, out on rent" : handedOff ? "Returned" : "Pickup") : handedOff ? "Handed off" : "Hand off"} state={stateOf(handedOff && status !== "in_use", paid && !cancelled)}>
+        <Step n={4} title={rental ? (status === "in_use" ? "Picked up, out on rent" : handedOff ? "Returned" : "Pickup") : service ? (handedOff ? "Job done" : "The job") : handedOff ? "Handed off" : "Hand off"} state={stateOf(handedOff && status !== "in_use", paid && !cancelled)}>
           {paid && p.meet?.address && !paidOut && (
             <p className="flex flex-wrap items-center gap-1">
               <MapPin className="size-4 text-primary" /> {p.meet.label} · {p.meet.address} ·{" "}
@@ -133,16 +134,21 @@ export function NextSteps(p: Props) {
           )}
           {!paid && !cancelled && <p className="text-muted-foreground">The exact address shows here once it&apos;s paid.</p>}
           {handedOff && status !== "in_use" && ok("capture") && <p><Confirmed what="Charge" /></p>}
-          {status === "held" && !iPay && <p className="mt-1 text-muted-foreground">{other} confirms {rental ? "the pickup" : "once they have it"}. Then PayPal pays you.</p>}
+          {status === "held" && !iPay && (
+            <div className="mt-2 flex flex-col gap-1">
+              <p className="text-muted-foreground">{other} confirms {rental ? "the pickup" : service ? "once the job is done" : "once they have it"}, then PayPal pays you. Done on your side? Let them know:</p>
+              <Nudge roomId={p.roomId} label={rental ? "I handed it over" : service ? "The job's done" : "I handed it over"} />
+            </div>
+          )}
           {status === "held" && iPay && leg && (
             <div className="mt-2">
               <ConfirmAction
-                label={rental ? "I picked it up" : "I have it"}
-                title={rental ? "Picked it up?" : "Got it, and it's as described?"}
+                label={rental ? "I picked it up" : service ? "The job's done" : "I have it"}
+                title={rental ? "Picked it up?" : service ? `Did ${other} do the job?` : "Got it, and it's as described?"}
                 points={rental
                   ? [`PayPal keeps holding ${money(p.price)} + the ${money(p.deposit)} deposit while you have it.`, "Bring it back on time to get the deposit back."]
                   : [`PayPal charges the ${money(p.price)} it's holding and pays ${other}.`, "This can't be undone. If something turns out wrong, use Report a problem."]}
-                confirm={rental ? "Yes, picked up" : "Yes, I have it"}
+                confirm={rental ? "Yes, picked up" : service ? "Yes, it's done" : "Yes, I have it"}
                 action={confirmHandoffAction.bind(null, leg.id)}
                 done={rental ? "Picked up. PayPal keeps holding it until it's back." : `Done. PayPal charged ${money(p.price)} and is paying ${other}.`}
               />

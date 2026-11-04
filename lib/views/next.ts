@@ -3,7 +3,7 @@ import { money, payoutOf } from "@/lib/payments/fees";
 import { inSentence } from "@/lib/text/words";
 
 type RoomView = NonNullable<Awaited<ReturnType<typeof getRoomView>>>;
-export type Next = { state: "needs_you" | "waiting" | "upcoming" | "talking" | "done"; label: string };
+export type Next = { state: "needs_you" | "waiting" | "upcoming" | "talking" | "done"; label: string; act?: boolean }; // act: there's a button for you, even if it isn't due yet
 
 // Who the viewer is in this deal, in plain words.
 export function roleOf(data: RoomView, viewerId: string) {
@@ -68,7 +68,16 @@ export function nextFor(data: RoomView, viewerId: string): Next {
   }
 
   const when = data.booking ? data.booking.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" }) : "soon";
-  return { state: "upcoming", label: `${data.need?.type === "rent" ? "Pickup" : "Handoff"} ${when}` };
+  const service = leg.kind === "service";
+  const rental = data.need?.type === "rent";
+  const step = rental ? "Pickup" : service ? "Job" : "Handoff";
+  // Due within the hour (or past): it's on the buyer now. Before that, the button is there but it's not urgent.
+  const due = !data.booking || data.booking.startsAt.getTime() - Date.now() < 3_600_000;
+  if (isBuyer) {
+    const confirm = rental ? "confirm the pickup" : service ? "confirm when it's done" : "confirm when you have it";
+    return { state: due ? "needs_you" : "upcoming", label: `${step} ${when} · ${confirm}`, act: true };
+  }
+  return { state: "upcoming", label: `${step} ${when} · ${other} confirms it`, act: true };
 }
 
 export type Role = ReturnType<typeof roleOf>;

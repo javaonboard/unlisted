@@ -2,6 +2,7 @@ import { and, eq, lt } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { getPayoutItemStatus } from "@/lib/paypal/payouts";
+import { aboutLeg } from "./legs";
 import type { Stage } from "./events";
 
 type Leg = typeof schema.dealLegs.$inferSelect;
@@ -14,11 +15,11 @@ export async function applyPayPal(leg: Leg, stage: Stage, ok: boolean, eventId: 
 
   if (stage === "payout" && ok && leg.status === "payout_sent") {
     await db.update(schema.dealLegs).set({ status: "paid_out", paidOutAt: new Date() }).where(eq(schema.dealLegs.id, leg.id));
-    await notify(leg.payeeId, "PayPal confirmed your payout", `The money for “${leg.description}” is in your PayPal account.`, leg.roomId);
+    await notify(leg.payeeId, "PayPal confirmed your payout", `The money for ${(await aboutLeg(leg)).what} is in your PayPal account.`, leg.roomId);
   }
   if (stage === "payout" && !ok && ["payout_sent", "paid_out"].includes(leg.status)) {
     await db.update(schema.dealLegs).set({ status: "payout_failed" }).where(eq(schema.dealLegs.id, leg.id));
-    await notify(leg.payeeId, "Your payout didn't go through", `PayPal couldn't deliver the money for “${leg.description}”. Check that your PayPal email is right; Unlisted still holds it for you.`, leg.roomId);
+    await notify(leg.payeeId, "Your payout didn't go through", `PayPal couldn't deliver the money for ${(await aboutLeg(leg)).what}. Check that your PayPal email is right; Unlisted still holds it for you.`, leg.roomId);
   }
   if (stage === "capture" && !ok) {
     await db.update(schema.dealLegs).set({ status: "capture_failed" }).where(eq(schema.dealLegs.id, leg.id));

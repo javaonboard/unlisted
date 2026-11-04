@@ -100,7 +100,7 @@ async function Inbox() {
       {going.length > 0 && (
         <>
           <h2 className="mt-6 mb-2 font-medium">In progress</h2>
-          <div className="flex flex-col gap-3">{going.map((t) => thread(t, false))}</div>
+          <div className="flex flex-col gap-3">{going.map((t) => thread(t, !!t.next.act))}</div>
         </>
       )}
 

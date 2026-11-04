@@ -13,7 +13,7 @@ import { FEE, payoutOf, rentalCapture } from "./fees";
 const money = (n: number) => n.toFixed(2);
 
 // The words for a payment message: what it's for and who's who. "the grey 3-seat sectional", "Ben", "Maya".
-async function aboutLeg(leg: { roomId: string | null; payerId: string; payeeId: string; description: string }) {
+export async function aboutLeg(leg: { roomId: string | null; payerId: string; payeeId: string; description: string }) {
   const [room] = leg.roomId ? await db.select({ itemId: schema.negotiations.itemId }).from(schema.negotiations).where(eq(schema.negotiations.id, leg.roomId)) : [];
   const [item] = room?.itemId ? await db.select({ title: schema.items.title }).from(schema.items).where(eq(schema.items.id, room.itemId)) : [];
   const people = await db.select({ id: schema.users.id, name: schema.users.name }).from(schema.users);
@@ -25,7 +25,7 @@ async function say(dealId: string, userId: string | null, message: string, data:
   await logActivity({ userId, type: "payment", message, data: { dealId, ...data } });
 }
 
-// Once a deal is accepted it gets its payment step: who pays whom, how much, and a handoff code.
+// Once a deal is accepted it gets its payment step: who pays whom and how much.
 // A one-off deal gets its own small deal record; a deal in a plan uses the plan's.
 export async function openLeg(roomId: string) {
   const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
@@ -82,8 +82,8 @@ export async function holdPayment(orderId: string, payerId: string) {
   await say(legs[0].dealId, payerId, `PayPal hold placed: $${total.toFixed(0)} for ${legs.map((l) => l.description).join(" + ")}. Not charged yet.`, { orderId, authorizationId });
   for (const leg of legs) {
     const w = await aboutLeg(leg);
-    await notify(payerId, `You paid $${Number(leg.amount).toFixed(0)} for ${w.what}`, `PayPal holds it until you confirm you have it. Nothing is charged before that.`, leg.roomId);
-    await notify(leg.payeeId, `${w.payer} paid $${Number(leg.amount).toFixed(0)} for ${w.what}`, `PayPal holds it. You get paid once ${w.payer} confirms the handoff.`, leg.roomId);
+    await notify(payerId, `You paid $${Number(leg.amount).toFixed(0)} for ${w.what}`, `PayPal holds it until you confirm ${leg.kind === "service" ? "the job is done" : leg.kind === "rental" ? "the pickup" : "you have it"}. Nothing is charged before that.`, leg.roomId);
+    await notify(leg.payeeId, `${w.payer} paid $${Number(leg.amount).toFixed(0)} for ${w.what}`, leg.kind === "rental" ? "PayPal holds the fee and deposit. You get paid when it's back and you confirm the return." : `PayPal holds it. You get paid once ${w.payer} confirms ${leg.kind === "service" ? "the job is done" : "the handoff"}.`, leg.roomId);
   }
 }
 
@@ -122,7 +122,7 @@ export async function confirmHandoff(legId: string, payerId: string) {
   if (leg.kind === "goods") await markSold(leg); // it now belongs to the buyer
   await say(leg.dealId, payerId, `Handoff confirmed for ${leg.description}. PayPal captured $${Number(leg.amount).toFixed(0)}.`, { legId, captureId });
   const w = await aboutLeg(leg);
-  await notify(payerId, `You got ${w.what}`, `PayPal charged the $${Number(leg.amount).toFixed(0)} it was holding.`, leg.roomId);
+  await notify(payerId, leg.kind === "service" ? `${w.payee} did ${w.what}` : `You got ${w.what}`, `PayPal charged the $${Number(leg.amount).toFixed(0)} it was holding.`, leg.roomId);
 
   await payOut(leg, Number(leg.amount));
 }

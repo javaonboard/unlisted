@@ -43,10 +43,17 @@ test("both accepted: the buyer pays with PayPal", () => {
   assert.deepEqual(nextFor(view(), "gus"), { state: "waiting", label: "Waiting for Sara to pay" });
 });
 
-test("held and accepted by both: the handoff is next, nothing needs anyone", () => {
-  const v = view({ leg: { id: "l1", payerId: "sara", payeeId: "gus", status: "held" } });
-  assert.equal(nextFor(v, "gus").state, "upcoming");
-  assert.equal(nextFor(v, "sara").state, "upcoming");
+test("paid and held: the buyer confirms the job when it's done, both see a button", () => {
+  const later = { startsAt: new Date(Date.now() + 2 * 86_400_000), endsAt: new Date(Date.now() + 2 * 86_400_000 + 7_200_000) };
+  const ahead = view({ booking: later, leg: { id: "l1", kind: "service", payerId: "sara", payeeId: "gus", status: "held" } });
+  assert.equal(nextFor(ahead, "sara").state, "upcoming"); // days away: not urgent yet
+  assert.match(nextFor(ahead, "sara").label, /confirm when it's done/);
+  assert.equal(nextFor(ahead, "sara").act, true);
+  assert.match(nextFor(ahead, "gus").label, /Sara confirms it/);
+  assert.equal(nextFor(ahead, "gus").act, true);
+
+  const due = view({ leg: { id: "l1", kind: "service", payerId: "sara", payeeId: "gus", status: "held" } }); // the job time has come
+  assert.equal(nextFor(due, "sara").state, "needs_you");
 });
 
 test("a new time after paying is accepted again by whoever didn't ask for it", () => {
