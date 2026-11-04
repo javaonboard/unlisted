@@ -1,5 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import { logActivity } from "@/lib/db/activity";
 import { rankBuyers } from "@/lib/scout/rank";
 import { openRoom } from "@/lib/negotiation/room";
 import { notify } from "@/lib/notifications/notify";
@@ -13,6 +14,7 @@ export async function goPublic(ownerId: string, itemId: string) {
   const [item] = await db.select().from(schema.items).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, ownerId)));
   if (!item || item.openToOffers) return []; // already public: nothing to start again
   await db.update(schema.items).set({ openToOffers: true }).where(eq(schema.items.id, itemId));
+  await logActivity({ userId: ownerId, type: "item", message: `Made ${item.title} public`, data: { itemId } });
 
   const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, ownerId));
   const talking = await db.select({ intentId: schema.negotiations.intentId }).from(schema.negotiations).where(and(eq(schema.negotiations.itemId, itemId), inArray(schema.negotiations.status, ["open", "waiting_owner", "agreed"])));
@@ -37,5 +39,6 @@ export async function goPublic(ownerId: string, itemId: string) {
 
 // Back to private: new people can't start talks. Talks already going carry on.
 export async function goPrivate(ownerId: string, itemId: string) {
-  await db.update(schema.items).set({ openToOffers: false }).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, ownerId)));
+  const [item] = await db.update(schema.items).set({ openToOffers: false }).where(and(eq(schema.items.id, itemId), eq(schema.items.ownerId, ownerId))).returning();
+  if (item) await logActivity({ userId: ownerId, type: "item", message: `Made ${item.title} private`, data: { itemId } });
 }

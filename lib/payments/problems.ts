@@ -1,6 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
+import { firstName, logStep } from "@/lib/db/activity";
 import { refundCapture } from "@/lib/paypal/payments";
 import { AFTER_HANDOFF } from "@/lib/payments/states";
 
@@ -12,6 +13,7 @@ export async function reportProblem(legId: string, payerId: string, note: string
   const charged = Number(leg.charged ?? leg.amount);
   const amount = Math.min(Math.max(1, Math.round(refund * 100) / 100), charged);
   await db.update(schema.dealLegs).set({ problem: { note, refund: amount, status: "open" } }).where(eq(schema.dealLegs.id, legId));
+  await logStep(leg.roomId, payerId, `${await firstName(payerId)} reported a problem and asked for a $${amount.toFixed(2)} refund`, { legId });
   await notify(leg.payeeId, "A problem was reported", `On “${leg.description}”: “${note}”. They ask for a $${amount.toFixed(2)} refund.`, leg.roomId);
   return null;
 }
@@ -30,8 +32,10 @@ export async function answerProblem(legId: string, payeeId: string, agree: boole
   if (agree) {
     const { refundId } = await refundCapture(leg.captureId!, leg.problem.refund.toFixed(2));
     await db.update(schema.dealLegs).set({ refundId: refundId ?? null }).where(eq(schema.dealLegs.id, legId));
+    await logStep(leg.roomId, payeeId, `${await firstName(payeeId)} agreed. PayPal refunded $${leg.problem.refund.toFixed(2)}`, { legId, refundId });
     await notify(leg.payerId, "Refund sent", `$${leg.problem.refund.toFixed(2)} is on its way back to your PayPal.`, leg.roomId);
   } else {
+    await logStep(leg.roomId, payeeId, `${await firstName(payeeId)} declined the refund`, { legId });
     await notify(leg.payerId, "Refund declined", "They didn't agree. You can still open a case with PayPal from your PayPal account.", leg.roomId);
   }
 }

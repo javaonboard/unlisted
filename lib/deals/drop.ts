@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
+import { logActivity } from "@/lib/db/activity";
 import { runWave } from "@/lib/suggestions/engine";
 import { onLegFinished } from "./coordinator";
 
@@ -25,6 +26,7 @@ export async function dropPart(roomId: string, ownerId: string): Promise<{ error
     await db.update(schema.deals).set({ helperIds: deal.helperIds.filter((id) => id !== room.intentId) }).where(eq(schema.deals.id, deal.id));
   }
   console.log("[plan] part dropped", deal.id, room.label);
+  await logActivity({ userId: ownerId, type: "plan", message: `Went ahead without ${room.label}`, data: { dealId: deal.id, roomId } });
   await notify(ownerId, `${deal.title}: going ahead without ${room.label}`, "The rest of the plan carries on. I'll keep looking for that part on its own.", room.id);
 
   // The rest may be ready now (helpers booked around the goods); the dropped need keeps looking.

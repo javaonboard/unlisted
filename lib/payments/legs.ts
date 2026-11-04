@@ -21,8 +21,9 @@ export async function aboutLeg(leg: { roomId: string | null; payerId: string; pa
   return { what: `the ${inSentence(item?.title ?? leg.description)}`, payer: first(leg.payerId), payee: first(leg.payeeId) };
 }
 
-async function say(dealId: string, userId: string | null, message: string, data: Record<string, unknown> = {}) {
-  await logActivity({ userId, type: "payment", message, data: { dealId, ...data } });
+// A money step, on the deal's "What happened" list.
+async function say(leg: { dealId: string; roomId: string | null; id: string }, userId: string | null, message: string, data: Record<string, unknown> = {}) {
+  await logActivity({ userId, type: "payment", message, data: { dealId: leg.dealId, roomId: leg.roomId, legId: leg.id, ...data } });
 }
 
 // Once a deal is accepted it gets its payment step: who pays whom and how much.
@@ -79,9 +80,9 @@ export async function holdPayment(orderId: string, payerId: string) {
     .where(eq(schema.dealLegs.orderId, orderId));
   for (const leg of legs) if (leg.roomId) await approve(leg.roomId, payerId); // paying is saying yes
   const total = legs.reduce((sum, l) => sum + Number(l.amount) + Number(l.deposit ?? 0), 0);
-  await say(legs[0].dealId, payerId, `PayPal hold placed: $${total.toFixed(0)} for ${legs.map((l) => l.description).join(" + ")}. Not charged yet.`, { orderId, authorizationId });
   for (const leg of legs) {
     const w = await aboutLeg(leg);
+    await say(leg, payerId, `${w.payer} paid $${(Number(leg.amount) + Number(leg.deposit ?? 0)).toFixed(0)} with PayPal. PayPal is holding it, nothing charged yet`, { orderId, authorizationId, total });
     await notify(payerId, `You paid $${Number(leg.amount).toFixed(0)} for ${w.what}`, `PayPal holds it until you confirm ${leg.kind === "service" ? "the job is done" : leg.kind === "rental" ? "the pickup" : "you have it"}. Nothing is charged before that.`, leg.roomId);
     await notify(leg.payeeId, `${w.payer} paid $${Number(leg.amount).toFixed(0)} for ${w.what}`, leg.kind === "rental" ? "PayPal holds the fee and deposit. You get paid when it's back and you confirm the return." : `PayPal holds it. You get paid once ${w.payer} confirms ${leg.kind === "service" ? "the job is done" : "the handoff"}.`, leg.roomId);
   }
@@ -105,6 +106,7 @@ export async function confirmHandoff(legId: string, payerId: string) {
   // A rental starts at pickup. The money moves when it comes back (confirmReturn).
   if (leg.kind === "rental") {
     const w = await aboutLeg(leg);
+    await say(leg, payerId, `${w.payer} picked it up. PayPal keeps holding the fee and deposit until it's back`);
     await notify(payerId, `You picked up ${w.what}`, `Bring it back on time and your deposit is released.`, leg.roomId);
     await notify(leg.payeeId, `${w.payer} picked up ${w.what}`, `Confirm here when it comes back. PayPal then takes the fee and releases the deposit.`, leg.roomId);
     return;
@@ -120,7 +122,7 @@ export async function confirmHandoff(legId: string, payerId: string) {
   });
   await db.update(schema.dealLegs).set({ captureId, status: "captured", capturedAt: new Date(), charged: leg.amount }).where(eq(schema.dealLegs.id, legId));
   if (leg.kind === "goods") await markSold(leg); // it now belongs to the buyer
-  await say(leg.dealId, payerId, `Handoff confirmed for ${leg.description}. PayPal captured $${Number(leg.amount).toFixed(0)}.`, { legId, captureId });
+  await say(leg, payerId, `${(await aboutLeg(leg)).payer} confirmed the ${leg.kind === "service" ? "job" : "handoff"}. PayPal charged $${Number(leg.amount).toFixed(0)}`, { captureId });
   const w = await aboutLeg(leg);
   await notify(payerId, leg.kind === "service" ? `${w.payee} did ${w.what}` : `You got ${w.what}`, `PayPal charged the $${Number(leg.amount).toFixed(0)} it was holding.`, leg.roomId);
 
@@ -140,7 +142,7 @@ async function payOut(leg: typeof schema.dealLegs.$inferSelect, charged: number)
   }
   const { batchId } = await sendPayout(payee.paypalEmail, money(payout), `Unlisted: ${leg.description}`, leg.id);
   await db.update(schema.dealLegs).set({ payoutBatchId: batchId, paidTo: payee.paypalEmail, status: "payout_sent" }).where(eq(schema.dealLegs.id, leg.id)); // "paid out" once PayPal confirms
-  await say(leg.dealId, leg.payeeId, `Paid out $${payout.toFixed(2)} to ${payee.name.split(" ")[0]} (after Unlisted's ${FEE * 100}% fee).`, { legId: leg.id, batchId });
+  await say(leg, leg.payeeId, `Payout of $${payout.toFixed(2)} sent to ${payee.name.split(" ")[0]}'s PayPal (after Unlisted's ${FEE * 100}% fee)`, { batchId });
   await notify(leg.payeeId, `Payout sent for ${w.what}`, `$${payout.toFixed(2)} is on its way to your PayPal, ${payee.paypalEmail} (after Unlisted's ${FEE * 100}% fee).`, leg.roomId);
 }
 
@@ -193,6 +195,7 @@ export async function confirmReturn(legId: string, payeeId: string, goodShape: b
     throw error;
   });
   await db.update(schema.dealLegs).set({ captureId, status: "captured", capturedAt: new Date(), charged: money(take) }).where(eq(schema.dealLegs.id, legId));
+  await say(leg, payeeId, goodShape ? `${(await aboutLeg(leg)).payee} confirmed the return. PayPal charged the $${take.toFixed(0)} fee and released the deposit` : `${(await aboutLeg(leg)).payee} kept the deposit. PayPal charged $${take.toFixed(0)}`, { captureId });
   await notify(leg.payerId, goodShape ? "Returned, deposit released" : "Returned with a problem", goodShape ? `PayPal charged the $${take.toFixed(0)} fee and released your deposit.` : `The owner kept the deposit. PayPal charged $${take.toFixed(0)}.`, leg.roomId);
 
   await payOut(leg, take);

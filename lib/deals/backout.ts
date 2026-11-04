@@ -1,6 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
+import { logStep } from "@/lib/db/activity";
 import { voidAuthorization } from "@/lib/paypal/payments";
 import { inSentence } from "@/lib/text/words";
 import { AFTER_HANDOFF } from "@/lib/payments/states";
@@ -44,6 +45,7 @@ export async function backOut(roomId: string, userId: string, reason: Reason, no
     await db.update(schema.dealLegs).set({ status: "voided" }).where(eq(schema.dealLegs.id, leg.id));
   }
   await db.delete(schema.bookings).where(eq(schema.bookings.roomId, roomId));
+  await logStep(roomId, userId, `${first} backed out: ${REASONS[reason]}${leg?.status === "held" ? ". PayPal released the hold, nothing charged" : ""}`, { reason });
 
   // The other side hears why, and their agent remembers it for next time (without naming anyone).
   const otherId = room.buyerId === userId ? room.sellerId : room.buyerId;

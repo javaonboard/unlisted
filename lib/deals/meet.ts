@@ -1,5 +1,6 @@
 import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import { firstName, logStep } from "@/lib/db/activity";
 import { notify } from "@/lib/notifications/notify";
 import { reapprove } from "./approval";
 import { distanceText, placesInReach, publicSpot, rangeOfNeed, rangeOfOffer, type MeetAt } from "@/lib/places";
@@ -56,5 +57,6 @@ export async function changeMeetAt(roomId: string, userId: string, meetAt: MeetA
   if (room.meetAt === meetAt) return; // a second click changes nothing
   await db.update(schema.negotiations).set({ meetAt, reopenedBy: "owner" }).where(eq(schema.negotiations.id, roomId));
   await reapprove(roomId, userId);
+  await logStep(roomId, userId, `${await firstName(userId)} changed where to meet: ${SAY[meetAt]}`);
   await notify(other, "They changed where to meet", `Now ${SAY[meetAt]}. Please accept or change it.`, roomId);
 }

@@ -1,5 +1,6 @@
 import { and, eq, isNull, lt, or, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import { logActivity } from "@/lib/db/activity";
 
 // Not part of the demo world: the snapshot itself, the event queue, and AI usage (a reset mustn't lift the daily limit).
 const SKIP = ["demo_snapshots", "events", "ai_usage"];
@@ -60,6 +61,7 @@ export async function resetDemo(by: "button" | "nightly") {
       await tx.execute(sql.raw(`update offers set terms = jsonb_set(terms, '{slotStart}', to_jsonb(to_char(((terms->>'slotStart')::timestamptz + interval '${weeks} weeks') at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'))) where terms->>'slotStart' is not null`));
     }
   });
+  await logActivity({ type: "demo", message: `Demo reset (${by})`, data: { weeks } });
   console.log(`[demo] reset (${by}), dates moved ${weeks} week(s)`);
   return true;
 }

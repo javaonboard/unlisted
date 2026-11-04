@@ -8,6 +8,7 @@ import { BackLink } from "@/components/shared/BackLink";
 import { ChatMessage } from "@/components/deals/ChatMessage";
 import { LiveRefresh } from "@/components/rooms/LiveRefresh";
 import { RoomNextSteps } from "@/components/rooms/RoomNextSteps";
+import { History } from "@/components/rooms/History";
 import { nextFor, roleOf } from "@/lib/views/next";
 import { RoleBadge, StatusPill } from "@/components/shared/Badges";
 
@@ -53,6 +54,7 @@ async function Room({ params }: { params: Promise<{ id: string }> }) {
       </div>
 
       {room.status === "agreed" && <RoomNextSteps data={data} viewerId={viewerId} />}
+      <History roomId={room.id} legId={data.leg?.id ?? null} />
 
       {childSummaries.length > 0 && (
         <div className="mt-3 rounded-2xl border p-4 text-sm">

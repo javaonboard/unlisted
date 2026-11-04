@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/lib/db";
+import { firstName, logStep } from "@/lib/db/activity";
 import { notify } from "@/lib/notifications/notify";
 import { askForData } from "@/lib/ai/structured";
 import { MODELS } from "@/lib/ai/client";
@@ -59,6 +60,7 @@ export async function askForNewTime(roomId: string, ownerId: string, words: stri
   if (!room) return;
 
   await reapprove(roomId, ownerId);
+  await logStep(roomId, ownerId, by === "plan" ? "The plan agent asked for another time to fit the plan" : `${await firstName(ownerId)} asked for another time: “${words}”`);
 
   const price = Number(room.agreedPrice).toFixed(0);
   const keepPrice = by === "owner" || (done && done.status !== "pending");

@@ -34,6 +34,6 @@ export async function recordPayPalEvent(event: PayPalEvent) {
     type: "paypal",
     message: `PayPal confirmed: ${event.summary ?? event.event_type}`,
     paypalEventId: event.id,
-    data: { eventType: event.event_type, resourceId: ids[0], ...(leg ? { dealId: leg.dealId, legId: leg.id } : {}) },
+    data: { eventType: event.event_type, resourceId: ids[0], ...(leg ? { dealId: leg.dealId, legId: leg.id, roomId: leg.roomId } : {}) },
   });
 }

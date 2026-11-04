@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, eq, inArray, sql } from "drizzle-orm";
 import { distanceText } from "@/lib/places";
 import { blockedBy } from "@/lib/deals/dependency";
 import { waitingFor } from "@/lib/deals/approval";
@@ -113,4 +113,15 @@ export async function getRoomView(roomId: string, viewerId: string) {
     messages: moves.filter((m) => (m.kind === "ask_owner" || m.kind === "owner_note" ? m.fromUserId === viewerId : true)),
     parents: all.filter((r) => room.dependsOn.includes(r.id) && visible(r)),
   };
+}
+
+// Everything that happened in one deal, oldest first: approvals, changes, each money step and PayPal's
+// signed webhooks. The room page only shows it to people in the deal.
+export async function dealHistory(roomId: string, legId: string | null) {
+  const rows = await db
+    .select()
+    .from(schema.activity)
+    .where(sql`(${schema.activity.data}->>'roomId' = ${roomId} ${legId ? sql`or ${schema.activity.data}->>'legId' = ${legId}` : sql``}) and ${schema.activity.type} in ('deal', 'payment', 'paypal', 'plan')`)
+    .orderBy(asc(schema.activity.createdAt));
+  return rows.map((r) => ({ id: r.id, at: r.createdAt, message: r.message, paypal: r.type === "paypal" }));
 }

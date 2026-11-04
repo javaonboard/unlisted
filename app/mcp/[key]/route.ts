@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { db, schema } from "@/lib/db";
+import { logActivity } from "@/lib/db/activity";
 import { unlistedServer } from "@/lib/connector/server";
 
 // The user's personal MCP connector link. The key in the URL decides whose tools these are.
@@ -9,6 +10,11 @@ async function handle(request: Request, { params }: { params: Promise<{ key: str
   const [user] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.connectorKey, key));
   if (!user) return new Response("unknown connector", { status: 404 });
   await db.update(schema.users).set({ connectorUsedAt: new Date() }).where(eq(schema.users.id, user.id));
+  // Each tool their AI used goes on their activity log.
+  const body = request.method === "POST" ? await request.clone().json().catch(() => null) : null;
+  for (const call of [body].flat().filter((m) => m?.method === "tools/call")) {
+    await logActivity({ userId: user.id, type: "connector", message: `Your AI used ${call.params?.name}`, data: { tool: call.params?.name } });
+  }
 
   // Stateless: a fresh server and transport per request.
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
