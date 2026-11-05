@@ -2,6 +2,7 @@ import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { usesOf } from "@/lib/deals/usage";
 import { clashes } from "@/lib/deals/clash";
+import { publish } from "@/lib/events/bus";
 
 type Room = typeof schema.negotiations.$inferSelect;
 type Db = Pick<typeof db, "select">;
@@ -86,5 +87,8 @@ export async function claimAgreement(roomId: string, round: number, price: strin
     }
     await tx.update(schema.negotiations).set({ round, status: "agreed", agreedPrice: price }).where(eq(schema.negotiations.id, roomId));
     return true;
+  }).then(async (won) => {
+    if (won) await publish("deal.agreed", { roomId }); // everyone else's agents catch up (see onDealAgreed)
+    return won;
   });
 }

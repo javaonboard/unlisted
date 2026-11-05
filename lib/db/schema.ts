@@ -283,7 +283,7 @@ export const suggestions = pgTable("suggestions", {
   action: jsonb("action").$type<Record<string, string | number>>().notNull(), // what "Yes" does
   needId: uuid("need_id").references(() => intents.id), // the demand this answers, if any
   wave: integer("wave").default(1).notNull(),
-  status: text("status", { enum: ["new", "accepted", "dismissed"] }).default("new").notNull(),
+  status: text("status", { enum: ["new", "accepted", "dismissed", "expired"] }).default("new").notNull(), // expired: the moment passed (someone else filled it)
   createdAt: createdAt(),
 });
 

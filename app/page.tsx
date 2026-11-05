@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, inArray, or } from "drizzle-orm";
 import { inPlanOrder, planSteps } from "@/lib/deals/order";
 import { Bot, Check, CircleAlert } from "lucide-react";
 import { db, schema } from "@/lib/db";
@@ -19,6 +19,9 @@ const time = (d: Date) => d.toLocaleString("en-US", { weekday: "short", hour: "n
 
 // The inbox, one card per thing: deals that need you first, then what's in progress,
 // with everything finished folded away. Each card keeps its own history.
+const SHOWN = 5; // newest updates shown
+const MORE = 30; // the most a "Show more" opens
+
 async function Inbox() {
   const userId = await currentUserId();
   const [user, notifications, suggestions] = await Promise.all([
@@ -65,13 +68,34 @@ async function Inbox() {
     for (const [id, s] of planSteps(rooms, t.view.deal!)) steps.set(id, s);
   }
 
-  const open = suggestions.filter((s) => s.status === "new");
-  const answered = suggestions.filter((s) => s.status !== "new");
+  // A suggestion about a need someone already filled, or a thing already sold, is out of date: don't show it.
+  const needIds = [...new Set(suggestions.filter((s) => s.status === "new" && s.needId).map((s) => s.needId!))];
+  const filled = new Set(
+    needIds.length
+      ? [
+          ...(await db.select({ id: schema.intents.id, status: schema.intents.status }).from(schema.intents).where(inArray(schema.intents.id, needIds))).filter((n) => n.status !== "open").map((n) => n.id),
+          ...(await db.select({ id: schema.negotiations.intentId }).from(schema.negotiations).where(and(inArray(schema.negotiations.intentId, needIds), eq(schema.negotiations.status, "agreed")))).map((r) => r.id!),
+        ]
+      : [],
+  );
+  const open = suggestions.filter((s) => s.status === "new" && !(s.needId && filled.has(s.needId)));
+  const answered = suggestions.filter((s) => s.status === "accepted" || s.status === "dismissed").slice(0, 10);
   const needsYou = inPlanOrder(threads.filter((t) => t.next.state === "needs_you"), steps);
   const going = inPlanOrder(threads.filter((t) => ["waiting", "upcoming", "talking"].includes(t.next.state)), steps);
   const done = threads.filter((t) => t.next.state === "done");
   const updates = notifications.filter((n) => !n.roomId && !n.fromMe);
   const count = needsYou.length + open.length;
+
+  const update = (n: (typeof updates)[number]) => (
+    <li key={n.id} className="flex gap-2 rounded-xl border px-3 py-2">
+      <Bot className="mt-0.5 size-4 shrink-0 text-primary" />
+      <div className="min-w-0 flex-1">
+        <span className="font-medium">{n.title}</span> <span className="text-xs text-muted-foreground">· {time(n.createdAt)}</span>
+        <FormattedText text={n.body} className="text-muted-foreground" />
+        {n.link && <Link href={n.link} className="text-xs text-primary hover:underline">See it</Link>}
+      </div>
+    </li>
+  );
 
   const thread = (t: (typeof threads)[number], expanded: boolean) => (
     <DealThread key={t.roomId} roomId={t.roomId} legId={t.view.leg?.id ?? null} planId={t.planId} item={{ kind: t.view.item.kind, photos: t.view.item.photos }} viewerId={userId} role={t.role} next={t.next} distance={t.view.distance} plan={t.planId ? `${steps.has(t.roomId) ? `step ${steps.get(t.roomId)!.step} of ${steps.get(t.roomId)!.total} in ` : "part of "}your ${t.view.deal!.title} plan` : null} notes={t.notes} open={expanded} />
@@ -107,24 +131,19 @@ async function Inbox() {
       {updates.length > 0 && (
         <>
           <h2 className="mt-6 mb-2 font-medium">Updates</h2>
-          <ul className="flex flex-col gap-2 text-sm">
-            {updates.slice(0, 4).map((n) => (
-              <li key={n.id} className="flex gap-2 rounded-xl border px-3 py-2">
-                <Bot className="mt-0.5 size-4 shrink-0 text-primary" />
-                <div className="min-w-0 flex-1">
-                  <span className="font-medium">{n.title}</span> <span className="text-xs text-muted-foreground">· {time(n.createdAt)}</span>
-                  <FormattedText text={n.body} className="text-muted-foreground" />
-                  {n.link && <Link href={n.link} className="text-xs text-primary hover:underline">Open</Link>}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <ul className="flex flex-col gap-2 text-sm">{updates.slice(0, SHOWN).map(update)}</ul>
+          {updates.length > SHOWN && (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-sm text-primary">Show {Math.min(updates.length, MORE) - SHOWN} more</summary>
+              <ul className="mt-2 flex flex-col gap-2 text-sm">{updates.slice(SHOWN, MORE).map(update)}</ul>
+            </details>
+          )}
         </>
       )}
 
-      {(done.length > 0 || answered.length > 0 || updates.length > 4 || ended.length > 0) && (
+      {(done.length > 0 || answered.length > 0 || ended.length > 0) && (
         <details className="mt-6">
-          <summary className="cursor-pointer font-medium">Done ({done.length + ended.length + answered.length + Math.max(0, updates.length - 4)})</summary>
+          <summary className="cursor-pointer font-medium">Done ({done.length + ended.length + answered.length})</summary>
           <div className="mt-3 flex flex-col gap-3">
             {done.map((t) => thread(t, false))}
             {ended.map((r) => (
@@ -135,9 +154,6 @@ async function Inbox() {
             ))}
             {answered.map((s) => (
               <p key={s.id} className="rounded-xl border px-3 py-2 text-sm text-muted-foreground">{s.title} · <span className="text-foreground">{s.status === "accepted" ? "You said yes" : "Not now"}</span></p>
-            ))}
-            {updates.slice(4).map((n) => (
-              <p key={n.id} className="rounded-xl border px-3 py-2 text-sm text-muted-foreground"><span className="text-foreground">{n.title}</span> · {time(n.createdAt)}</p>
             ))}
           </div>
         </details>

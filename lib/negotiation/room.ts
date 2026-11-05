@@ -15,7 +15,7 @@ export async function openRoom(input: NewRoom) {
   // A suggestion to talk about this same thing and need is now underway: clear it.
   await db
     .update(schema.suggestions)
-    .set({ status: "dismissed" })
+    .set({ status: "expired" })
     .where(and(eq(schema.suggestions.status, "new"), eq(schema.suggestions.needId, input.intentId), sql`${schema.suggestions.action}->>'itemId' = ${input.itemId}`));
   for (const userId of [input.buyerId, input.sellerId]) {
     await logActivity({ userId, type: "agent", message: "Your agent opened a negotiation.", data: { roomId: room.id } });

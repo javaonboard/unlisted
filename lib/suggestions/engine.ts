@@ -1,4 +1,4 @@
-import { and, eq, lte } from "drizzle-orm";
+import { and, eq, lte, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { notify } from "@/lib/notifications/notify";
 import { findDemandFor, findSupplyFor } from "@/lib/matching/matcher";
@@ -137,3 +137,15 @@ export async function onDismissed(needId: string, wave: number) {
   if (inWave.length && inWave.every((s) => s.status === "dismissed")) await runWave(needId, wave + 1);
 }
 
+
+// A deal was agreed: suggestions about the need it filled, or the goods it sold, are out of date for everyone.
+export async function onDealAgreed(roomId: string) {
+  const [room] = await db.select().from(schema.negotiations).where(eq(schema.negotiations.id, roomId));
+  if (!room) return;
+  const [need] = await db.select({ type: schema.intents.type }).from(schema.intents).where(eq(schema.intents.id, room.intentId!));
+  const [item] = await db.select({ kind: schema.items.kind }).from(schema.items).where(eq(schema.items.id, room.itemId!));
+  await db.update(schema.suggestions).set({ status: "expired" }).where(and(eq(schema.suggestions.status, "new"), eq(schema.suggestions.needId, room.intentId!)));
+  if (item?.kind === "goods" && need?.type !== "rent") {
+    await db.update(schema.suggestions).set({ status: "expired" }).where(and(eq(schema.suggestions.status, "new"), sql`${schema.suggestions.action}->>'itemId' = ${room.itemId}`));
+  }
+}
