@@ -12,14 +12,22 @@ Unlisted gives everyone a personal agent for their neighborhood. Show it a photo
 
 Most of what people could sell, rent out or do for neighbors is never listed. Listing is a chore, haggling takes days, and local deals fall apart on timing, trust and payment. Real life is also linked: you sell the old sofa only if you find a smaller one, and you need a mover for both on Saturday.
 
+## Why it's better than a listing site
+
+- **No listing.** Your agent finds people who want what you already own, and only asks you when there's a real buyer.
+- **A fair price you can trust.** Prices come from a live web search, real product prices and past local deals, with the sources shown. Photos are checked honestly, flaws included.
+- **No back-and-forth.** Agents negotiate the price, time and place with every interested neighbor at once, inside your limits. You just approve.
+- **Nothing falls through.** Deals that depend on each other are planned together, every agent knows when something changes, and PayPal holds the money until the handoff.
+
 ## What it does
 
-1. **Getting things in.** A room photo becomes a list of goods (with condition and a used price) and services your equipment suggests (a ladder means you could clean gutters). Or just type it. Everything starts private.
+1. **Getting things in.** A room photo becomes a list of goods (with condition and a used price) and services your equipment suggests (a ladder means you could clean gutters). Or just type it. Everything starts private: other agents only learn that demand exists, and your agent suggests going public when people nearby want what you have.
 2. **The agent looks around.** It prices things from a live web search, Channel3 and past deals, checks your photos for wear, and suggests what to do: a buyer nearby, a plan, a missing piece, a better price, renting something out.
-3. **Agents negotiate.** Your agent talks to the other person's agent with hard guardrails: your limits, your calendar, how far you'll travel, and only real evidence. It asks you when it needs to.
+3. **Agents negotiate.** Your agent talks to the other person's agent with hard guardrails: your limits, your calendar, how far you'll travel, and only real evidence. It asks you when it needs to. When several talks reach a yes, the best price wins, and every other agent hears about it at once: the item is off the market and stale suggestions disappear.
 4. **Plans.** Several deals can depend on each other. Maya sells her sectional only if she finds a smaller sofa, and a mover is booked around both handoffs. If one part moves, the plan agent moves the rest.
-5. **Your schedule.** Every handoff and job lands on your calendar (Bryntum Scheduler): orange while someone still has to approve, green once it's final. Drag across empty time to mark when you're free, and agents only book inside those hours. Drag a booking to ask for another time, and the agents work it out. A mover sees their Saturday as one row of stops.
-6. **PayPal settles it.** Both people approve. The buyer pays with PayPal and the money is held. At the handoff it's charged, and the seller gets a payout minus Unlisted's 8% fee. Each step is confirmed by PayPal's signed webhook.
+5. **Rent or sell.** The same thing can be rented out and sold. A rental only blocks its own days, a sale hands off after every rental is back, and a deposit is held and released through PayPal.
+6. **Your schedule.** Every handoff and job lands on your calendar (Bryntum Scheduler): orange while someone still has to approve, green once it's final. Drag across empty time to mark when you're free, and agents only book inside those hours. Drag a booking to ask for another time, and the agents work it out. A mover sees their Saturday as one row of stops.
+7. **PayPal settles it.** Both people approve. The buyer pays with PayPal and the money is held. At the handoff it's charged, and the seller gets a payout minus Unlisted's 8% fee. Each step is confirmed by PayPal's signed webhook.
 
 ## Try it (about 5 minutes)
 
@@ -58,6 +66,13 @@ Each person pays from their own account; payouts go to the seller's own account.
 
 Everything runs in the PayPal sandbox. The platform account is the payee on each order, so it can hold, charge, release and refund. Sellers are paid with Payouts.
 
+**Why these PayPal products fit.** A local deal has a gap between agreeing and the handoff. Authorize-then-capture fills it: the buyer is protected until they have the item, and the seller can see the money is there before they show up. Payouts lets one platform pay many neighbors, minus a fee. Signed webhooks are the source of truth, so the app never claims money moved before PayPal says so. And the Agent Toolkit gives AI read-only eyes on payments, so agents can answer questions without being able to move money.
+
+**What it brings to PayPal.**
+- New payment volume from things that were never listed anywhere.
+- Every agent-to-agent deal settles through PayPal: PayPal becomes the trust layer for agent commerce.
+- People who never sold anything get a reason to open a PayPal account to get paid.
+
 **PayPal Agent Toolkit over MCP.** "Did my payment go through?" is answered by Claude using PayPal's own tools. The app starts the Agent Toolkit's MCP server inside the app for each question, with a fresh sandbox token, and connects to it in memory; Claude gets the tools through the Anthropic SDK's MCP helper. The same question works from the user's own AI through the connector.
 - Live answers straight from PayPal, not from our database.
 - One read-only tool (`get_order`), so the AI can look but never move money.
@@ -91,10 +106,10 @@ Code sets the rules, and the AI does the judgement: naming, categorizing, pricin
 
 ## Sponsor tools
 
-- **Channel3:** finds products in a photo, and gives new prices and specs for the pricing and planning agents (`lib/items/products.ts`).
-- **Bryntum Scheduler:** the Schedule page, one row per person in your deals over the next three days. It shows what's waiting and what's final, your free hours (which the agents must respect), and lets you drag to mark free time or move a booking (`components/bryntum/ScheduleView.tsx`).
-- **Render:** web service and Postgres from `render.yaml`, with migrations before each deploy and a health check.
-- **APIMatic:** the APIMatic Context Plugin was used while building the PayPal integration, and PayPal's Server SDK is generated with APIMatic.
+- **Channel3:** names what's in a room photo, anchors each used price with the real new price (a used price never goes above it), and gives the specs the planner checks, like whether a power supply is big enough for a new graphics card (`lib/items/products.ts`).
+- **Bryntum Scheduler:** the shared calendar is how agents avoid double-booking. Your free hours are hard rules for every agent, bookings turn from waiting to final as people approve, and dragging a booking makes the agents find a new time. One row per person in your deals over the next three days (`components/bryntum/ScheduleView.tsx`).
+- **Render:** keeps the agents running around the clock: the web service, Postgres (which also carries the agents' events), the 10-minute timer for need waves and payout checks, and the nightly demo reset, all from `render.yaml`.
+- **APIMatic:** the APIMatic Context Plugin was used while building the PayPal integration, to get the Server SDK calls right the first time. PayPal's Server SDK is itself generated with APIMatic.
 
 ## Run it yourself
 
@@ -110,7 +125,7 @@ npm run dev
 
 Open http://localhost:3000. For webhooks, point a sandbox webhook at `/api/webhooks/paypal` and set `PAYPAL_WEBHOOK_ID`.
 
-- `npm test`: 46 unit tests for the rules (guardrails, fees, webhooks, plan order, rentals, places).
+- `npm test`: 47 unit tests for the rules (guardrails, fees, webhooks, plan order, rentals, places).
 - `npm run paypal:check -- create 10`: step through a hold, charge, release, refund and payout by hand in the sandbox.
 - `npm run lint`, `npm run build`.
 
