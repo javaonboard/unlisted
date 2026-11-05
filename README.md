@@ -106,7 +106,7 @@ Code sets the rules, and the AI does the judgement: naming, categorizing, pricin
 
 ## Sponsor tools
 
-- **Channel3:** names what's in a room photo, anchors each used price with the real new price (a used price never goes above it), and gives the specs the planner checks, like whether a power supply is big enough for a new graphics card (`lib/items/products.ts`).
+- **Channel3:** names what's in a room photo, anchors each used price with the real new price, used as the ceiling, and gives the specs the planner checks, like whether a power supply is big enough for a new graphics card (`lib/items/products.ts`).
 - **Bryntum Scheduler:** the shared calendar is how agents avoid double-booking. Your free hours are hard rules for every agent, bookings turn from waiting to final as people approve, and dragging a booking makes the agents find a new time. One row per person in your deals over the next three days (`components/bryntum/ScheduleView.tsx`).
 - **Render:** keeps the agents running around the clock: the web service, Postgres (which also carries the agents' events), the 10-minute timer for need waves and payout checks, and the nightly demo reset, all from `render.yaml`.
 - **APIMatic:** the APIMatic Context Plugin was used while building the PayPal integration, to get the Server SDK calls right the first time. PayPal's Server SDK is itself generated with APIMatic.
