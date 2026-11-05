@@ -31,7 +31,7 @@ async function Room({ params }: { params: Promise<{ id: string }> }) {
         <Thumb item={item} />
         <div className="min-w-0">
           <h1 className="text-xl font-semibold">{other}&apos;s agent</h1>
-          <p className="text-sm text-muted-foreground">{item.title}{seenText(item.inspection) ? ` · ${seenText(item.inspection)}` : ""}</p>
+          <p className="text-sm text-muted-foreground">{item.title}{seenText(item.inspection, item.kind) ? ` · ${seenText(item.inspection, item.kind)}` : ""}</p>
         </div>
       </div>
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">

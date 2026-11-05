@@ -56,6 +56,7 @@ export async function rankSellers(intentId: string, ownerArea: string): Promise<
         const freeMorning = !busy.some((b) => b.startsAt.getTime() <= saturday.getTime() + 3 * 3_600_000 && b.endsAt > saturday);
         score += freeMorning ? 4 : -2;
         reasons.push(freeMorning ? "free Saturday morning" : "busy until the afternoon");
+        if (item.inspection?.matches) { score += 1.5; reasons.push("photos of past work"); } // shown proof of their work
       } else if (item.condition) {
         reasons.push(item.condition.toLowerCase());
       }

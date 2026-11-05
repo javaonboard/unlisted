@@ -17,8 +17,9 @@ export function Thumb({ item, size = "size-12" }: { item: Item; size?: string })
 }
 
 // What the agent saw in the photos, in one short line.
-export function seenText(i: Inspection | null | undefined) {
+export function seenText(i: Inspection | null | undefined, kind = "goods") {
   if (!i) return null;
+  if (kind === "skill") return i.matches ? `Photos of past work: ${i.condition}` : `Photo doesn't match: ${i.mismatch ?? "check it"}`;
   if (!i.matches) return `Photo doesn't match: ${i.mismatch ?? "check it"}`;
   const wear = i.wear.length ? i.wear.join(", ") : "no visible wear";
   const working = i.needsWorking ? (i.workingShown ? " · shown working" : " · not shown working yet") : "";

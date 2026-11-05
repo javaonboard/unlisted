@@ -14,12 +14,21 @@ const Check = z.object({
   ask: z.string().nullable().describe("One short request to the owner for a better photo or proof it works, or null if nothing is missing"),
 });
 
+// For a service: photos or a video of past work, checked the same careful way.
+const WorkCheck = z.object({
+  matches: z.boolean().describe("The photos show this kind of work, or the gear for it. False only if they clearly show something else"),
+  mismatch: z.string().nullable(),
+  shows: z.string().describe("One short line a customer can trust: what the work looks like, e.g. 'Clean gutters on a two-story house, debris bagged'"),
+  ask: z.string().nullable().describe("One short request for a better photo (before and after, the finished job), or null"),
+});
+
 export type Inspection = z.infer<typeof Check> & { at: string; photos: number };
 
 // The agent looks at the owner's photos (or frames from a short video): is it the item,
 // what wear shows, and is it shown working when that matters. Findings become verified evidence.
 export async function inspectItem(itemId: string, images: string[], fromVideo = false, ip?: string): Promise<Inspection> {
   const [item] = await db.select().from(schema.items).where(eq(schema.items.id, itemId));
+  if (item.kind === "skill") return inspectWork(item, images, fromVideo, ip);
   const before = item.inspection?.matches ? item.inspection : null;
   const check = await askForData({
     schema: Check,
@@ -47,5 +56,25 @@ Check it like a careful buyer would. Only report what you can see; don't guess h
   const rows = [{ itemId, type: "photo" as const, summary: `Photo check: ${check.grade}, ${seen}.`, verified: true }];
   if (inspection.workingShown) rows.push({ itemId, type: "photo", summary: "Photo check: shown working.", verified: true });
   await db.insert(schema.evidence).values(rows);
+  return inspection;
+}
+
+// Photos of a provider's past work become verified evidence their agent can show, and help them get picked.
+async function inspectWork(item: typeof schema.items.$inferSelect, images: string[], fromVideo: boolean, ip?: string): Promise<Inspection> {
+  const check = await askForData({
+    schema: WorkCheck,
+    ip,
+    content: [
+      ...images.map((url) => ({ type: "image" as const, source: { type: "base64" as const, media_type: "image/jpeg" as const, data: url.split(",")[1] } })),
+      { type: "text", text: `${fromVideo ? "Frames from a short video" : "Photos"} a local provider added to show their past work for: "${item.title}" (${item.category}). Describe only what you can see.` },
+    ],
+  });
+  console.log("[ai] work photos checked", item.title, check.matches ? "" : "MISMATCH");
+  const before = item.inspection?.matches ? item.inspection : null;
+  const inspection: Inspection = { matches: check.matches, mismatch: check.mismatch, grade: "good", wear: [], condition: check.shows, needsWorking: false, workingShown: false, ask: check.ask, at: new Date().toISOString(), photos: images.length + (before?.photos ?? 0) };
+  if (!check.matches) return inspection;
+  await db.update(schema.items).set({ inspection }).where(eq(schema.items.id, item.id));
+  await db.delete(schema.evidence).where(and(eq(schema.evidence.itemId, item.id), like(schema.evidence.summary, "Photo check:%")));
+  await db.insert(schema.evidence).values({ itemId: item.id, type: "photo", summary: `Photo check: past work, ${check.shows}`, verified: true });
   return inspection;
 }

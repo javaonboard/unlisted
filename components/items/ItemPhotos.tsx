@@ -39,7 +39,7 @@ async function fromVideo(file: File, max: number) {
 }
 
 // The owner's photos, what their agent saw in them, and a way to add more or show it working.
-export function ItemPhotos({ itemId, photos, inspection }: { itemId: string; photos: string[]; inspection: Inspection | null }) {
+export function ItemPhotos({ itemId, photos, inspection, kind = "goods" }: { itemId: string; photos: string[]; inspection: Inspection | null; kind?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const photoInput = useRef<HTMLInputElement>(null);
@@ -57,7 +57,8 @@ export function ItemPhotos({ itemId, photos, inspection }: { itemId: string; pho
     });
   };
 
-  const seen = seenText(inspection);
+  const seen = seenText(inspection, kind);
+  const work = kind === "skill";
   const askWorking = inspection?.needsWorking && !inspection.workingShown;
   return (
     <div className="mt-3 text-sm">
@@ -70,9 +71,11 @@ export function ItemPhotos({ itemId, photos, inspection }: { itemId: string; pho
       {seen && <p className={inspection?.matches ? "text-muted-foreground" : "text-destructive"}>{seen}</p>}
       {inspection?.ask && <p className="text-muted-foreground">Your agent asks: {inspection.ask}</p>}
       <div className="mt-2 flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" loading={pending} onClick={() => photoInput.current?.click()}><Camera />{photos.length ? "Add photos" : "Add a photo"}</Button>
+        <Button size="sm" variant="outline" loading={pending} onClick={() => photoInput.current?.click()}><Camera />{work ? "Add photos of your work" : photos.length ? "Add photos" : "Add a photo"}</Button>
+        {work && <Button size="sm" variant="outline" loading={pending} onClick={() => videoInput.current?.click()}><Video />Add a short video</Button>}
         {askWorking && <Button size="sm" variant="outline" loading={pending} onClick={() => videoInput.current?.click()}><Video />Show it working</Button>}
       </div>
+      {work && !inspection && <p className="mt-1 text-muted-foreground">Photos of jobs you&apos;ve done become proof on your profile, and people who show their work get picked more often.</p>}
       {pending && <p className="mt-1 text-muted-foreground">Your agent is looking at it…</p>}
       {error && <p className="mt-1 text-destructive">{error}</p>}
       <input ref={photoInput} type="file" accept="image/*" multiple hidden onChange={(e) => upload(e.target.files, false)} />

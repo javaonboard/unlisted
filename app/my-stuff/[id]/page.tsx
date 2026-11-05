@@ -22,10 +22,13 @@ async function ItemView({ params }: { params: Promise<{ id: string }> }) {
   if (!data) notFound();
   const { item, evidence, negotiations } = data;
   const notes = evidence.filter((e) => !e.summary.startsWith("Photo check:")); // the photo check shows with the photos
+  // Just added: the agent's first look (photo check, price check) may still be running.
+  const fresh = Date.now() - item.createdAt.getTime() < 3 * 60_000;
+  const checking = fresh && ((item.photos.length > 0 && !item.inspection) || !item.priceCheck);
 
   return (
     <>
-      <LiveRefresh active={negotiations.some((n) => n.room.status === "open")} />
+      <LiveRefresh active={checking || negotiations.some((n) => n.room.status === "open")} every={checking ? 3000 : 2000} />
       <BackLink href="/my-stuff" label="My stuff" />
       <Card>
         <CardHeader>
@@ -34,7 +37,13 @@ async function ItemView({ params }: { params: Promise<{ id: string }> }) {
             <Badge variant={item.openToOffers ? "default" : "secondary"}>{item.openToOffers ? "Open to offers" : "Private"}</Badge>
           </CardTitle>
           <CardDescription>{item.condition ?? item.category}</CardDescription>
-          {item.kind === "goods" && <ItemPhotos itemId={item.id} photos={item.photos} inspection={item.inspection ?? null} />}
+          {checking && (
+            <div className="mt-2 rounded-xl bg-accent px-3 py-2 text-sm">
+              <p>Your agent is doing a quick check: {[item.photos.length > 0 && !item.inspection ? "the photo" : null, !item.priceCheck ? "the price" : null].filter(Boolean).join(" and ")}…</p>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-primary/20"><div className="h-full w-1/3 animate-pulse rounded-full bg-primary" /></div>
+            </div>
+          )}
+          <ItemPhotos itemId={item.id} photos={item.photos} inspection={item.inspection ?? null} kind={item.kind} />
         </CardHeader>
         <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
@@ -44,7 +53,7 @@ async function ItemView({ params }: { params: Promise<{ id: string }> }) {
               <div className="my-2"><WaysSwitch ways={waysOf(item)} onChange={setWaysAction.bind(null, item.id)} /></div>
             )}
             {item.minPrice && <p>Your minimum: ${Number(item.minPrice).toFixed(0)} <span className="text-muted-foreground">(only you see this)</span></p>}
-            <RangeForm action={setItemRangeAction.bind(null, item.id)} miles={rangeOfOffer(item.maxMiles)} label={item.kind === "skill" ? "I travel up to" : "I'll deliver up to (0 = pickup only)"} />
+            <RangeForm action={setItemRangeAction.bind(null, item.id)} miles={rangeOfOffer(item.maxMiles)} label={item.kind === "skill" ? "I travel up to" : "I'll deliver up to"} pickup={item.kind === "goods"} />
             {Object.keys(item.details).length > 0 && <p className="text-muted-foreground">{Object.entries(item.details).map(([k, v]) => `${k}: ${v}`).join(" · ")}</p>}
           </div>
           <div>
