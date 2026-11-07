@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { db, schema } from "@/lib/db";
 import { claude, FALLBACK, MODELS } from "@/lib/ai/client";
@@ -35,7 +35,7 @@ export async function composePlan(userId: string, change?: string): Promise<Comp
   const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId));
   const [needs, items, facts] = await Promise.all([
     db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, userId), eq(schema.intents.status, "open"))),
-    db.select().from(schema.items).where(eq(schema.items.ownerId, userId)),
+    db.select().from(schema.items).where(and(eq(schema.items.ownerId, userId), isNull(schema.items.soldAt), isNull(schema.items.removedAt))),
     db.select().from(schema.memoryFacts).where(eq(schema.memoryFacts.userId, userId)).orderBy(desc(schema.memoryFacts.confidence)).limit(6),
   ]);
   if (needs.length < 2 || !needs.some((n) => n.type === "sell" || n.type === "buy")) return null;

@@ -117,7 +117,7 @@ export async function onNeedPosted(needId: string) {
 // People who need it only hear if it's public; a private thing stays private.
 export async function onItemAdded(itemId: string) {
   const [item] = await db.select().from(schema.items).where(eq(schema.items.id, itemId));
-  if (!item) return;
+  if (!item || item.removedAt) return;
   await priceItem(itemId).catch((e) => console.error("[price] failed", e?.message)); // web, Channel3 and our own sales
   await checkIn(item.ownerId, `they added ${item.title}`);
   if (!item.openToOffers) return;

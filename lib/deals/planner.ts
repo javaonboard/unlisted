@@ -1,5 +1,5 @@
 import { after } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { openRoom, playRoom } from "@/lib/negotiation/room";
 import { rankBuyers, rankSellers } from "@/lib/scout/rank";
@@ -22,7 +22,7 @@ type PlanChoice = {
 export async function startLinkedDeal(ownerId: string, choice: PlanChoice) {
   const [owner] = await db.select().from(schema.users).where(eq(schema.users.id, ownerId));
   const mine = await db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, ownerId), eq(schema.intents.status, "open")));
-  const things = await db.select().from(schema.items).where(eq(schema.items.ownerId, ownerId));
+  const things = await db.select().from(schema.items).where(and(eq(schema.items.ownerId, ownerId), isNull(schema.items.soldAt), isNull(schema.items.removedAt)));
   // A thing can be sold in a plan even if they never wrote a "sell" need: one is added for it.
   const sells = [];
   for (const s of choice.sells) {

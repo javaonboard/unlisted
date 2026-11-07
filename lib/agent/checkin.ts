@@ -50,7 +50,7 @@ export async function checkIn(userId: string, why: string) {
   if (!me) return 0;
 
   const [things, needs, facts, recent, plans, users] = await Promise.all([
-    db.select().from(schema.items).where(and(eq(schema.items.ownerId, userId), isNull(schema.items.soldAt))),
+    db.select().from(schema.items).where(and(eq(schema.items.ownerId, userId), isNull(schema.items.soldAt), isNull(schema.items.removedAt))),
     db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, userId), eq(schema.intents.status, "open"))),
     db.select().from(schema.memoryFacts).where(eq(schema.memoryFacts.userId, userId)).orderBy(desc(schema.memoryFacts.confidence)).limit(6),
     db.select().from(schema.suggestions).where(and(eq(schema.suggestions.userId, userId), gte(schema.suggestions.createdAt, new Date(Date.now() - 14 * 86_400_000)))),

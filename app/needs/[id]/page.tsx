@@ -11,7 +11,8 @@ import { setNeedRangeAction } from "@/app/actions/range";
 import { rangeOfNeed } from "@/lib/places";
 import { PriceAdvice } from "@/components/shared/PriceAdvice";
 import { EditNeed } from "@/components/shared/EditForms";
-import { checkNeedPriceAction, updateNeedAction, useNeedBudgetAction } from "@/app/actions/edit";
+import { checkNeedPriceAction, removeNeedAction, updateNeedAction, useNeedBudgetAction } from "@/app/actions/edit";
+import { ConfirmAction } from "@/components/ConfirmAction";
 
 async function NeedView({ params }: { params: Promise<{ id: string }> }) {
   const data = await getNeedView((await params).id, await currentUserId());
@@ -30,13 +31,27 @@ async function NeedView({ params }: { params: Promise<{ id: string }> }) {
             {need.maxPrice && ` · up to $${Number(need.maxPrice).toFixed(0)} (only you see this)`}
             {need.dueAt && ` · by ${need.dueAt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`}
             {need.status === "done" && " · Done"}
+            {need.status === "removed" && " · Removed"}
           </CardDescription>
-          {/* A filled need is history: nothing left to change. */}
-          {need.status !== "done" && (
+          {/* A filled or removed need is history: nothing left to change. */}
+          {need.status !== "done" && need.status !== "removed" && (
             <>
               <RangeForm action={setNeedRangeAction.bind(null, need.id)} miles={rangeOfNeed(need.maxMiles)} label="Anyone within" />
               <PriceAdvice check={need.priceCheck ?? null} onCheck={checkNeedPriceAction.bind(null, need.id)} onUse={useNeedBudgetAction.bind(null, need.id)} useLabel="Budget" />
               <EditNeed action={updateNeedAction.bind(null, need.id)} need={need} />
+              <div className="flex justify-end">
+                <ConfirmAction
+                  label="Remove"
+                  variant="link"
+                  size="xs"
+                  title="Remove this need?"
+                  points={["Your agent stops looking for it.", "Talks about it end, and the other side is told.", "Old chats and receipts stay."]}
+                  confirm="Remove"
+                  action={removeNeedAction.bind(null, need.id)}
+                  done="Removed."
+                  goTo="/my-stuff"
+                />
+              </div>
             </>
           )}
         </CardHeader>

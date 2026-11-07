@@ -20,7 +20,7 @@ import { TellAgent } from "@/components/items/TellAgent";
 async function MyStuff() {
   const userId = await currentUserId();
   const [items, needs, users, plans] = await Promise.all([
-    db.select().from(schema.items).where(and(eq(schema.items.ownerId, userId), isNull(schema.items.soldAt))).orderBy(asc(schema.items.createdAt)),
+    db.select().from(schema.items).where(and(eq(schema.items.ownerId, userId), isNull(schema.items.soldAt), isNull(schema.items.removedAt))).orderBy(asc(schema.items.createdAt)),
     db.select().from(schema.intents).where(and(eq(schema.intents.ownerId, userId), eq(schema.intents.status, "open"))),
     db.select().from(schema.users),
     db.select().from(schema.deals).where(eq(schema.deals.ownerId, userId)),

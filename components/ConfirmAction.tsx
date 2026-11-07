@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { showDone } from "@/components/shared/Toaster";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -14,10 +15,12 @@ type Props = {
   variant?: "default" | "outline" | "destructive" | "secondary" | "link";
   size?: "xs" | "sm" | "default";
   done?: string; // a short confirmation once it went through
+  goTo?: string; // where to go once it went through
 };
 
 // For steps that can't be undone: say plainly what will happen, then Yes or Not yet.
-export function ConfirmAction({ label, title, points, confirm, action, variant = "default", size = "sm", done }: Props) {
+export function ConfirmAction({ label, title, points, confirm, action, variant = "default", size = "sm", done, goTo }: Props) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   return (
@@ -36,7 +39,10 @@ export function ConfirmAction({ label, title, points, confirm, action, variant =
             const result = (await action()) as { error?: string | null } | undefined;
             setOpen(false);
             if (result?.error) showDone(result.error, true);
-            else if (done) showDone(done);
+            else {
+              if (done) showDone(done);
+              if (goTo) router.push(goTo);
+            }
           })}>{confirm}</Button>
         </DialogFooter>
       </DialogContent>

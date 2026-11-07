@@ -59,6 +59,7 @@ export const items = pgTable("vault_items", {
   rentPerDay: money("rent_per_day"), // goods: can be rented, at this price a day. Empty = not for rent
   deposit: money("deposit"), // held by PayPal during a rental, released when it comes back
   soldAt: timestamp("sold_at"), // sold and handed over: it moves to "Things I had"
+  removedAt: timestamp("removed_at"), // the owner took it off; kept so old chats and receipts still work
   createdAt: createdAt(),
 });
 
@@ -90,7 +91,7 @@ export const intents = pgTable("intents", {
   constraints: jsonb("constraints").$type<Record<string, unknown>>().default({}).notNull(),
   dependsOn: jsonb("depends_on").$type<string[]>().default([]).notNull(), // other intent ids
   dueAt: timestamp("due_at"),
-  status: text("status", { enum: ["open", "matched", "done", "expired"] })
+  status: text("status", { enum: ["open", "matched", "done", "expired", "removed"] })
     .default("open")
     .notNull(),
   wave: integer("wave").default(0).notNull(), // how far we've widened the search for this need

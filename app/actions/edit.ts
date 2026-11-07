@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
@@ -9,6 +10,8 @@ import { updateNeed } from "@/lib/intents/mutations";
 import { priceItem, priceNeed } from "@/lib/pricing/save";
 import { goPrivate, goPublic } from "@/lib/items/visibility";
 import { playLater } from "@/lib/negotiation/start";
+import { removeItem } from "@/lib/items/remove";
+import { removeNeed } from "@/lib/intents/remove";
 
 const num = (v: FormDataEntryValue | null) => (v === null || v === "" ? undefined : Number(v));
 const refresh = () => revalidatePath("/", "layout");
@@ -87,4 +90,19 @@ export async function setVisibilityAction(itemId: string, open: boolean) {
   if (open) playLater(await goPublic(userId, itemId));
   else await goPrivate(userId, itemId);
   refresh();
+}
+
+// Taking something off. Blocked while a deal on it is agreed; the other sides' agents look again afterwards.
+export async function removeItemAction(itemId: string) {
+  const result = await removeItem(await currentUserId(), itemId);
+  if (result.carryOn) after(() => result.carryOn!().catch((e) => console.error("[remove] failed", e?.message)));
+  refresh();
+  return { error: result.error };
+}
+
+export async function removeNeedAction(needId: string) {
+  const result = await removeNeed(await currentUserId(), needId);
+  if (result.carryOn) after(() => result.carryOn!().catch((e) => console.error("[remove] failed", e?.message)));
+  refresh();
+  return { error: result.error };
 }

@@ -8,7 +8,7 @@ type Intent = typeof schema.intents.$inferSelect;
 
 // Hard rules: same category, prices within reach, and requirements met ("minSeats: 3" needs seats ≥ 3).
 function fits(item: Item, intent: Intent) {
-  if (item.category !== intent.category || item.ownerId === intent.ownerId || item.soldAt) return false;
+  if (item.category !== intent.category || item.ownerId === intent.ownerId || item.soldAt || item.removedAt) return false;
   if (intent.type === "buy" && item.kind === "goods" && !item.forSale) return false;
   if (intent.type === "rent" && !item.rentPerDay) return false;
   // Within 10% is still worth talking about; owners can stretch. A rental costs its daily price times the days.

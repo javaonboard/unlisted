@@ -46,6 +46,9 @@ export async function resetDemo(by: "button" | "nightly") {
 
   const days = Math.floor((Date.now() - snap.takenAt.getTime()) / DAY);
   const weeks = Math.ceil(days / 7); // same day: none; any later day: enough whole weeks to keep plans ahead
+  // When things were created stays in the past, in the same order: it moves forward only up to now.
+  const lastCreated = Math.max(0, ...Object.values(snap.data).flat().map((r) => (r as { created_at?: string }).created_at).map((at) => (at ? new Date(/Z|[+-]\d\d:?\d\d$/.test(at) ? at : `${at}Z`).getTime() : 0)));
+  const createdShift = Math.max(0, Math.min(weeks * 7 * DAY, Date.now() - lastCreated - 60_000));
   const tables = await tablesInOrder();
   await db.transaction(async (tx) => {
     await tx.execute(sql.raw(`truncate ${tables.map((t) => `"${t}"`).join(", ")} restart identity cascade`));
@@ -54,7 +57,8 @@ export async function resetDemo(by: "button" | "nightly") {
       if (rows.length) await tx.execute(sql`insert into ${sql.identifier(t)} select * from jsonb_populate_recordset(null::${sql.identifier(t)}, ${JSON.stringify(rows)}::jsonb)`);
       if (!weeks) continue;
       const cols = await tx.execute<{ c: string }>(sql`select column_name as c from information_schema.columns where table_schema = 'public' and table_name = ${t} and data_type like 'timestamp%'`);
-      if (cols.length) await tx.execute(sql.raw(`update "${t}" set ${cols.map(({ c }) => `"${c}" = "${c}" + interval '${weeks} weeks'`).join(", ")}`));
+      const shift = (c: string) => (c === "created_at" ? `interval '${createdShift} milliseconds'` : `interval '${weeks} weeks'`);
+      if (cols.length) await tx.execute(sql.raw(`update "${t}" set ${cols.map(({ c }) => `"${c}" = "${c}" + ${shift(c)}`).join(", ")}`));
     }
     // Agreed times also live inside each move's terms.
     if (weeks) {

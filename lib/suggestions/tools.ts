@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { askForData } from "@/lib/ai/structured";
 import { MODELS } from "@/lib/ai/client";
@@ -10,7 +10,7 @@ export async function toolOwnersFor(need: { id: string; ownerId: string; text: s
   const items = await db
     .select({ id: schema.items.id, ownerId: schema.items.ownerId, title: schema.items.title })
     .from(schema.items)
-    .where(and(eq(schema.items.kind, "goods"), ne(schema.items.ownerId, need.ownerId)))
+    .where(and(eq(schema.items.kind, "goods"), ne(schema.items.ownerId, need.ownerId), isNull(schema.items.soldAt), isNull(schema.items.removedAt)))
     .limit(80);
   if (!items.length) return [];
 
