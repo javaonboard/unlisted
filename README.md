@@ -45,10 +45,10 @@ The demo has 14 people in Austin with things, needs and services. Switch between
 |---|---|---|
 | Maya | unlisted-maya@personal.example.com | pay for her plan, get paid for her sectional |
 | Omar | unlisted-omar@personal.example.com | buy Maya's sectional |
-| Ben, Bella | unlisted-buyer@ / unlisted-buyer2@personal.example.com | buy or rent |
+| Ben, Bella | unlisted-ben@ / unlisted-bella@personal.example.com | buy or rent |
 | Kai, Gus, Priya | unlisted-kai@ / unlisted-gus@ / unlisted-priya@personal.example.com | rent out or buy the ladder, buy a graphics card |
-| Sam, Sara, Leo, Lily | unlisted-seller@ / unlisted-seller2@ / unlisted-leo@ / unlisted-lily@personal.example.com | get paid out |
-| Marco, Dev (movers) | unlisted-mover@ / unlisted-dev@business.example.com | get paid out |
+| Sam, Sara, Leo, Lily, Ivan | unlisted-sam@ / unlisted-sara@ / unlisted-leo@ / unlisted-lily@ / unlisted-ivan@personal.example.com | get paid out |
+| Marco, Dev (movers) | unlisted-marco@ / unlisted-dev@business.example.com | get paid out |
 
 Each person pays from their own account; payouts go to the seller's own account.
 
