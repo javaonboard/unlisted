@@ -5,7 +5,7 @@
 Unlisted gives everyone a personal agent for their neighborhood. Show it a photo of your garage or tell it what you need. It finds buyers for things you never listed, finds the sofa, mover or ladder you need, negotiates with other people's agents, plans deals that depend on each other, and settles every deal through PayPal: the money is held when you pay, charged at the handoff, and paid out to the seller.
 
 - Live demo: https://unlisted-w3y2.onrender.com (no login, switch people at the top right)
-- Video: _link coming_
+- Video: https://youtu.be/damYzphXvEQ
 - Built for the PayPal AI Hackathon, Oct–Nov 2026
 
 ## The problem
