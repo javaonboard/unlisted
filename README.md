@@ -50,7 +50,7 @@ The demo has 14 people in Austin with things, needs and services. Switch between
 | Sam, Sara, Leo, Lily, Ivan | unlisted-sam@ / unlisted-sara@ / unlisted-leo@ / unlisted-lily@ / unlisted-ivan@personal.example.com | get paid out |
 | Marco, Dev (movers) | unlisted-marco@ / unlisted-dev@business.example.com | get paid out |
 
-Each person pays from their own account; payouts go to the seller's own account.
+Payouts go to the seller's own account. Any sandbox account can pay for any deal, so Maya's works for everything.
 
 ## How PayPal is used
 
