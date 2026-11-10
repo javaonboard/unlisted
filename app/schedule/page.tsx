@@ -33,13 +33,33 @@ async function MySchedule() {
     await Promise.all(upcoming.filter((b) => b.roomId).map(async (b) => [b.roomId!, await getRoomView(b.roomId!, userId)] as const)),
   );
 
+  // The person on the other side of each booking, and what the bar shows.
+  const people = new Map<string, { name: string; role: string }>();
+  const slots = upcoming.map((b) => {
+    const view = b.roomId ? views[b.roomId] : null;
+    const when = `${b.startsAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" })}`;
+    if (!view) return { b, other: null, slot: { id: b.id, name: b.title, label: "", tip: `${b.title}<br>${when}`, iconCls: "fa fa-clock", startDate: local(b.startsAt), endDate: local(b.endsAt), eventColor: "gray", draggable: false } };
+    const { room, item, names } = view;
+    const kind = roleOf(view, userId).kind;
+    const otherId = room.buyerId === userId ? room.sellerId : room.buyerId;
+    const service = item.kind === "skill";
+    const role = kind === "renter" ? "Lends to you" : kind === "lender" ? "Rents from you" : room.buyerId === userId ? (service ? "Does the job" : "Sells to you") : (service ? "Hired you" : "Buys from you");
+    people.set(otherId, { name: names[otherId] ?? otherId, role });
+    const price = room.agreedPrice ? `$${Math.round(Number(room.agreedPrice))}` : "";
+    const next = nextFor(view, userId);
+    const tip = `<b>${b.title}</b><br>${when}${price ? ` · ${price}` : ""}<br>${next.label}`;
+    const iconCls = service ? "fa fa-truck" : kind === "renter" || kind === "lender" ? "fa fa-rotate" : room.buyerId === userId ? "fa fa-bag-shopping" : "fa fa-tag";
+    return { b, other: otherId, slot: { id: b.id, name: b.title, label: price, tip, iconCls, startDate: local(b.startsAt), endDate: local(b.endsAt), eventColor: status(b.roomId) ? "orange" : "green", draggable: true } };
+  });
+
   return (
     <>
       <ScheduleView
+        me={userId}
         from={local(today)}
         to={local(weekLater)}
-        rows={[{ id: userId, name: user?.name.split(" ")[0] ?? "Me" }]}
-        slots={upcoming.map((b) => ({ id: b.id, resourceId: userId, name: b.title, startDate: local(b.startsAt), endDate: local(b.endsAt), eventColor: !b.roomId ? "gray" : status(b.roomId) ? "orange" : "green", draggable: !!b.roomId }))}
+        rows={[{ id: userId, name: user?.name ?? "Me", role: "You", eventColor: "blue" }, ...[...people].map(([id, p]) => ({ id, name: p.name, role: p.role, eventColor: "gray" }))]}
+        slots={slots.map(({ slot, other }) => ({ ...slot, resourceIds: other ? [userId, other] : [userId] }))}
         free={free.map((f) => ({ id: f.id, resourceId: userId, startDate: local(f.startsAt), endDate: local(f.endsAt) }))}
         onFree={markFreeAction}
         onMove={moveBookingAction}
