@@ -46,8 +46,9 @@ function Schedule({ me, rows, slots, from, to, free = [], onFree, onMove }: Prop
         resources={rows}
         events={slots}
         eventStore={eventStore}
-        eventRenderer={({ eventRecord }) => String(eventRecord.getData("label") ?? "")}
-        labelsFeature={{ right: { field: "name" }, labelLayoutMode: "estimate" }}
+        // Short bars only fit the icon, so the price and title go beside the bar.
+        eventRenderer={() => ""}
+        labelsFeature={{ right: { renderer: ({ eventRecord }: { eventRecord: { getData: (f: string) => unknown } }) => [eventRecord.getData("label"), eventRecord.getData("name")].filter(Boolean).join(" · ") }, labelLayoutMode: "estimate" }}
         eventTooltipFeature={{ template: ({ eventRecord }: { eventRecord: { getData: (f: string) => unknown } }) => String(eventRecord.getData("tip") ?? "") }}
         resourceTimeRanges={free.map((f) => ({ ...f, name: "Free", timeRangeColor: "green" }))}
         resourceTimeRangesFeature

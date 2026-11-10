@@ -104,7 +104,7 @@ async function MySchedule() {
 
 export default function SchedulePage() {
   return (
-    <main className="mx-auto w-full max-w-4xl p-8">
+    <main className="mx-auto w-full max-w-5xl p-8">
       <BackLink href="/" label="Inbox" />
       <h1 className="mb-1 text-2xl font-semibold">My schedule</h1>
       <p className="mb-4 text-muted-foreground">Every handoff and job your agent agreed. Orange means someone still has to confirm the time.</p>
